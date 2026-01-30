@@ -10,6 +10,7 @@ import { usePathname } from 'next/navigation';
 // Redux aur API Imports
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { logout } from '@/lib/store/features/authSlice';
+import { clearCourseCache } from '@/lib/store/features/courseSlice';
 import { logoutUserAPI, logoutLocal } from '@/lib/api/apiService';
 import { getRolePath } from '@/lib/navigationConfig';
 
@@ -31,6 +32,7 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     try { await logoutUserAPI(); } catch (err) { console.error('Logout error:', err); }
     finally {
       dispatch(logout());
+      dispatch(clearCourseCache()); // Clear course cache on logout
       logoutLocal();
       window.location.href = '/signin';
     }
