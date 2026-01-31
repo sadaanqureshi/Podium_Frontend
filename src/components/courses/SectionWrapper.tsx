@@ -23,7 +23,7 @@ export const SectionWrapper = ({ sectionName, children, role, type, onAddItem }:
                 </div>
 
                 {role !== 'student' && (
-                    <button 
+                    <button
                         onClick={onAddItem}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-100"
                     >

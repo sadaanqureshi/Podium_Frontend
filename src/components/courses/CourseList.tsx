@@ -2,7 +2,7 @@ import React from 'react';
 import Card from '@/components/courses/Card';
 
 interface CourseListProps {
-  courses: any[]; 
+  courses: any[];
   basePath: string;
   showProgress?: boolean;
 }
@@ -20,9 +20,9 @@ const CourseList: React.FC<CourseListProps> = ({ courses, basePath, showProgress
           description={course.shortDescription}
           rating={course.avgRating || 0}
           imageUrl={course.coverImg}
-          currentLesson={0} 
+          currentLesson={0}
           totalLessons={course.totalLectures || 0}
-          basePath={basePath} 
+          basePath={basePath}
           showProgress={showProgress}
         />
       ))}

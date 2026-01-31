@@ -5,6 +5,7 @@ import {
     Users, FileText, BookOpen, Layers, Plus, ArrowLeft,
     Loader2, Video, ClipboardList
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 // API aur Components Imports
@@ -14,19 +15,32 @@ import {
     createSectionAPI,
     createResourceAPI,
     createRecordedLectureAPI,
+    dismissStudentAPI,
     createLiveLectureAPI,
     createAssignmentAPI,
     enrollStudentAPI,
-    deleteLectureAPI,      // Naya
-    updateLectureAPI,      // Naya
-    deleteResourceAPI,     // Naya
-    updateResourceAPI      // Naya
+    deleteLectureAPI,
+    updateLectureAPI,
+    deleteResourceAPI,
+    updateResourceAPI,
+    createQuizAPI,
+    updateQuizAPI,
+    deleteQuizAPI
 } from '@/lib/api/apiService';
 import { CourseInfoCard } from '@/components/courses/CourseInfoCard';
 import { StudentsTab } from '@/components/courses/StudentsTab';
 import { GenericContentTab } from '@/components/courses/GenericContentTab';
 import GenericFormModal, { FormField } from '@/components/ui/GenericFormModal';
-import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal'; // Naya
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
+
+// # PROFESSIONAL MAPPING TO FIX "QUIZZE" ERROR
+const TAB_TO_TYPE_MAP: Record<string, ModalType> = {
+    students: 'student',
+    lectures: 'lecture',
+    quizzes: 'quiz',
+    assignments: 'assignment',
+    resources: 'resource'
+};
 
 type ModalType = 'student' | 'lecture' | 'quiz' | 'assignment' | 'resource' | 'section';
 
@@ -42,14 +56,13 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
     const [loading, setLoading] = useState(true);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // Naya
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [modalLoading, setModalLoading] = useState(false);
     const [modalType, setModalType] = useState<ModalType>('lecture');
     const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
 
-    // Edit/Delete Item States
-    const [itemToEdit, setItemToEdit] = useState<any>(null); // Naya
-    const [itemToDelete, setItemToDelete] = useState<any>(null); // Naya
+    const [itemToEdit, setItemToEdit] = useState<any>(null);
+    const [itemToDelete, setItemToDelete] = useState<any>(null);
 
     const tabs = [
         { id: 'students', label: 'Students', icon: Users },
@@ -79,7 +92,6 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
             }
         } catch (err: any) {
             console.error("Main Content Fetch Error:", err);
-            alert("Course data load karne mein masla hua.");
         } finally {
             setLoading(false);
         }
@@ -97,16 +109,22 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
     }, [fullData, activeTab]);
 
     const formFields = useMemo(() => {
+        const lectureTypeToUse = itemToEdit ? itemToEdit.lectureType : activeLectureSubTab;
+
         const configs: Record<string, FormField[]> = {
             section: [
                 { name: 'title', label: 'Section Title', type: 'text', required: true },
                 { name: 'description', label: 'Brief Description', type: 'textarea' }
             ],
-            lecture: [
+            lecture: lectureTypeToUse === 'online' ? [
+                { name: 'title', label: 'Session Title', type: 'text', required: true },
+                { name: 'description', label: 'Agenda/Description', type: 'textarea' },
+                { name: 'liveStart', label: 'Start Date & Time', type: 'datetime-local', required: true },
+                { name: 'lectureOrder', label: 'Order', type: 'number', required: true }
+            ] : [
                 { name: 'title', label: 'Lecture Title', type: 'text', required: true },
                 { name: 'description', label: 'Description', type: 'textarea' },
-                // Name strictly 'file' rakha hai plural nahi taaki backend crash na ho
-                { name: 'video', label: 'Video File', type: 'files', required: !itemToEdit }, 
+                { name: 'video', label: 'Video File', type: 'files', required: !itemToEdit },
                 { name: 'lectureOrder', label: 'Order', type: 'number', required: true }
             ],
             assignment: [
@@ -120,10 +138,19 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
             resource: [
                 { name: 'title', label: 'Resource Title', type: 'text', required: true },
                 { name: 'resourceType', label: 'Type', type: 'select', options: [{ label: 'PDF', value: 'pdf' }, { label: 'Video', value: 'video' }], required: true },
-                // Singular 'file' logic for resource
                 { name: 'file', label: 'Upload File', type: 'files', required: !itemToEdit }
             ],
             student: [{ name: 'studentId', label: 'Select Student', type: 'select', options: allAvailableStudents, required: true }],
+            // # QUIZ FORM FIELDS WITH DYNAMIC BUILDER
+            quiz: [
+                { name: 'title', label: 'Quiz Title', type: 'text', required: true },
+                { name: 'description', label: 'Quiz Description', type: 'textarea' },
+                { name: 'total_marks', label: 'Total Marks', type: 'number', required: true },
+                { name: 'start_time', label: 'Start Time', type: 'datetime-local', required: false },
+                { name: 'end_time', label: 'End Time', type: 'datetime-local', required: false },
+                { name: 'is_Published', label: 'Publish Immediately?', type: 'select', options: [{ label: 'Yes', value: 'true' }, { label: 'No', value: 'false' }] },
+                { name: 'questions', label: 'Quiz Questions', type: 'quiz-builder', required: true }
+            ],
         };
         return configs[modalType] || [];
     }, [modalType, activeLectureSubTab, allAvailableStudents, itemToEdit]);
@@ -132,63 +159,86 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
         setModalLoading(true);
         try {
             const courseIdNum = Number(courseId);
-            
+            const rawData = Object.fromEntries(formData);
+
             if (itemToEdit) {
-                // --- PATCH LOGIC (Dirty fields handled by modal) ---
-                if (modalType === 'lecture') await updateLectureAPI(itemToEdit.id, courseIdNum, formData);
+                if (modalType === 'quiz') {
+                    const payload = {
+                        ...rawData,
+                        questions: JSON.parse(rawData.questions as string),
+                        total_marks: Number(rawData.total_marks),
+                        is_Published: rawData.is_Published === 'true'
+                    };
+                    await updateQuizAPI(itemToEdit.id, payload);
+                }
+                else if (modalType === 'lecture') await updateLectureAPI(itemToEdit.id, courseIdNum, formData);
                 else if (modalType === 'resource') await updateResourceAPI(courseIdNum, selectedSectionId!, itemToEdit.id, formData);
                 alert("Kamyabi se update ho gaya!");
             } else {
-                // --- POST LOGIC (Existing Create) ---
-                const rawData = Object.fromEntries(formData);
-                if (modalType === 'section') {
-                    await createSectionAPI(courseIdNum, { title: rawData.title as string, description: rawData.description as string });
-                }
+                if (modalType === 'section') await createSectionAPI(courseIdNum, { title: rawData.title as string, description: rawData.description as string });
                 else if (modalType === 'assignment') {
                     formData.append('courseId', courseId.toString());
                     formData.append('sectionId', selectedSectionId!.toString());
                     await createAssignmentAPI(formData);
                 }
-                else if (modalType === 'student') {
-                    await enrollStudentAPI({ courseId: courseIdNum, studentId: Number(rawData.studentId) });
+                else if (modalType === 'student') await enrollStudentAPI({ courseId: courseIdNum, studentId: Number(rawData.studentId) });
+
+                // # CREATE QUIZ LOGIC
+                else if (modalType === 'quiz') {
+                    await createQuizAPI({
+                        ...rawData,
+                        course_id: courseIdNum,
+                        section_id: selectedSectionId,
+                        total_marks: Number(rawData.total_marks),
+                        is_Published: rawData.is_Published === 'true',
+                        questions: JSON.parse(rawData.questions as string)
+                    });
                 }
                 else if (modalType === 'lecture') {
-                    formData.append('courseId', courseId.toString());
-                    formData.append('sectionId', selectedSectionId!.toString());
-                    await createRecordedLectureAPI(formData);
+                    if (activeLectureSubTab === 'online') {
+                        await createLiveLectureAPI({
+                            title: rawData.title, description: rawData.description,
+                            courseId: courseIdNum, sectionId: selectedSectionId,
+                            liveStart: new Date(rawData.liveStart as string).toISOString(),
+                            lectureOrder: Number(rawData.lectureOrder)
+                        });
+                    } else {
+                        formData.append('courseId', courseId.toString());
+                        formData.append('sectionId', selectedSectionId!.toString());
+                        await createRecordedLectureAPI(formData);
+                    }
                 }
-                else if (modalType === 'resource') {
-                    await createResourceAPI(courseIdNum, selectedSectionId!, formData);
-                }
+                else if (modalType === 'resource') await createResourceAPI(courseIdNum, selectedSectionId!, formData);
                 alert("Naya content add ho gaya!");
             }
 
             await fetchData();
             setIsModalOpen(false);
             setItemToEdit(null);
-        } catch (err: any) {
-            alert(err.message || "Fail ho gaya");
-        } finally {
-            setModalLoading(false);
-        }
-    };
-
-    // --- DELETE HANDLER ---
-    const handleDeleteConfirm = async () => {
-        setModalLoading(true);
-        try {
-            const courseIdNum = Number(courseId);
-            if (itemToDelete.type === 'lecture') await deleteLectureAPI(itemToDelete.id, courseIdNum);
-            else if (itemToDelete.type === 'resource') await deleteResourceAPI(courseIdNum, itemToDelete.sectionId, itemToDelete.id);
-            
-            alert("Item delete ho gaya!");
-            setIsDeleteModalOpen(false);
-            await fetchData();
-        } catch (err: any) { alert(err.message); }
+        } catch (err: any) { alert(err.message || "Operation fail ho gaya"); }
         finally { setModalLoading(false); }
     };
 
-    if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+    const handleDeleteConfirm = async () => {
+        if (!itemToDelete) return;
+        setModalLoading(true);
+        try {
+            const courseIdNum = Number(courseId);
+            const itemId = Number(itemToDelete.id);
+
+            if (itemToDelete.type === 'enrollment') await dismissStudentAPI(itemId, courseIdNum, itemToDelete.studentId);
+            else if (itemToDelete.type === 'quiz') await deleteQuizAPI(itemId);
+            else if (itemToDelete.type === 'lecture') await deleteLectureAPI(itemId, courseIdNum);
+            else if (itemToDelete.type === 'resource') await deleteResourceAPI(courseIdNum, itemToDelete.sectionId, itemId);
+
+            setIsDeleteModalOpen(false);
+            await fetchData(); // Refresh fresh state
+            alert("Item permanent delete ho gaya!");
+        } catch (err: any) { alert(err.message); }
+        finally { setModalLoading(false); setItemToDelete(null); }
+    };
+
+    if (loading && !fullData) return <div className="h-screen flex items-center justify-center bg-gray-50"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
 
     return (
         <div className="w-full bg-gray-50 min-h-screen font-sans text-[#0F172A] pt-0">
@@ -211,29 +261,40 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
 
                 <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8 min-h-[450px]">
                     {activeTab === 'students' ? (
-                        <StudentsTab data={fullData?.enrollments || []} role={role} onAdd={() => { setModalType('student'); setItemToEdit(null); setIsModalOpen(true); }} />
+                        <StudentsTab
+                            data={fullData?.enrollments || []}
+                            role={role}
+                            onDelete={(id, name) => {
+                                setItemToDelete({ id, title: name, type: 'enrollment' });
+                                setIsDeleteModalOpen(true);
+                            }}
+                            onAdd={() => { setModalType('student'); setItemToEdit(null); setIsModalOpen(true); }}
+                        />
                     ) : (
                         <GenericContentTab
                             title={activeTab}
-                            type={activeTab.slice(0, -1) as any}
+                            // # USE MAPPING FOR TYPE TO FIX "QUIZZE" ERROR
+                            type={TAB_TO_TYPE_MAP[activeTab] as any}
                             data={activeTabData}
                             role={role}
                             onAddSection={() => { setModalType('section'); setItemToEdit(null); setIsModalOpen(true); }}
                             onSubTabChange={(tab: any) => setActiveLectureSubTab(tab)}
                             onAddItem={(sectionId) => {
                                 setSelectedSectionId(sectionId);
-                                setModalType(activeTab.slice(0, -1) as ModalType);
+                                setModalType(TAB_TO_TYPE_MAP[activeTab]);
                                 setItemToEdit(null);
                                 setIsModalOpen(true);
                             }}
                             onEditItem={(item, sectionId) => {
+                                // # PRE-FILL FIX: Ensuring nested data (questions) is passed to modal
+                                console.log("Editing Item Data:", item);
                                 setItemToEdit(item);
                                 setSelectedSectionId(sectionId);
-                                setModalType(activeTab.slice(0, -1) as ModalType);
+                                setModalType(TAB_TO_TYPE_MAP[activeTab]);
                                 setIsModalOpen(true);
                             }}
                             onDeleteItem={(item, sectionId) => {
-                                setItemToDelete({ ...item, type: activeTab.slice(0, -1), sectionId });
+                                setItemToDelete({ ...item, type: TAB_TO_TYPE_MAP[activeTab], sectionId });
                                 setIsDeleteModalOpen(true);
                             }}
                         />
@@ -249,10 +310,11 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
                 fields={formFields}
                 onSubmit={handleFormSubmit}
                 loading={modalLoading}
+                // # ENSURING INITIAL DATA IS SPREAD CORRECTLY
                 initialData={itemToEdit}
             />
 
-            <DeleteConfirmationModal 
+            <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={handleDeleteConfirm}

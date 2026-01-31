@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import { UserPlus, GraduationCap, Calendar } from 'lucide-react';
 import UserManagementTable from '@/components/ui/UserManagementTable';
@@ -7,9 +8,11 @@ interface StudentsTabProps {
     onAdd: () => void;
     role: string;
     loading?: boolean;
+    // # Naya prop add kiya gaya hai delete logic handle karne ke liye
+    onDelete: (id: number, name: string) => void;
 }
 
-export const StudentsTab = ({ data, onAdd, role, loading = false }: StudentsTabProps) => {
+export const StudentsTab = ({ data, onAdd, role, onDelete, loading = false }: StudentsTabProps) => {
     if (role === 'student') return null;
 
     // Enrollment list ke liye Column Configuration
@@ -55,9 +58,9 @@ export const StudentsTab = ({ data, onAdd, role, loading = false }: StudentsTabP
             header: 'Status',
             key: 'status',
             align: 'right' as const,
-            render: () => (
+            render: (item: any) => (
                 <span className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">
-                    Active
+                    {item.status || 'Active'}
                 </span>
             )
         }
@@ -90,9 +93,14 @@ export const StudentsTab = ({ data, onAdd, role, loading = false }: StudentsTabP
                     loading={loading}
                     columnConfig={enrollmentColumns}
                     type="enrollment"
-                    // Role ke mutabiq buttons control karna
-                    visibleActions={role === 'admin' ? ['delete', 'edit', 'view'] : []}
-                    onDelete={(id) => console.log("Delete Student ID:", id)}
+                    // # Edit button ko list se remove kar diya gaya hai
+                    // # Ab sirf delete aur view buttons nazar aayenge
+                    visibleActions={role === 'admin' ? ['delete', 'view'] : []}
+                    // # Delete confirmation logic ko integration ke liye update kiya gaya hai
+                    onDelete={(id) => {
+                        const student = data.find(s => s.id === id);
+                        onDelete(id, student?.studentName || "Student");
+                    }}
                 />
             </div>
 

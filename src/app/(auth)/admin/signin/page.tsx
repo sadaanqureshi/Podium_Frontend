@@ -4,18 +4,17 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch } from '@/lib/store/hooks';
-import { logout,setAuth } from '@/lib/store/features/authSlice';
+import { logout, setAuth } from '@/lib/store/features/authSlice';
 import { loginUser, logoutLocal } from '@/lib/api/apiService'; // Centralized API service
 import AuthLayout from '@/components/auth/AuthLayout';
 import { Loader2 } from 'lucide-react';
-import { FcGoogle } from 'react-icons/fc';
 
-const SignInPage = () => { 
+const SignInPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const router = useRouter();
   const dispatch = useAppDispatch();
 
@@ -28,7 +27,7 @@ const SignInPage = () => {
   //   try {
   //     // 1. Centralized API call (NestJS backend)
   //     const response = await loginUser({ email, password });
-      
+
   //     // 2. Redux state update (Response structure ke mutabiq)
   //     dispatch(setAuth({
   //       user: response.user,
@@ -40,7 +39,7 @@ const SignInPage = () => {
 
   //     // 3. Role-based Redirection
   //     const role = response.user.role.roleName;
-      
+
   //     // if (role === 'admin') {
   //     //   router.push('/admin/dashboard');
   //     // } else if (role === 'teacher') {
@@ -65,47 +64,47 @@ const SignInPage = () => {
 
   // Admin SignIn Page
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  dispatch(logout());
-  setError('');
-  setIsLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    dispatch(logout());
+    setError('');
+    setIsLoading(true);
 
-  try {
-    const response = await loginUser({ email, password });
-    const userRole = response.user.role.roleName.toLowerCase();
+    try {
+      const response = await loginUser({ email, password });
+      const userRole = response.user.role.roleName.toLowerCase();
 
-    if (userRole === 'admin') {
-      // 1. Agar Role sahi hai, TAB cookies set karein
-      Cookies.set('authToken', response.access_token, { expires: 7 });
-      Cookies.set('userRole', response.user.role.roleName, { expires: 7 });
+      if (userRole === 'admin') {
+        // 1. Agar Role sahi hai, TAB cookies set karein
+        Cookies.set('authToken', response.access_token, { expires: 7 });
+        Cookies.set('userRole', response.user.role.roleName, { expires: 7 });
+      }
+      if (userRole === 'admin') {
+        dispatch(setAuth({
+          user: response.user,
+          token: response.access_token,
+          role: response.user.role.roleName,
+          sidebar: response.sidebar
+        }));
+        router.replace('/admin/dashboard');
+      } else {
+        logoutLocal(); // Cookies delete karein
+        dispatch(logout());
+        setError('Unauthorized: Only Admins can access this portal.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Login failed.');
+    } finally {
+      setIsLoading(false);
     }
-    if (userRole === 'admin') {
-      dispatch(setAuth({
-        user: response.user,
-        token: response.access_token,
-        role: response.user.role.roleName,
-        sidebar: response.sidebar
-      }));
-      router.replace('/admin/dashboard');
-    } else {
-      logoutLocal(); // Cookies delete karein
-      dispatch(logout());
-      setError('Unauthorized: Only Admins can access this portal.');
-    }
-  } catch (err: any) {
-    setError(err.message || 'Login failed.');
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <AuthLayout>
       <div className="w-full">
         <h1 className="text-3xl font-bold mb-2 text-gray-900">Admin Sign in</h1>
         <p className="text-gray-600 mb-6">Please enter your details to access your portal</p>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -122,15 +121,15 @@ const handleSubmit = async (e: React.FormEvent) => {
               disabled={isLoading}
             />
           </div>
-          
+
           <div>
             {/* FIX: Label aur Forgot Password link ko ek hi line mein adjust kiya */}
             <div className="flex items-center justify-between mb-1">
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <Link 
-                href="/forgotpassword" 
+              <Link
+                href="/forgotpassword"
                 className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
               >
                 Forgot password?
@@ -154,7 +153,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               {error}
             </div>
           )}
-          
+
           <button
             type="submit"
             disabled={isLoading}

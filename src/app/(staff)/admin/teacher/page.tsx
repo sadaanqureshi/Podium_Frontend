@@ -71,22 +71,22 @@ const TeacherManagement = () => {
     { name: 'password', label: 'Password', type: 'text', required: !selectedUser, placeholder: selectedUser ? 'Leave blank to keep current' : 'Enter secure password' },
     { name: 'contactNumber', label: 'Contact Number', type: 'text' },
     // Status Dropdown Logic
-    { 
-        name: 'isActive', 
-        label: 'Account Status', 
-        type: 'select', 
-        options: [
-            { label: 'Active (Working)', value: 'true' }, 
-            { label: 'Inactive (Suspended)', value: 'false' }
-        ],
-        required: true 
+    {
+      name: 'isActive',
+      label: 'Account Status',
+      type: 'select',
+      options: [
+        { label: 'Active (Working)', value: 'true' },
+        { label: 'Inactive (Suspended)', value: 'false' }
+      ],
+      required: true
     }
   ];
 
   const handleSubmit = async (formData: FormData) => {
     setModalLoading(true);
     const rawData = Object.fromEntries(formData);
-    
+
     // --- DATA FORMATTING (String to Boolean) ---
     // Backend ko bool chahiye, UI se string milti hai
     const payload: any = {
@@ -96,7 +96,7 @@ const TeacherManagement = () => {
 
     // Password safety check
     if (selectedUser && !payload.password) {
-        delete payload.password;
+      delete payload.password;
     }
 
     try {
@@ -110,10 +110,10 @@ const TeacherManagement = () => {
       }
       setModalOpen(false);
       fetchTeachers(); // Table refresh
-    } catch (err: any) { 
-        alert(err.message || "Failed to save data"); 
-    } finally { 
-        setModalLoading(false); 
+    } catch (err: any) {
+      alert(err.message || "Failed to save data");
+    } finally {
+      setModalLoading(false);
     }
   };
 
@@ -147,13 +147,13 @@ const TeacherManagement = () => {
           loading={loading}
           columnConfig={feesColumns}
           visibleActions={['edit', 'delete']}
-          onEdit={(user) => { 
-              // Convert boolean to string for dropdown initial value matching
-              setSelectedUser({
-                  ...user,
-                  isActive: String(user.isActive)
-              }); 
-              setModalOpen(true); 
+          onEdit={(user) => {
+            // Convert boolean to string for dropdown initial value matching
+            setSelectedUser({
+              ...user,
+              isActive: String(user.isActive)
+            });
+            setModalOpen(true);
           }}
           onDelete={handleDelete}
           type="teacher"

@@ -18,18 +18,18 @@ interface CourseCardProps {
 }
 
 const Card: React.FC<CourseCardProps> = ({
-  id, title, author, description, rating, progress = 0, 
-  currentLesson, totalLessons, imageUrl, basePath, showProgress = true 
+  id, title, author, description, rating, progress = 0,
+  currentLesson, totalLessons, imageUrl, basePath, showProgress = true
 }) => {
   return (
     <Link href={`${basePath}/${id}`} className="block h-full">
       <div className="w-full h-full rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 bg-white transition-all duration-300 group">
-        
+
         <div className="relative w-full h-44">
           <Image src={imageUrl || '/blankcover.jpg'} alt={title} layout="fill" objectFit="cover" className="group-hover:scale-105 transition-transform duration-500" />
           <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm">
-             <Star size={14} className="text-yellow-500 fill-yellow-500" />
-             <span className="text-xs font-bold">{rating || 0}</span>
+            <Star size={14} className="text-yellow-500 fill-yellow-500" />
+            <span className="text-xs font-bold">{rating || 0}</span>
           </div>
         </div>
 
@@ -50,7 +50,7 @@ const Card: React.FC<CourseCardProps> = ({
               </div>
             </div>
           )}
-          
+
           <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 border-t border-gray-50 pt-4">
             <BookOpen size={14} className="text-blue-500" />
             <span>{totalLessons || 0} Total Lessons</span>
