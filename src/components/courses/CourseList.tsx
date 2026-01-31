@@ -1,5 +1,6 @@
 import React from 'react';
 import Card from '@/components/courses/Card';
+import { Course } from '@/data/courses';
 
 interface CourseListProps {
   courses: any[];

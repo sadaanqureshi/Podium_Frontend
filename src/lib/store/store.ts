@@ -1,5 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './features/authSlice';
+import assignmentReducer from './features/assignmentSlice';
+import courseReducer from './features/courseSlice';
 
 /**
  * Redux store ko configure kiya gaya hai.
@@ -9,6 +11,8 @@ export const makeStore = () => {
   return configureStore({
     reducer: {
       auth: authReducer,
+      assignment: assignmentReducer,
+      course: courseReducer,
       // Baaki reducers yahan add karein
     },
     // Middleware configuration agar zaroorat ho

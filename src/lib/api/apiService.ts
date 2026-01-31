@@ -182,6 +182,26 @@ export const getCourseWithContentAPI = async (courseId: number) => {
     return await response.json();
 };
 
+export const getMyEnrolledCoursesAPI = async () => {
+    const token = Cookies.get('authToken');
+    if (!token) throw new Error('No authentication token found');
+    
+    const response = await fetch(`${API_URL}/enrollments/my-courses`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch enrolled courses');
+    }
+    
+    return await response.json();
+};
+
 export const updateCourseAPI = async (id: number, formData: FormData) => {
     const token = Cookies.get('authToken');
     const response = await fetch(`${API_URL}/courses/${id}`, {
@@ -281,6 +301,26 @@ export const getAssignmentDetailAPI = async (id: string | number) => {
         headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!response.ok) throw new Error('Assignment detail load nahi ho saki');
+    return await response.json();
+};
+
+export const uploadAssignmentSubmissionAPI = async (assignmentId: string | number, files: File[]) => {
+    const token = Cookies.get('authToken');
+    if (!token) throw new Error('Authentication token missing');
+    
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    
+    const response = await fetch(`${API_URL}/assignments/${assignmentId}/submit`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Submission upload failed');
+    }
     return await response.json();
 };
 

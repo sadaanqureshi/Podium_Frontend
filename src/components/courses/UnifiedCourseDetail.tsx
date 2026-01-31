@@ -27,6 +27,8 @@ import {
     updateQuizAPI,
     deleteQuizAPI
 } from '@/lib/api/apiService';
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import { fetchCourseContent, refreshCourseContent } from '@/lib/store/features/courseSlice';
 import { CourseInfoCard } from '@/components/courses/CourseInfoCard';
 import { StudentsTab } from '@/components/courses/StudentsTab';
 import { GenericContentTab } from '@/components/courses/GenericContentTab';
@@ -47,9 +49,15 @@ type ModalType = 'student' | 'lecture' | 'quiz' | 'assignment' | 'resource' | 's
 const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: string; id?: string }>, role: 'admin' | 'teacher' }) => {
     const actualParams = use(params) as any;
     const courseId = actualParams.courseId || actualParams.id;
+    const dispatch = useAppDispatch();
 
     const [activeTab, setActiveTab] = useState('students');
     const [activeLectureSubTab, setActiveLectureSubTab] = useState<'recorded' | 'online'>('recorded');
+
+    // Get course content from Redux
+    const courseIdNum = courseId ? Number(courseId) : null;
+    const cachedCourseData = courseIdNum ? useAppSelector((state) => state.course.courseContent[courseIdNum]) : null;
+    const courseLoading = courseIdNum ? useAppSelector((state) => state.course.loading.courseContent[courseIdNum] || false) : false;
 
     const [fullData, setFullData] = useState<any>(null);
     const [allAvailableStudents, setAllAvailableStudents] = useState<any[]>([]);
@@ -75,8 +83,17 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
     const fetchData = async () => {
         setLoading(true);
         try {
-            const contentRes = await getCourseWithContentAPI(Number(courseId));
-            setFullData(contentRes);
+            if (courseIdNum) {
+                // Fetch from API and it will be cached automatically
+                const result = await dispatch(fetchCourseContent(courseIdNum));
+                if (fetchCourseContent.fulfilled.match(result)) {
+                    setFullData(result.payload.content);
+                } else {
+                    // Fallback to direct API call if Redux fetch fails
+                    const contentRes = await getCourseWithContentAPI(courseIdNum);
+                    setFullData(contentRes);
+                }
+            }
 
             if (role === 'admin') {
                 try {
@@ -97,7 +114,27 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
         }
     };
 
-    useEffect(() => { fetchData(); }, [courseId]);
+    useEffect(() => { 
+        if (courseIdNum) {
+            // Check if we have cached data, use it immediately
+            if (cachedCourseData) {
+                setFullData(cachedCourseData);
+                setLoading(false);
+                // Still fetch students if admin
+                if (role === 'admin') {
+                    getStudentsAPI().then(studentsRes => {
+                        const rawStudents = studentsRes.data || [];
+                        setAllAvailableStudents(rawStudents.map((s: any) => ({
+                            label: `${s.firstName} ${s.lastName} (${s.email})`,
+                            value: s.id
+                        })));
+                    }).catch(err => console.error("Admin student list fetch error:", err));
+                }
+            } else {
+                fetchData();
+            }
+        }
+    }, [courseIdNum, cachedCourseData, role, dispatch]);
 
     const activeTabData = useMemo(() => {
         if (!fullData?.sections) return [];
@@ -212,6 +249,10 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
                 alert("Naya content add ho gaya!");
             }
 
+            // Refresh course content in Redux cache
+            if (courseIdNum) {
+                dispatch(refreshCourseContent(courseIdNum));
+            }
             await fetchData();
             setIsModalOpen(false);
             setItemToEdit(null);
