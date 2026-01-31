@@ -24,12 +24,13 @@ const iconMap = {
 const ContentCard = ({ id, title, subtitle, type, role, onEdit, onDelete, sectionId }: ContentCardProps) => {
     const params = useParams();
     const courseId = params.courseId || params.id;
-    console.log("Section ID:", params);
+    // console.log("Section ID:", params);
     // const sectionId = params.sectionId;
 
     const basePath = role === 'student' ? '/student/my-courses' : role === 'admin' ? '/admin/courses' : '/teacher/assigned-courses';
     // const detailUrl = `${basePath}/${courseId}/${type}/${id}`;
     // const detailUrl = `${basePath}/${courseId}/${type}/${sectionId}/${id}`;
+    // const detailUrl = `${basePath}/${courseId}/section/${sectionId}/${type}/${id}`;
     const detailUrl = `${basePath}/${courseId}/section/${sectionId}/${type}/${id}`;
 
     return (

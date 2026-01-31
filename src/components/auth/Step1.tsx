@@ -14,7 +14,7 @@ interface StepProps {
 }
 
 const Step1Details: React.FC<StepProps> = ({ data, setData, nextStep }) => {
-  
+
   // 3. 'setData' ko hamesha callback function ke saath istemaal karein
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -23,7 +23,7 @@ const Step1Details: React.FC<StepProps> = ({ data, setData, nextStep }) => {
       [name]: value,
     }));
   };
-  
+
   // 4. Gender change ko bhi callback ke saath update karein
   const handleGenderChange = (value: string) => {
     setData(prevData => ({
@@ -42,7 +42,7 @@ const Step1Details: React.FC<StepProps> = ({ data, setData, nextStep }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">Enter Your Details</h2>
-      
+
       {/* Full Name Input */}
       <div>
         <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -91,7 +91,7 @@ const Step1Details: React.FC<StepProps> = ({ data, setData, nextStep }) => {
                 <ChevronDown size={20} className="text-gray-400" />
               </span>
             </Listbox.Button>
-            
+
             {/* Smooth Animation (Fade + Scale) */}
             <Transition
               as={Fragment}
@@ -108,8 +108,7 @@ const Step1Details: React.FC<StepProps> = ({ data, setData, nextStep }) => {
                   <Listbox.Option
                     key={gender}
                     className={({ active }) =>
-                      `relative cursor-default select-none py-2 pl-10 pr-4 ${
-                        active ? 'bg-blue-100 text-blue-900' : 'text-gray-900'
+                      `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-100 text-blue-900' : 'text-gray-900'
                       }`
                     }
                     value={gender}
@@ -117,9 +116,8 @@ const Step1Details: React.FC<StepProps> = ({ data, setData, nextStep }) => {
                     {({ selected }) => (
                       <>
                         <span
-                          className={`block truncate ${
-                            selected ? 'font-medium' : 'font-normal'
-                          }`}
+                          className={`block truncate ${selected ? 'font-medium' : 'font-normal'
+                            }`}
                         >
                           {gender}
                         </span>

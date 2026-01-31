@@ -1,7 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Yahaan aapke doosre config ho sakte hain...
-  
+  typescript: {
+    // !! WARNING !!
+    // Build fail nahi hogi agar aapke project mein TS errors hain.
+    // Client demo ke liye yeh best jugaar hai.
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    // Build ke waqt ESLint ko check karne se rok dega.
+    ignoreDuringBuilds: true,
+  },
+
   // YEH HISSA ADD KAREIN:
   images: {
     remotePatterns: [

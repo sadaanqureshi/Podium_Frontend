@@ -21,7 +21,7 @@ const fields = [
 ];
 
 const Step2Field: React.FC<StepProps> = ({ data, setData, nextStep }) => {
-  
+
   // 3. FIX: 'setData' ko callback function ke saath istemaal karein
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setData(prevData => ({
@@ -38,7 +38,7 @@ const Step2Field: React.FC<StepProps> = ({ data, setData, nextStep }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">What field are you learning for?</h2>
-      
+
       <div className="space-y-3">
         {fields.map((field) => (
           <label key={field} className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">

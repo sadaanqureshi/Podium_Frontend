@@ -19,16 +19,16 @@ const TeacherAssignments = () => {
 
     return (
         <>
-            <ModulePageTemplate 
+            <ModulePageTemplate
                 role="teacher"
                 type="assignment"
                 pageTitle="Manage Assignments"
                 subTitle="Create tasks and grade your students."
-                courses={assignedCourses} 
+                courses={assignedCourses}
                 allData={allTeacherAssignments}
                 onAddClick={() => setIsModalOpen(true)}
             />
-            <GenericFormModal 
+            <GenericFormModal
                 isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
                 title="Create New Assignment" submitText="Create Assignment"
                 fields={assignmentFields as any} onSubmit={async () => setIsModalOpen(false)}

@@ -12,7 +12,7 @@ import { resetPasswordAPI } from '../../../../lib/api/apiService';
 const ResetPasswordPage = () => {
   const router = useRouter();
   const params = useParams();
-  
+
   // URL se token nikalna ([rp] folder ki wajah se params.rp mein hoga)
   const token = params.rp as string;
 
@@ -47,7 +47,7 @@ const ResetPasswordPage = () => {
       // 3. API Call (Backend ko token aur password bhej rahe hain)
       await resetPasswordAPI(token, password);
       setIsSuccess(true);
-      
+
       // 3 seconds baad login page par redirect
       setTimeout(() => {
         router.push('/signin');

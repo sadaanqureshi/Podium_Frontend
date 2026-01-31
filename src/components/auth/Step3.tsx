@@ -18,21 +18,21 @@ const interestsList = [
 ];
 
 const Step3Interests: React.FC<StepProps> = ({ data, setData, submit }) => {
-  
+
   // 3. FIX: 'setData' ko callback function ke saath istemaal karein
   const toggleInterest = (interest: string) => {
     setData(prevData => {
       // Yahaan 'prevData.interests' ka undefined hona check karna zaroori hai
       const currentInterests = prevData.interests || [];
       const isSelected = currentInterests.includes(interest);
-      
+
       let newInterests = [];
       if (isSelected) {
         newInterests = currentInterests.filter((item: string) => item !== interest);
       } else {
         newInterests = [...currentInterests, interest];
       }
-      
+
       // Naya object return karein
       return { ...prevData, interests: newInterests };
     });
@@ -46,7 +46,7 @@ const Step3Interests: React.FC<StepProps> = ({ data, setData, submit }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">Select your interest areas</h2>
-      
+
       <div className="flex flex-wrap gap-3">
         {interestsList.map((interest) => {
           // Yahaan 'data.interests' ka undefined hona check karna zaroori hai
@@ -54,13 +54,12 @@ const Step3Interests: React.FC<StepProps> = ({ data, setData, submit }) => {
           return (
             <button
               key={interest}
-              type="button" 
+              type="button"
               onClick={() => toggleInterest(interest)}
-              className={`px-4 py-2 rounded-full font-medium text-sm transition-colors ${
-                isSelected 
-                  ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+              className={`px-4 py-2 rounded-full font-medium text-sm transition-colors ${isSelected
+                  ? 'bg-blue-100 text-blue-700 border border-blue-300'
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
+                }`}
             >
               {interest}
             </button>

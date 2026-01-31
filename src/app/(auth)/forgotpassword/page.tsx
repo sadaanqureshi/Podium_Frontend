@@ -31,8 +31,8 @@ const ForgotPasswordPage = () => {
     <AuthLayout>
       <div className="w-full">
         {/* Back Link */}
-        <Link 
-          href="/signin" 
+        <Link
+          href="/signin"
           className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 mb-8 transition-colors"
         >
           <ArrowLeft size={16} />
@@ -55,11 +55,11 @@ const ForgotPasswordPage = () => {
             >
               Return to sign in
             </Link>
-            <button 
+            <button
               onClick={() => setIsSuccess(false)}
               className="mt-6 text-sm font-medium text-blue-600 hover:underline"
             >
-              Didn't receive the email? Try again
+              Didn&apos;t receive the email? Try again
             </button>
           </div>
         ) : (

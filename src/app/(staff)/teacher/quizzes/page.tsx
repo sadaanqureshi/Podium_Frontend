@@ -33,17 +33,17 @@ const TeacherQuizzes = () => {
 
     return (
         <>
-            <ModulePageTemplate 
+            <ModulePageTemplate
                 role="teacher"
                 type="quiz"
                 pageTitle="Quiz Management"
                 subTitle="Create and monitor quizzes for your students"
-                courses={assignedCourses} 
+                courses={assignedCourses}
                 allData={allTeacherQuizzes}
                 onAddClick={() => setIsModalOpen(true)}
             />
 
-            <GenericFormModal 
+            <GenericFormModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title="Create New Quiz"

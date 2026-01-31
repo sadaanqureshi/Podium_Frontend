@@ -15,16 +15,16 @@ const TeacherResources = () => {
 
     return (
         <>
-            <ModulePageTemplate 
+            <ModulePageTemplate
                 role="teacher"
                 type="resource"
                 pageTitle="Manage Resources"
                 subTitle="Upload notes and materials for students."
-                courses={assignedCourses} 
+                courses={assignedCourses}
                 allData={[]} // Start with empty for testing
                 onAddClick={() => setIsModalOpen(true)}
             />
-            <GenericFormModal 
+            <GenericFormModal
                 isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}
                 title="Upload New Resource" submitText="Upload Now"
                 fields={resourceFields as any} onSubmit={async () => setIsModalOpen(false)}

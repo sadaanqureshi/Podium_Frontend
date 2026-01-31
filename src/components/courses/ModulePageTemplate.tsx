@@ -16,8 +16,8 @@ interface ModulePageTemplateProps {
     onAddClick?: () => void;
 }
 
-const ModulePageTemplate: React.FC<ModulePageTemplateProps> = ({ 
-    role, type, pageTitle, subTitle, allData, courses, onAddClick 
+const ModulePageTemplate: React.FC<ModulePageTemplateProps> = ({
+    role, type, pageTitle, subTitle, allData, courses, onAddClick
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [courseFilter, setCourseFilter] = useState('All');
@@ -28,8 +28,8 @@ const ModulePageTemplate: React.FC<ModulePageTemplateProps> = ({
     // 1. Dynamic Filtering Logic
     const filteredItems = useMemo(() => {
         return allData.filter(item => {
-            const matchSearch = (item.title || item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                (item.courseName || '').toLowerCase().includes(searchTerm.toLowerCase());
+            const matchSearch = (item.title || item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (item.courseName || '').toLowerCase().includes(searchTerm.toLowerCase());
             const matchCourse = courseFilter === 'All' || item.courseName === courseFilter;
             return matchSearch && matchCourse;
         });
@@ -44,7 +44,7 @@ const ModulePageTemplate: React.FC<ModulePageTemplateProps> = ({
                     <p className="text-gray-500 mt-1 font-medium">{subTitle}</p>
                 </div>
                 {isStaff && (
-                    <button 
+                    <button
                         onClick={onAddClick}
                         className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-xl shadow-blue-100 active:scale-95 transition-all w-full sm:w-auto justify-center"
                     >
@@ -57,43 +57,43 @@ const ModulePageTemplate: React.FC<ModulePageTemplateProps> = ({
             {/* Filters Section */}
             <div className="grid grid-cols-1 md:flex items-center gap-4 mb-10">
                 <div className="flex-1">
-                    <SearchBar 
-                        placeholder={`Search ${type} or course...`} 
-                        onChange={(e: any) => setSearchTerm(e.target.value)} 
+                    <SearchBar
+                        placeholder={`Search ${type} or course...`}
+                        onChange={(e: any) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                
+
                 {/* Course Filter Dropdown */}
                 <div className="relative min-w-[220px]">
-                    <button 
-                        onClick={() => setIsCourseOpen(!isCourseOpen)} 
+                    <button
+                        onClick={() => setIsCourseOpen(!isCourseOpen)}
                         className="w-full flex items-center justify-between px-5 py-3 border border-gray-100 rounded-xl bg-white text-sm font-bold text-gray-700 hover:border-blue-300 shadow-sm transition-all h-[52px]"
                     >
                         <span className="truncate">Course: {courseFilter}</span>
                         <ChevronDown size={18} className={`text-gray-400 transition-transform ${isCourseOpen ? 'rotate-180' : ''}`} />
                     </button>
-                    
+
                     <AnimatePresence>
                         {isCourseOpen && (
-                            <motion.div 
-                                initial={{ opacity: 0, y: 10 }} 
-                                animate={{ opacity: 1, y: 0 }} 
-                                exit={{ opacity: 0, y: 10 }} 
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
                                 className="absolute z-[60] w-full mt-2 bg-white border border-gray-50 rounded-2xl shadow-2xl py-3 max-h-72 overflow-y-auto"
                             >
-                                <div 
+                                <div
                                     onClick={() => { setCourseFilter('All'); setIsCourseOpen(false); }}
                                     className="px-5 py-2.5 hover:bg-blue-50 cursor-pointer text-sm font-semibold flex justify-between items-center"
                                 >
                                     All Courses {courseFilter === 'All' && <Check size={16} className="text-blue-600" />}
                                 </div>
                                 {courses.map(course => (
-                                    <div 
-                                        key={course.id} 
-                                        onClick={() => { setCourseFilter(course.courseName || course.title); setIsCourseOpen(false); }} 
+                                    <div
+                                        key={course.id}
+                                        onClick={() => { setCourseFilter(course.courseName || course.title); setIsCourseOpen(false); }}
                                         className="px-5 py-2.5 hover:bg-blue-50 cursor-pointer text-sm font-semibold flex justify-between items-center"
                                     >
-                                        {course.courseName || course.title} 
+                                        {course.courseName || course.title}
                                         {courseFilter === (course.courseName || course.title) && <Check size={16} className="text-blue-600" />}
                                     </div>
                                 ))}
@@ -111,10 +111,10 @@ const ModulePageTemplate: React.FC<ModulePageTemplateProps> = ({
             <div className="space-y-4">
                 {filteredItems.length > 0 ? (
                     filteredItems.map(item => (
-                        <ContentCard 
-                            key={item.id} 
+                        <ContentCard
+                            key={item.id}
                             id={item.id}
-                            title={item.title || item.name} 
+                            title={item.title || item.name}
                             subtitle={item.courseName || 'General'}
                             type={type as any}
                             role={role}

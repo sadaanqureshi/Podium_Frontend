@@ -3,7 +3,7 @@ import Card from '@/components/courses/Card';
 import { Course } from '@/data/courses';
 
 interface CourseListProps {
-  courses: Course[]; 
+  courses: any[];
   basePath: string;
   showProgress?: boolean;
 }
@@ -15,14 +15,14 @@ const CourseList: React.FC<CourseListProps> = ({ courses, basePath, showProgress
         <Card
           key={course.id}
           id={course.id}
-          title={course.title}
-          author={course.author}
-          description={course.description}
-          rating={course.rating}
-          progress={course.progress}
-          currentLesson={course.currentLesson}
-          totalLessons={course.totalLessons}
-          imageUrl={course.imageUrl}
+          // Backend keys mapping
+          title={course.courseName}
+          author={course.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}` : 'Instructor'}
+          description={course.shortDescription}
+          rating={course.avgRating || 0}
+          imageUrl={course.coverImg}
+          currentLesson={0}
+          totalLessons={course.totalLectures || 0}
           basePath={basePath}
           showProgress={showProgress}
         />
