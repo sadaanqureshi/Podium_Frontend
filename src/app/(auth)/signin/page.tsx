@@ -16,7 +16,7 @@ const SignInPage = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const router = useRouter();
   const dispatch = useAppDispatch();
 
@@ -25,11 +25,11 @@ const SignInPage = () => {
   //   dispatch(logout());
   //   setError('');
   //   setIsLoading(true);
- 
+
   //   try {
   //     // 1. Centralized API call (NestJS backend)
   //     const response = await loginUser({ email, password });
-      
+
   //     // 2. Redux state update (Response structure ke mutabiq)
   //     dispatch(setAuth({
   //       user: response.user,
@@ -41,7 +41,7 @@ const SignInPage = () => {
 
   //     // 3. Role-based Redirection
   //     const role = response.user.role.roleName;
-      
+
   //     // if (role === 'admin') {
   //     //   router.push('/admin/dashboard');
   //     // } else if (role === 'teacher') {
@@ -65,55 +65,55 @@ const SignInPage = () => {
   // };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  dispatch(logout()); // Purana data clear karein
-  setError('');
-  setIsLoading(true);
+    e.preventDefault();
+    dispatch(logout()); // Purana data clear karein
+    setError('');
+    setIsLoading(true);
 
-  try {
-    const response = await loginUser({ email, password });
-    
-    // Role ko check karein REDUX aur COOKIES set hone se pehle ya foran baad
-    const userRole = response.user.role.roleName.toLowerCase();
+    try {
+      const response = await loginUser({ email, password });
 
-    if (userRole === 'student') {
-      // 1. Agar Role sahi hai, TAB cookies set karein
-      Cookies.set('authToken', response.access_token, { expires: 7 });
-      Cookies.set('userRole', response.user.role.roleName, { expires: 7 });
+      // Role ko check karein REDUX aur COOKIES set hone se pehle ya foran baad
+      const userRole = response.user.role.roleName.toLowerCase();
+
+      if (userRole === 'student') {
+        // 1. Agar Role sahi hai, TAB cookies set karein
+        Cookies.set('authToken', response.access_token, { expires: 7 });
+        Cookies.set('userRole', response.user.role.roleName, { expires: 7 });
+      }
+
+      if (userRole === 'student') {
+        // Sirf Student ke liye state update karein
+        dispatch(setAuth({
+          user: response.user,
+          token: response.access_token,
+          role: response.user.role.roleName,
+          sidebar: response.sidebar
+        }));
+        router.replace('/dashboard');
+      } else {
+        // AGAR ADMIN YA TEACHER HAI: 
+        // 1. Cookies clear karein (Jo loginUser ne set ki thi)
+        logoutLocal();
+        // 2. Redux clear karein
+        dispatch(logout());
+        // 3. Error dikhayen
+        setError('Unauthorized: Admins/Teachers must use their respective portals.');
+      }
+
+    } catch (err: any) {
+      setError(err.message || 'Login failed.');
+    } finally {
+      setIsLoading(false);
     }
-
-    if (userRole === 'student') {
-      // Sirf Student ke liye state update karein
-      dispatch(setAuth({
-        user: response.user,
-        token: response.access_token,
-        role: response.user.role.roleName,
-        sidebar: response.sidebar
-      }));
-      router.replace('/dashboard');
-    } else {
-      // AGAR ADMIN YA TEACHER HAI: 
-      // 1. Cookies clear karein (Jo loginUser ne set ki thi)
-      logoutLocal(); 
-      // 2. Redux clear karein
-      dispatch(logout());
-      // 3. Error dikhayen
-      setError('Unauthorized: Admins/Teachers must use their respective portals.');
-    }
-
-  } catch (err: any) {
-    setError(err.message || 'Login failed.');
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <AuthLayout>
       <div className="w-full">
         <h1 className="text-3xl font-bold mb-2 text-gray-900">Student Sign in</h1>
         <p className="text-gray-600 mb-6">Please enter your details to access your portal</p>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -130,15 +130,15 @@ const SignInPage = () => {
               disabled={isLoading}
             />
           </div>
-          
+
           <div>
             {/* FIX: Label aur Forgot Password link ko ek hi line mein adjust kiya */}
             <div className="flex items-center justify-between mb-1">
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <Link 
-                href="/forgotpassword" 
+              <Link
+                href="/forgotpassword"
                 className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
               >
                 Forgot password?
@@ -162,7 +162,7 @@ const SignInPage = () => {
               {error}
             </div>
           )}
-          
+
           <button
             type="submit"
             disabled={isLoading}
@@ -192,7 +192,7 @@ const SignInPage = () => {
           <div className="flex-grow border-t border-gray-300"></div>
         </div>
 
-        <button 
+        <button
           type="button"
           disabled={isLoading}
           className="w-full py-3 border border-gray-300 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"

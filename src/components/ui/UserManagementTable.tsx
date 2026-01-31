@@ -32,7 +32,7 @@ const UserManagementTable: React.FC<UserManagementTableProps> = ({
             </div>
         );
     }
-    console.log('data:', data);
+    // console.log('data:', data);
     const showActionsColumn = visibleActions.length > 0;
 
     return (

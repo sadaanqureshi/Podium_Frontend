@@ -1,7 +1,7 @@
 // src/config/navigationConfig.ts
-import { 
-  LayoutDashboard, BookOpen, NotepadText, Users, Settings, 
-  History, Bell, Moon, CreditCard, Megaphone, NotebookPen, BookCopy 
+import {
+  LayoutDashboard, BookOpen, NotepadText, Users, Settings,
+  History, Bell, Moon, CreditCard, Megaphone, NotebookPen, BookCopy
 } from 'lucide-react';
 
 export const ICON_MAPPING: Record<string, any> = {
@@ -24,7 +24,7 @@ export const ICON_MAPPING: Record<string, any> = {
 
 export const getRolePath = (roleInput: any, itemName: string): string => {
   const name = itemName.toLowerCase().trim();
-  
+
   // 1. ROLE EXTRACTION: Object ya string dono ko handle karega
   let role = "";
   if (roleInput && typeof roleInput === 'object') {
@@ -35,7 +35,7 @@ export const getRolePath = (roleInput: any, itemName: string): string => {
 
   // Prefix generation
   const rolePrefix = role === 'admin' ? '/admin' : role === 'teacher' ? '/teacher' : '';
-  
+
   // console.log(`Final Calculated Role: "${role}", Item: "${name}", Prefix: "${rolePrefix}"`);
 
   // --- A. DASHBOARD SPECIFIC LOGIC ---
@@ -45,7 +45,7 @@ export const getRolePath = (roleInput: any, itemName: string): string => {
   if (name === "student dashboard" || name === "dashboard") return "/dashboard";
 
   // --- B. DYNAMIC FOLDERS (Quizzes, Assignments, etc.) ---
-  const dynamicFolders = ["quiz", "assignment", "resource", "profile","fees"];
+  const dynamicFolders = ["quiz", "assignment", "resource", "profile", "fees", "attendance"];
   const matched = dynamicFolders.find(folder => name.includes(folder));
 
   if (matched) {
@@ -56,6 +56,7 @@ export const getRolePath = (roleInput: any, itemName: string): string => {
     if (matched === 'resource') folderName = 'resource';
     if (matched === 'fees') folderName = 'fees';
     if (matched === 'profile') folderName = 'profile';
+    if (matched === 'attendance') folderName = 'attendance';
 
     // Role ke mutabiq path: e.g., /teacher/quizzes ya /quizzes
     return rolePrefix ? `${rolePrefix}/${folderName}` : `/${folderName}`;
@@ -69,14 +70,15 @@ export const getRolePath = (roleInput: any, itemName: string): string => {
     "teacher management": "/admin/teacher",
     "audit logs": "/admin/logs",
     "configuration": "/admin/config",
-    
+
     // Teacher specific
     "assigned courses": "/teacher/assigned-courses",
-    
+    // "attendance": "/teacher/attendance",
+
     // Student specific
     "enrolled courses": "/enroll-courses",
     "available courses": "/available-courses",
-    
+
     // Global
     "notifications": "/notifications",
     "fees management": "/fees",

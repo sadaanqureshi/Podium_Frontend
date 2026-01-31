@@ -1,8 +1,8 @@
-'use client'; 
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { Menu, X, Settings, User, Bell, LogOut } from 'lucide-react'; 
+import { Menu, X, Settings, User, Bell, LogOut } from 'lucide-react';
 import WebSidebar from '@/components/sidebar/WebSidebar';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -10,6 +10,7 @@ import { usePathname } from 'next/navigation';
 // Redux aur API Imports
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { logout } from '@/lib/store/features/authSlice';
+import { clearCourseCache } from '@/lib/store/features/courseSlice';
 import { logoutUserAPI, logoutLocal } from '@/lib/api/apiService';
 import { getRolePath } from '@/lib/navigationConfig';
 
@@ -17,7 +18,7 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
+
   const dispatch = useAppDispatch();
   const pathname = usePathname();
 
@@ -31,6 +32,7 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     try { await logoutUserAPI(); } catch (err) { console.error('Logout error:', err); }
     finally {
       dispatch(logout());
+      dispatch(clearCourseCache()); // Clear course cache on logout
       logoutLocal();
       window.location.href = '/signin';
     }
@@ -43,7 +45,7 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       if (lastActivity) {
         const diffInMs = Date.now() - parseInt(lastActivity);
         const diffInHours = diffInMs / (1000 * 60 * 60);
-        
+
         // Agar 1 ghante se zyada gap ho toh logout
         if (diffInHours >= 1) {
           handleLogout();
@@ -75,7 +77,7 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }, []);
 
   const sidebarVariants: Variants = {
-    hidden: { x: '-100%' }, 
+    hidden: { x: '-100%' },
     show: { x: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } },
     exit: { x: '-100%', transition: { duration: 0.2, ease: 'easeOut' } },
   };
@@ -88,28 +90,28 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   return (
     <div className="flex min-h-screen w-full bg-[#F8FAFC]">
-      
+
       {/* Desktop Sidebar */}
       <div className="hidden lg:block flex-shrink-0 w-[260px] h-screen sticky top-0 border-r border-gray-200 bg-white z-50">
-        <WebSidebar /> 
+        <WebSidebar />
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">
-        
+
         {/* HEADER: Dark Blue & Slim */}
         <header className="h-14 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-[40] bg-gradient-to-r from-white to-blue-100 ">
-          
+
           <div className="lg:hidden w-10"></div>
 
           <div className="flex items-center gap-4 ml-auto">
             <button className="p-2 text-slate-400 hover:text-white transition-all relative">
-                <Bell size={18} />
-                <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+              <Bell size={18} />
+              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
             </button>
 
             {/* PROFILE DROPDOWN */}
             <div className="relative" ref={dropdownRef}>
-              <button 
+              <button
                 onMouseEnter={() => setIsDropdownOpen(true)}
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-white hover:bg-slate-700 transition-all active:scale-95 shadow-inner"
@@ -119,7 +121,7 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
               <AnimatePresence>
                 {isDropdownOpen && (
-                  <motion.div 
+                  <motion.div
                     onMouseLeave={() => setIsDropdownOpen(false)}
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -131,15 +133,15 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                       <p className="text-[9px] text-gray-400 font-bold uppercase">{userRole || 'Member'}</p>
                     </div>
 
-                    <Link 
-                      href={profilePath} 
+                    <Link
+                      href={profilePath}
                       onClick={() => setIsDropdownOpen(false)}
                       className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-bold text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all mb-1"
                     >
                       <Settings size={16} /> Profile Settings
                     </Link>
 
-                    <button 
+                    <button
                       onClick={handleLogout}
                       className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-bold text-red-500 hover:bg-red-50 rounded-xl transition-all"
                     >
@@ -155,7 +157,7 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         {/* CONTENT AREA: Minimized padding */}
         <main className="lg:px-10 lg:pt-4 lg:pb-10 w-full flex-1">
           <div className="animate-in fade-in slide-in-from-top-1 duration-500">
-            {children} 
+            {children}
           </div>
         </main>
       </div>
@@ -163,7 +165,7 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       {/* Mobile Hamburger Logic (Same as your code) */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="lg:hidden p-2 fixed top-2.5 left-4 z-[60] bg-white border border-slate-200 rounded-lg shadow-xl" 
+        className="lg:hidden p-2 fixed top-2.5 left-4 z-[60] bg-white border border-slate-200 rounded-lg shadow-xl"
       >
         <AnimatePresence mode="wait">
           {!isMobileMenuOpen ? (
@@ -185,7 +187,7 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <motion.div
               className="lg:hidden fixed inset-0 bg-[#0F172A]/40 backdrop-blur-sm z-40"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setIsMobileMenuOpen(false)} 
+              onClick={() => setIsMobileMenuOpen(false)}
             />
             <motion.aside
               className="lg:hidden fixed top-0 left-0 h-full z-50 shadow-2xl bg-white"

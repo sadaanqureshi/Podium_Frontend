@@ -14,7 +14,7 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
   const user = useAppSelector((state) => state.auth.user);
   const userRole = user?.role?.roleName || (typeof user?.role === 'string' ? user.role : "");
   const dynamicMenu = useAppSelector((state) => state.auth.menu) || [];
-  
+
   const [openMenus, setOpenMenus] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
 
@@ -53,51 +53,51 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
         <nav>
           <ul className="list-none p-0 m-0">
             {dynamicMenu.filter(item => item.is_enable).map((item) => {
-                const Icon = getIcon(item.name);
-                const enabledChildren = item.children?.filter(child => child.is_enable) || [];
-                const hasChildren = enabledChildren.length > 0;
-                const currentPath = getRolePath(userRole, item.name);
+              const Icon = getIcon(item.name);
+              const enabledChildren = item.children?.filter(child => child.is_enable) || [];
+              const hasChildren = enabledChildren.length > 0;
+              const currentPath = getRolePath(userRole, item.name);
 
-                if (hasChildren) {
-                  const isOpen = openMenus.includes(item.name);
-                  return (
-                    <li key={item.id} className="mb-1">
-                      <button onClick={() => toggleMenu(item.name)} className={`${baseNavItemClasses} w-full justify-between focus:outline-none`}>
-                        <div className="flex items-center gap-[12px]">
-                          <Icon size={18} />
-                          <span className="capitalize">{item.name}</span>
-                        </div>
-                        {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      </button>
-                      <AnimatePresence>
-                        {isOpen && (
-                          <motion.ul className="list-none p-0 mt-1 pl-10 overflow-hidden" variants={subMenuVariants} initial="hidden" animate="show" exit="exit">
-                            {enabledChildren.map((child) => {
-                              const dynamicChildPath = getRolePath(userRole, child.name);
-                              return (
-                                <li key={child.id}>
-                                  <Link href={dynamicChildPath} onClick={onLinkClick} className={`${baseSubNavItemClasses} ${pathname === dynamicChildPath ? 'bg-[#0F172A] text-white' : ''} capitalize`}>
-                                    {child.name}
-                                  </Link>
-                                </li>
-                              );
-                            })}
-                          </motion.ul>
-                        )}
-                      </AnimatePresence>
-                    </li>
-                  );
-                }
-
+              if (hasChildren) {
+                const isOpen = openMenus.includes(item.name);
                 return (
                   <li key={item.id} className="mb-1">
-                    <Link href={currentPath} onClick={onLinkClick} className={`${baseNavItemClasses} ${pathname === currentPath ? 'bg-[#0F172A] text-white' : ''}`}>
-                      <Icon size={18} />
-                      <span className="capitalize">{item.name}</span>
-                    </Link>
+                    <button onClick={() => toggleMenu(item.name)} className={`${baseNavItemClasses} w-full justify-between focus:outline-none`}>
+                      <div className="flex items-center gap-[12px]">
+                        <Icon size={18} />
+                        <span className="capitalize">{item.name}</span>
+                      </div>
+                      {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    </button>
+                    <AnimatePresence>
+                      {isOpen && (
+                        <motion.ul className="list-none p-0 mt-1 pl-10 overflow-hidden" variants={subMenuVariants} initial="hidden" animate="show" exit="exit">
+                          {enabledChildren.map((child) => {
+                            const dynamicChildPath = getRolePath(userRole, child.name);
+                            return (
+                              <li key={child.id}>
+                                <Link href={dynamicChildPath} onClick={onLinkClick} className={`${baseSubNavItemClasses} ${pathname === dynamicChildPath ? 'bg-[#0F172A] text-white' : ''} capitalize`}>
+                                  {child.name}
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </motion.ul>
+                      )}
+                    </AnimatePresence>
                   </li>
                 );
-              })}
+              }
+
+              return (
+                <li key={item.id} className="mb-1">
+                  <Link href={currentPath} onClick={onLinkClick} className={`${baseNavItemClasses} ${pathname === currentPath ? 'bg-[#0F172A] text-white' : ''}`}>
+                    <Icon size={18} />
+                    <span className="capitalize">{item.name}</span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       </div>

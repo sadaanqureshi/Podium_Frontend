@@ -16,7 +16,7 @@ export const LecturesTab = ({ data, onAdd, role }: { data: any[], onAdd: () => v
 
             <div className="grid grid-cols-1 gap-4">
                 {data.map((lecture: any, idx: number) => (
-                    <ContentCard 
+                    <ContentCard
                         key={lecture.id}
                         title={lecture.title}
                         subtitle="15:30 Mins • Ready to play"

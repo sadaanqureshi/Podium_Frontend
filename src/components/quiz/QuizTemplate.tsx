@@ -33,8 +33,8 @@ const QuizPageTemplate: React.FC<TemplateProps> = ({ role, pageTitle, subTitle }
 
   const filtered = useMemo(() => {
     return allQuizzes.filter(q => {
-      const matchSearch = q.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          q.courseTitle.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchSearch = q.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        q.courseTitle.toLowerCase().includes(searchTerm.toLowerCase());
       const matchCourse = courseFilter === 'All' || q.courseTitle === courseFilter;
       const matchStatus = statusFilter === 'All' || q.status === statusFilter;
       return matchSearch && matchCourse && matchStatus;
@@ -62,7 +62,7 @@ const QuizPageTemplate: React.FC<TemplateProps> = ({ role, pageTitle, subTitle }
         <div className="flex-1">
           <SearchBar placeholder="Search by quiz or course name..." />
         </div>
-        
+
         {/* Course Dropdown */}
         <div className="relative min-w-[180px]">
           <button onClick={() => setIsCourseOpen(!isCourseOpen)} className="w-full flex items-center justify-between px-4 py-2.5 border border-gray-200 rounded-xl bg-white text-sm font-medium hover:border-gray-400 transition-all h-[44px]">

@@ -4,6 +4,8 @@ import Cookies from 'js-cookie';
 // BASE URL
 // ==============================
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006';
+// process.env use karne se Next.js khud hi environment ke mutabiq URL utha lega
+// const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 // ==============================
 // AUTH APIs
@@ -180,6 +182,26 @@ export const getCourseWithContentAPI = async (courseId: number) => {
     return await response.json();
 };
 
+export const getMyEnrolledCoursesAPI = async () => {
+    const token = Cookies.get('authToken');
+    if (!token) throw new Error('No authentication token found');
+    
+    const response = await fetch(`${API_URL}/enrollments/my-courses`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch enrolled courses');
+    }
+    
+    return await response.json();
+};
+
 export const updateCourseAPI = async (id: number, formData: FormData) => {
     const token = Cookies.get('authToken');
     const response = await fetch(`${API_URL}/courses/${id}`, {
@@ -282,6 +304,26 @@ export const getAssignmentDetailAPI = async (id: string | number) => {
     return await response.json();
 };
 
+export const uploadAssignmentSubmissionAPI = async (assignmentId: string | number, files: File[]) => {
+    const token = Cookies.get('authToken');
+    if (!token) throw new Error('Authentication token missing');
+    
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    
+    const response = await fetch(`${API_URL}/assignments/${assignmentId}/submit`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Submission upload failed');
+    }
+    return await response.json();
+};
+
 export const getAssignmentSubmissionsAPI = async (id: string | number) => {
     const token = Cookies.get('authToken');
     const response = await fetch(`${API_URL}/assignments/${id}/submissions`, {
@@ -366,9 +408,9 @@ export const getAllStudentsAPI = async (page = 1, limit = 10) => {
     return await res.json();
 };
 
-export const updateStudentsAPI = async (id: number, data: any) => {
+export const updateStudentsAPI = async (userId: number, data: any) => {
     const token = Cookies.get('authToken');
-    const res = await fetch(`${API_URL}/admin/users/students/${id}`, {
+    const res = await fetch(`${API_URL}/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -527,14 +569,26 @@ export const deleteLectureAPI = async (lectureId: number, courseId: number) => {
     return true;
 };
 
+// # Update Lecture API: JSON Payload conversion
 export const updateLectureAPI = async (lectureId: number, courseId: number, data: FormData) => {
     const token = Cookies.get('authToken');
+
+    // # FormData ko plain object mein convert kar rahe hain
+    const payload = Object.fromEntries(data);
+
     const response = await fetch(`${API_URL}/lectures/${lectureId}/course/${courseId}`, {
         method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${token}` }, // FormData automatically sets boundary
-        body: data,
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json' // # Mandatory for this API
+        },
+        body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error('Lecture update nahi ho saka');
+
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || 'Lecture update nahi ho saka');
+    }
     return await response.json();
 };
 
@@ -572,5 +626,140 @@ export const getSpecificResourceAPI = async (courseId: number, sectionId: number
     });
 
     if (!response.ok) throw new Error('Resource detail load nahi ho saki');
+    return await response.json();
+};
+
+//student delete from course
+export const dismissStudentAPI = async (enrollmentId: number, courseId: number, studentId: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/enrollments/${enrollmentId}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        // # User ki requirement ke mutabiq body parameters set kiye gaye hain
+        body: JSON.stringify({
+            courseId: courseId,
+            studentId: studentId,
+            status: 'dismissed'
+        })
+    });
+
+    if (!response.ok) throw new Error('Student remove nahi ho saka');
+    return await response.json();
+};
+
+export const getLecturesBySectionAPI = async (courseId: number, sectionId: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/lectures/course/${courseId}/section/${sectionId}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error('Lectures load karne mein masla hua');
+    return await response.json();
+};
+
+//--------------------------------------------------------------------------------
+// # QUIZ CRUD APIs
+export const createQuizAPI = async (data: any) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/create`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error('Quiz create nahi ho saka');
+    return await response.json();
+};
+
+export const updateQuizAPI = async (id: number, data: any) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/update/${id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error('Quiz update nahi ho saka');
+    return await response.json();
+};
+
+export const deleteQuizAPI = async (id: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/delete/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Quiz delete nahi ho saka');
+    return true;
+};
+
+export const getSpecificQuizAPI = async (id: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/${id}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` },
+        // cache: 'no-store'
+    });
+    if (!response.ok) throw new Error('Quiz details nahi mil sakin');
+    return await response.json();
+};
+
+// # QUIZ SUBMISSIONS & GRADING APIs
+export const getQuizSubmissionsAPI = async (quizId: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/quiz/${quizId}/attempts`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Submissions load nahi ho sakeen');
+    return await response.json();
+};
+
+export const getQuizAttemptDetailAPI = async (attemptId: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/attempt/${attemptId}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Attempt details nahi mil sakin');
+    return await response.json();
+};
+
+export const gradeQuizAttemptAPI = async (attemptId: number, data: { marksObtained: number, comments: string }) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/grade/${attemptId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error('Grading fail ho gayi');
+    return await response.json();
+};
+
+// # ATTENDANCE APIs
+export const getAllAttendancesAPI = async () => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/attendance/all`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
+    });
+    if (!response.ok) throw new Error('Attendance list load nahi ho saki');
+    return await response.json();
+};
+
+export const updateAttendanceAPI = async (attendanceId: number, payload: any) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/attendance/${attendanceId}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error('Update fail ho gaya');
     return await response.json();
 };

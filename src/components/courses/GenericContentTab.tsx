@@ -22,10 +22,10 @@ interface Props {
     onSubTabChange?: (subTab: 'recorded' | 'online') => void; // Parent sync callback
 }
 
-export const GenericContentTab = ({ 
-    title, type, data, role, 
+export const GenericContentTab = ({
+    title, type, data, role,
     onAddSection, onAddItem, onEditItem, onDeleteItem, // New callbacks included
-    onScheduleOnline, onSubTabChange 
+    onScheduleOnline, onSubTabChange
 }: Props) => {
     const [activeLectureSubTab, setActiveLectureSubTab] = useState<'recorded' | 'online'>('recorded');
 
@@ -66,7 +66,7 @@ export const GenericContentTab = ({
                 // --- CONNECTED BUTTONS TO PARENT CALLBACKS ---
                 onEdit={() => onEditItem(item, sectionId)}
                 onDelete={() => onDeleteItem(item, sectionId)}
-                // ---------------------------------------------
+            // ---------------------------------------------
             />
         ));
     };
@@ -105,8 +105,8 @@ export const GenericContentTab = ({
                                         <button
                                             onClick={() => handleTabChange('recorded')}
                                             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeLectureSubTab === 'recorded'
-                                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-100'
-                                                    : 'text-slate-400 hover:bg-gray-100'
+                                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-100'
+                                                : 'text-slate-400 hover:bg-gray-100'
                                                 }`}
                                         >
                                             <MonitorPlay size={14} /> Recorded
@@ -114,8 +114,8 @@ export const GenericContentTab = ({
                                         <button
                                             onClick={() => handleTabChange('online')}
                                             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeLectureSubTab === 'online'
-                                                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-100'
-                                                    : 'text-slate-400 hover:bg-gray-100'
+                                                ? 'bg-purple-600 text-white shadow-lg shadow-purple-100'
+                                                : 'text-slate-400 hover:bg-gray-100'
                                                 }`}
                                         >
                                             <Video size={14} /> Online

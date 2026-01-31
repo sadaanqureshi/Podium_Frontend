@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-    User, ShieldCheck, Mail, Phone, Lock, 
-    Save, Camera, Calendar, ExternalLink 
+import {
+    User, ShieldCheck, Mail, Phone, Lock,
+    Save, Camera, Calendar, ExternalLink
 } from 'lucide-react';
 import { useAppSelector } from '@/lib/store/hooks';
 
@@ -42,11 +42,11 @@ const ProfilePage = () => {
 
     return (
         <div className="w-full max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">
-            
+
             {/* 1. Header Card - Responsive Flex */}
             <div className="bg-[#0F172A] rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 mb-8 text-white flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                
+
                 <div className="relative group flex-shrink-0">
                     <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2rem] bg-blue-600 flex items-center justify-center text-4xl font-black border-4 border-slate-800 shadow-2xl transition-transform duration-500 group-hover:scale-105">
                         {user?.firstName?.[0] || 'U'}
@@ -73,20 +73,20 @@ const ProfilePage = () => {
 
             {/* 2. Main Settings Grid - 1 Col on Mobile, 12 on Desktop */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
-                
+
                 {/* Navigation Sidebar */}
                 <div className="lg:col-span-4 flex flex-col gap-3">
                     <div className="bg-white rounded-[2rem] p-4 border border-slate-100 shadow-sm space-y-2">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4 mb-4 mt-2">Account Settings</p>
-                        
-                        <button 
+
+                        <button
                             onClick={() => setActiveTab('info')}
                             className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'info' ? 'bg-[#0F172A] text-white shadow-xl shadow-blue-900/20 translate-x-1' : 'text-slate-400 hover:bg-slate-50'}`}
                         >
                             <User size={18} /> Personal Info
                         </button>
 
-                        <button 
+                        <button
                             onClick={() => setActiveTab('password')}
                             className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'password' ? 'bg-[#0F172A] text-white shadow-xl shadow-blue-900/20 translate-x-1' : 'text-slate-400 hover:bg-slate-50'}`}
                         >
@@ -97,12 +97,12 @@ const ProfilePage = () => {
                     {/* Google Calendar Section */}
                     <div className="bg-white rounded-[2rem] p-4 border border-slate-100 shadow-sm">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4 mb-4 mt-2">Integrations</p>
-                        <button 
+                        <button
                             onClick={handleGoogleConnect}
                             className="w-full flex items-center justify-between px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all group"
                         >
                             <div className="flex items-center gap-4">
-                                <Calendar size={18} className="group-hover:scale-110 transition-transform" /> 
+                                <Calendar size={18} className="group-hover:scale-110 transition-transform" />
                                 <span>Google Calendar</span>
                             </div>
                             <ExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -118,12 +118,12 @@ const ProfilePage = () => {
                                 <h2 className="text-xl font-black text-[#0F172A] uppercase tracking-tighter">General Info</h2>
                                 <p className="text-xs text-slate-400 font-bold italic">Fields marked with * are required</p>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <ProfileInput label="First Name" icon={<User />} value={userInfo.firstName} onChange={(v: any) => setUserInfo({...userInfo, firstName: v})} required />
-                                <ProfileInput label="Last Name" icon={<User />} value={userInfo.lastName} onChange={(v: any) => setUserInfo({...userInfo, lastName: v})} />
+                                <ProfileInput label="First Name" icon={<User />} value={userInfo.firstName} onChange={(v: any) => setUserInfo({ ...userInfo, firstName: v })} required />
+                                <ProfileInput label="Last Name" icon={<User />} value={userInfo.lastName} onChange={(v: any) => setUserInfo({ ...userInfo, lastName: v })} />
                                 <ProfileInput label="Email Address" icon={<Mail />} value={userInfo.email} disabled />
-                                <ProfileInput label="Contact Number" icon={<Phone />} value={userInfo.contactNumber} onChange={(v: any) => setUserInfo({...userInfo, contactNumber: v})} />
+                                <ProfileInput label="Contact Number" icon={<Phone />} value={userInfo.contactNumber} onChange={(v: any) => setUserInfo({ ...userInfo, contactNumber: v })} />
                             </div>
 
                             <div className="pt-4">
@@ -140,10 +140,10 @@ const ProfilePage = () => {
                             </div>
 
                             <div className="space-y-6 max-w-md">
-                                <ProfileInput label="Current Password" type="password" icon={<Lock />} value={passwords.oldPassword} onChange={(v : any) => setPasswords({...passwords, oldPassword: v})} required />
+                                <ProfileInput label="Current Password" type="password" icon={<Lock />} value={passwords.oldPassword} onChange={(v: any) => setPasswords({ ...passwords, oldPassword: v })} required />
                                 <div className="h-px bg-slate-50 my-2"></div>
-                                <ProfileInput label="New Password" type="password" icon={<Lock />} value={passwords.newPassword} onChange={(v: any) => setPasswords({...passwords, newPassword: v})} required />
-                                <ProfileInput label="Confirm New Password" type="password" icon={<Lock />} value={passwords.confirmPassword} onChange={(v: any) => setPasswords({...passwords, confirmPassword: v})} required />
+                                <ProfileInput label="New Password" type="password" icon={<Lock />} value={passwords.newPassword} onChange={(v: any) => setPasswords({ ...passwords, newPassword: v })} required />
+                                <ProfileInput label="Confirm New Password" type="password" icon={<Lock />} value={passwords.confirmPassword} onChange={(v: any) => setPasswords({ ...passwords, confirmPassword: v })} required />
                             </div>
 
                             <div className="pt-4">
@@ -169,12 +169,12 @@ const ProfileInput = ({ label, value, onChange, icon, type = "text", disabled = 
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors pointer-events-none">
                 {React.cloneElement(icon, { size: 18 })}
             </div>
-            <input 
-                type={type} 
-                value={value} 
+            <input
+                type={type}
+                value={value}
                 disabled={disabled}
                 onChange={(e) => onChange?.(e.target.value)}
-                className={`w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-600 outline-none text-sm font-bold transition-all ${disabled ? 'bg-slate-50 text-slate-400 cursor-not-allowed' : 'bg-slate-50/50 text-slate-700'}`} 
+                className={`w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-600 outline-none text-sm font-bold transition-all ${disabled ? 'bg-slate-50 text-slate-400 cursor-not-allowed' : 'bg-slate-50/50 text-slate-700'}`}
             />
         </div>
     </div>

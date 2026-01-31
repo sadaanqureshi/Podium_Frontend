@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-    User, ShieldCheck, Mail, Phone, Lock, 
-    Save, Camera, Calendar, ExternalLink, Loader2, CheckCircle2 
+import {
+    User, ShieldCheck, Mail, Phone, Lock,
+    Save, Camera, Calendar, ExternalLink, Loader2, CheckCircle2
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/lib/store/hooks';
 import { updateUserProfileAPI, connectGoogleCalendarAPI } from '@/lib/api/apiService';
-import { setUser } from '@/lib/store/features/authSlice'; 
+import { setUser } from '@/lib/store/features/authSlice';
 
 const ProfilePage = () => {
     // 1. HYDRATION FIX: Next.js mismatch error khatam karne ke liye
@@ -55,10 +55,10 @@ const ProfilePage = () => {
         setLoading(true);
         try {
             const response = await updateUserProfileAPI(user.id, userInfo);
-            const updatedUser = response.data || response; 
-            
+            const updatedUser = response.data || response;
+
             // Seamless update (No window.location.reload required)
-            dispatch(setUser(updatedUser)); 
+            dispatch(setUser(updatedUser));
             alert("Profile successfully updated!");
         } catch (err: any) {
             alert(err.message || "Update failed");
@@ -69,32 +69,32 @@ const ProfilePage = () => {
 
     // --- 4. GOOGLE CALENDAR CONNECT LOGIC ---
     const handleGoogleConnect = async () => {
-    if (isCalendarConnected) return;
+        if (isCalendarConnected) return;
 
-    setCalendarLoading(true);
-    try {
-        // Response ab direct URL string hogi
-        const responseUrl = await connectGoogleCalendarAPI();
+        setCalendarLoading(true);
+        try {
+            // Response ab direct URL string hogi
+            const responseUrl = await connectGoogleCalendarAPI();
 
-        if (responseUrl && responseUrl.startsWith('http')) {
-            // REDIRECT TO NEW TAB FIX:
-            // window.open user ko naye tab par le jaye ga
-            window.open(responseUrl, '_blank', 'noopener,noreferrer');
-            
-            // Optional: User ko guide karne ke liye alert ya message
-            alert("Meharbani karke naye tab mein Google login mukammal karein.");
-        } else {
-            // Agar link nahi mila toh manual update (fallback)
-            dispatch(setUser({ ...user, isCalendarConnected: true }));
-            alert("Google Calendar Connected!");
+            if (responseUrl && responseUrl.startsWith('http')) {
+                // REDIRECT TO NEW TAB FIX:
+                // window.open user ko naye tab par le jaye ga
+                window.open(responseUrl, '_blank', 'noopener,noreferrer');
+
+                // Optional: User ko guide karne ke liye alert ya message
+                alert("Meharbani karke naye tab mein Google login mukammal karein.");
+            } else {
+                // Agar link nahi mila toh manual update (fallback)
+                dispatch(setUser({ ...user, isCalendarConnected: true }));
+                alert("Google Calendar Connected!");
+            }
+        } catch (err: any) {
+            console.error("Google Auth Error:", err);
+            alert(err.message || "Google integration failed");
+        } finally {
+            setCalendarLoading(false);
         }
-    } catch (err: any) {
-        console.error("Google Auth Error:", err);
-        alert(err.message || "Google integration failed");
-    } finally {
-        setCalendarLoading(false);
-    }
-};
+    };
 
     // Hydration Safe Displays
     const displayInitial = mounted ? (user?.firstName?.[0] || 'U') : 'U';
@@ -102,11 +102,11 @@ const ProfilePage = () => {
 
     return (
         <div className="w-full max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">
-            
+
             {/* Header Card */}
             <div className="bg-[#0F172A] rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 mb-8 text-white flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                
+
                 <div className="relative group flex-shrink-0">
                     <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2rem] bg-blue-600 flex items-center justify-center text-4xl font-black border-4 border-slate-800 shadow-2xl transition-transform duration-500 group-hover:scale-105">
                         {displayInitial}
@@ -127,7 +127,7 @@ const ProfilePage = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
-                
+
                 {/* Navigation Sidebar */}
                 <div className="lg:col-span-4 flex flex-col gap-3">
                     <div className="bg-white rounded-[2rem] p-4 border border-slate-100 shadow-sm space-y-2">
@@ -143,13 +143,13 @@ const ProfilePage = () => {
                     {/* Google Calendar Section with Switch UI */}
                     <div className="bg-white rounded-[2rem] p-4 border border-slate-100 shadow-sm">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4 mb-4 mt-2">Integrations</p>
-                        <button 
+                        <button
                             onClick={handleGoogleConnect}
                             disabled={calendarLoading || isCalendarConnected}
                             className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl transition-all group ${isCalendarConnected ? 'bg-green-50 border border-green-100' : 'hover:bg-blue-50'}`}
                         >
                             <div className="flex items-center gap-4">
-                                <Calendar size={18} className={isCalendarConnected ? "text-green-600" : "text-slate-400"} /> 
+                                <Calendar size={18} className={isCalendarConnected ? "text-green-600" : "text-slate-400"} />
                                 <span className={`text-xs font-black uppercase tracking-widest ${isCalendarConnected ? 'text-green-700' : 'text-slate-400'}`}>
                                     {isCalendarConnected ? 'Linked' : 'Google Calendar'}
                                 </span>
@@ -176,10 +176,10 @@ const ProfilePage = () => {
                                 <p className="text-xs text-slate-400 font-bold italic">Fields marked with * are required</p>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <ProfileInput label="First Name" icon={<User />} value={userInfo.firstName} onChange={(v: any) => setUserInfo({...userInfo, firstName: v})} required />
-                                <ProfileInput label="Last Name" icon={<User />} value={userInfo.lastName} onChange={(v: any) => setUserInfo({...userInfo, lastName: v})} />
+                                <ProfileInput label="First Name" icon={<User />} value={userInfo.firstName} onChange={(v: any) => setUserInfo({ ...userInfo, firstName: v })} required />
+                                <ProfileInput label="Last Name" icon={<User />} value={userInfo.lastName} onChange={(v: any) => setUserInfo({ ...userInfo, lastName: v })} />
                                 <ProfileInput label="Email Address" icon={<Mail />} value={mounted ? user?.email : ''} disabled />
-                                <ProfileInput label="Contact Number" icon={<Phone />} value={userInfo.contactNumber} onChange={(v: any) => setUserInfo({...userInfo, contactNumber: v})} />
+                                <ProfileInput label="Contact Number" icon={<Phone />} value={userInfo.contactNumber} onChange={(v: any) => setUserInfo({ ...userInfo, contactNumber: v })} />
                             </div>
                             <div className="pt-4">
                                 <button disabled={loading || !mounted} type="submit" className="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-95 shadow-xl disabled:opacity-50">
@@ -219,10 +219,10 @@ const ProfileInput = ({ label, value, onChange, icon, type = "text", disabled = 
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors pointer-events-none">
                 {React.cloneElement(icon, { size: 18 })}
             </div>
-            <input 
+            <input
                 type={type} value={value} disabled={disabled}
                 onChange={(e) => onChange?.(e.target.value)}
-                className={`w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 outline-none text-sm font-bold transition-all ${disabled ? 'bg-slate-50 text-slate-400 cursor-not-allowed' : 'bg-slate-50/50 text-slate-700 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-600'}`} 
+                className={`w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-100 outline-none text-sm font-bold transition-all ${disabled ? 'bg-slate-50 text-slate-400 cursor-not-allowed' : 'bg-slate-50/50 text-slate-700 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-blue-600'}`}
             />
         </div>
     </div>

@@ -18,9 +18,9 @@ interface TemplateProps {
   extraHeaderContent?: React.ReactNode; // Teacher ke blue button ke liye slot
   showProgress?: boolean; // Progress bar dikhane ke liye
 }
- 
-const CoursePageTemplate: React.FC<TemplateProps> = ({ 
-  title, description, courses, basePath, placeholder, extraHeaderContent, showProgress 
+
+const CoursePageTemplate: React.FC<TemplateProps> = ({
+  title, description, courses, basePath, placeholder, extraHeaderContent, showProgress
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [direction, setDirection] = useState(0);

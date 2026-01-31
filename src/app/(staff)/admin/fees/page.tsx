@@ -21,13 +21,13 @@ const FeesManagement = () => {
     console.log(feesData);
     // Table Column Configuration
     const feesColumns = [
-        { 
-            header: 'Transaction ID', 
+        {
+            header: 'Transaction ID',
             key: 'uuid',
             render: (item: any) => <span className="font-bold text-blue-600">#{item.uuid}</span>
         },
-        { 
-            header: 'Course / Detail', 
+        {
+            header: 'Course / Detail',
             key: 'courseName',
             render: (item: any) => (
                 <div>
@@ -36,27 +36,26 @@ const FeesManagement = () => {
                 </div>
             )
         },
-        { 
-            header: 'Amount', 
-            key: 'amount', 
+        {
+            header: 'Amount',
+            key: 'amount',
             align: 'left' as const,
             render: (item: any) => <span className="font-black text-gray-900">{item.amount}</span>
         },
-        { 
-            header: 'Status', 
-            key: 'status', 
+        {
+            header: 'Status',
+            key: 'status',
             align: 'center' as const,
             render: (item: any) => (
-                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                    item.status === 'paid' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'
-                }`}>
+                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${item.status === 'paid' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'
+                    }`}>
                     {item.status}
                 </span>
             )
         },
-        { 
-            header: 'Date', 
-            key: 'createdAt', 
+        {
+            header: 'Date',
+            key: 'createdAt',
             align: 'right' as const,
             render: (item: any) => <span className="text-gray-400 font-bold">{new Date(item.createdAt).toLocaleDateString('en-GB')}</span>
         }
@@ -81,9 +80,9 @@ const FeesManagement = () => {
 
             {/* Table Section */}
             <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
-                <UserManagementTable 
-                    data={feesData?.transactions || []} 
-                    loading={loading} 
+                <UserManagementTable
+                    data={feesData?.transactions || []}
+                    loading={loading}
                     columnConfig={feesColumns}
                     type="transaction"
                     visibleActions={[]} // Fees mein actions nahi chahiye
