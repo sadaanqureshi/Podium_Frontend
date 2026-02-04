@@ -78,8 +78,8 @@ const SignInPage = () => {
 
       if (userRole === 'student') {
         // 1. Agar Role sahi hai, TAB cookies set karein
-        Cookies.set('authToken', response.access_token, { expires: 7 });
-        Cookies.set('userRole', response.user.role.roleName, { expires: 7 });
+        Cookies.set('authToken', response.access_token);
+        Cookies.set('userRole', response.user.role.roleName);
       }
 
       if (userRole === 'student') {
@@ -90,7 +90,7 @@ const SignInPage = () => {
           role: response.user.role.roleName,
           sidebar: response.sidebar
         }));
-        router.replace('/dashboard');
+        router.replace('/student/dashboard');
       } else {
         // AGAR ADMIN YA TEACHER HAI: 
         // 1. Cookies clear karein (Jo loginUser ne set ki thi)

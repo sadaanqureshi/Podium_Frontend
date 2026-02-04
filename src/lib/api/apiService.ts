@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 // ==============================
 // BASE URL
 // ==============================
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006';
+const API_URL = 'http://localhost:3006';
 // process.env use karne se Next.js khud hi environment ke mutabiq URL utha lega
 // const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -76,7 +76,7 @@ export const logoutLocal = () => {
     const role = Cookies.get('userRole');
     if (role === 'admin') window.location.href = '/admin/signin';
     else if (role === 'teacher') window.location.href = '/teacher/signin';
-    else window.location.href = '/signin';
+    else window.location.href = '/student/signin';
     Cookies.remove('userRole');
 };
 
@@ -293,6 +293,30 @@ export const createAssignmentAPI = async (formData: FormData) => {
     if (!response.ok) throw new Error('Assignment upload fail ho gaya');
     return await response.json();
 };
+
+// # ASSIGNMENT DELETE API
+export const deleteAssignmentAPI = async (id: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/assignments/delete/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Assignment delete fail ho gayi');
+    return await response.json();
+};
+
+// # FUTURE ASSIGNMENT UPDATE API (Commented for now)
+/* export const updateAssignmentAPI = async (id: number, formData: FormData) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/assignments/update/${id}`, {
+        method: 'PATCH', // ya PUT, backend ke mutabiq
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+    });
+    if (!response.ok) throw new Error('Assignment update fail ho gaya');
+    return await response.json();
+};
+*/
 
 export const getAssignmentDetailAPI = async (id: string | number) => {
     const token = Cookies.get('authToken');

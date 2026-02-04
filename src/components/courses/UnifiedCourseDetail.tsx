@@ -18,6 +18,8 @@ import {
     dismissStudentAPI,
     createLiveLectureAPI,
     createAssignmentAPI,
+    // updateAssignmentAPI,   // # ADDED
+    // deleteAssignmentAPI,   // # ADDED
     enrollStudentAPI,
     deleteLectureAPI,
     updateLectureAPI,
@@ -25,10 +27,9 @@ import {
     updateResourceAPI,
     createQuizAPI,
     updateQuizAPI,
-    deleteQuizAPI
+    deleteQuizAPI,
+    deleteAssignmentAPI
 } from '@/lib/api/apiService';
-import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
-import { fetchCourseContent, refreshCourseContent } from '@/lib/store/features/courseSlice';
 import { CourseInfoCard } from '@/components/courses/CourseInfoCard';
 import { StudentsTab } from '@/components/courses/StudentsTab';
 import { GenericContentTab } from '@/components/courses/GenericContentTab';
@@ -49,15 +50,9 @@ type ModalType = 'student' | 'lecture' | 'quiz' | 'assignment' | 'resource' | 's
 const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: string; id?: string }>, role: 'admin' | 'teacher' }) => {
     const actualParams = use(params) as any;
     const courseId = actualParams.courseId || actualParams.id;
-    const dispatch = useAppDispatch();
 
     const [activeTab, setActiveTab] = useState('students');
     const [activeLectureSubTab, setActiveLectureSubTab] = useState<'recorded' | 'online'>('recorded');
-
-    // Get course content from Redux
-    const courseIdNum = courseId ? Number(courseId) : null;
-    const cachedCourseData = courseIdNum ? useAppSelector((state) => state.course.courseContent[courseIdNum]) : null;
-    const courseLoading = courseIdNum ? useAppSelector((state) => state.course.loading.courseContent[courseIdNum] || false) : false;
 
     const [fullData, setFullData] = useState<any>(null);
     const [allAvailableStudents, setAllAvailableStudents] = useState<any[]>([]);
@@ -83,17 +78,8 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
     const fetchData = async () => {
         setLoading(true);
         try {
-            if (courseIdNum) {
-                // Fetch from API and it will be cached automatically
-                const result = await dispatch(fetchCourseContent(courseIdNum));
-                if (fetchCourseContent.fulfilled.match(result)) {
-                    setFullData(result.payload.content);
-                } else {
-                    // Fallback to direct API call if Redux fetch fails
-                    const contentRes = await getCourseWithContentAPI(courseIdNum);
-                    setFullData(contentRes);
-                }
-            }
+            const contentRes = await getCourseWithContentAPI(Number(courseId));
+            setFullData(contentRes);
 
             if (role === 'admin') {
                 try {
@@ -114,27 +100,7 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
         }
     };
 
-    useEffect(() => { 
-        if (courseIdNum) {
-            // Check if we have cached data, use it immediately
-            if (cachedCourseData) {
-                setFullData(cachedCourseData);
-                setLoading(false);
-                // Still fetch students if admin
-                if (role === 'admin') {
-                    getStudentsAPI().then(studentsRes => {
-                        const rawStudents = studentsRes.data || [];
-                        setAllAvailableStudents(rawStudents.map((s: any) => ({
-                            label: `${s.firstName} ${s.lastName} (${s.email})`,
-                            value: s.id
-                        })));
-                    }).catch(err => console.error("Admin student list fetch error:", err));
-                }
-            } else {
-                fetchData();
-            }
-        }
-    }, [courseIdNum, cachedCourseData, role, dispatch]);
+    useEffect(() => { fetchData(); }, [courseId]);
 
     const activeTabData = useMemo(() => {
         if (!fullData?.sections) return [];
@@ -178,14 +144,13 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
                 { name: 'file', label: 'Upload File', type: 'files', required: !itemToEdit }
             ],
             student: [{ name: 'studentId', label: 'Select Student', type: 'select', options: allAvailableStudents, required: true }],
-            // # QUIZ FORM FIELDS WITH DYNAMIC BUILDER
             quiz: [
                 { name: 'title', label: 'Quiz Title', type: 'text', required: true },
                 { name: 'description', label: 'Quiz Description', type: 'textarea' },
                 { name: 'total_marks', label: 'Total Marks', type: 'number', required: true },
                 { name: 'start_time', label: 'Start Time', type: 'datetime-local', required: false },
                 { name: 'end_time', label: 'End Time', type: 'datetime-local', required: false },
-                { name: 'is_Published', label: 'Publish Immediately?', type: 'select', options: [{ label: 'Yes', value: 'true' }, { label: 'No', value: 'false' }] },
+                { name: 'is_Published', label: 'Publish Status', type: 'select', options: [{ label: 'Yes', value: 'true' }, { label: 'No', value: 'false' }] },
                 { name: 'questions', label: 'Quiz Questions', type: 'quiz-builder', required: true }
             ],
         };
@@ -199,6 +164,12 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
             const rawData = Object.fromEntries(formData);
 
             if (itemToEdit) {
+                // # UPDATE LOGIC FOR ASSIGNMENT ADDED
+                // if (modalType === 'assignment') {
+                //     formData.append('course_id', courseId.toString()); // Snake case for consistency
+                //     formData.append('section_id', selectedSectionId!.toString());
+                //     await updateAssignmentAPI(itemToEdit.id, formData);
+                // }
                 if (modalType === 'quiz') {
                     const payload = {
                         ...rawData,
@@ -213,14 +184,14 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
                 alert("Kamyabi se update ho gaya!");
             } else {
                 if (modalType === 'section') await createSectionAPI(courseIdNum, { title: rawData.title as string, description: rawData.description as string });
+                // # CREATE ASSIGNMENT FIX: Snake case keys for consistency with Quiz
                 else if (modalType === 'assignment') {
-                    formData.append('courseId', courseId.toString());
-                    formData.append('sectionId', selectedSectionId!.toString());
+                    formData.append('course_id', courseId.toString());
+                    formData.append('section_id', selectedSectionId!.toString());
                     await createAssignmentAPI(formData);
                 }
                 else if (modalType === 'student') await enrollStudentAPI({ courseId: courseIdNum, studentId: Number(rawData.studentId) });
 
-                // # CREATE QUIZ LOGIC
                 else if (modalType === 'quiz') {
                     await createQuizAPI({
                         ...rawData,
@@ -249,10 +220,6 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
                 alert("Naya content add ho gaya!");
             }
 
-            // Refresh course content in Redux cache
-            if (courseIdNum) {
-                dispatch(refreshCourseContent(courseIdNum));
-            }
             await fetchData();
             setIsModalOpen(false);
             setItemToEdit(null);
@@ -271,9 +238,11 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
             else if (itemToDelete.type === 'quiz') await deleteQuizAPI(itemId);
             else if (itemToDelete.type === 'lecture') await deleteLectureAPI(itemId, courseIdNum);
             else if (itemToDelete.type === 'resource') await deleteResourceAPI(courseIdNum, itemToDelete.sectionId, itemId);
+            // # ADDED ASSIGNMENT DELETE
+            else if (itemToDelete.type === 'assignment') await deleteAssignmentAPI(itemId);
 
             setIsDeleteModalOpen(false);
-            await fetchData(); // Refresh fresh state
+            await fetchData();
             alert("Item permanent delete ho gaya!");
         } catch (err: any) { alert(err.message); }
         finally { setModalLoading(false); setItemToDelete(null); }
@@ -283,6 +252,7 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
 
     return (
         <div className="w-full bg-gray-50 min-h-screen font-sans text-[#0F172A] pt-0">
+            {/* Header, Tabs, aur StudentsTab logic preserved as is */}
             <div className="flex justify-between items-center mb-4 p-8 pb-0">
                 <Link href={role === 'admin' ? "/admin/courses" : "/teacher/assigned-courses"} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold transition-all text-sm uppercase tracking-widest">
                     <ArrowLeft size={16} /> Back to Dashboard
@@ -302,19 +272,13 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
 
                 <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8 min-h-[450px]">
                     {activeTab === 'students' ? (
-                        <StudentsTab
-                            data={fullData?.enrollments || []}
-                            role={role}
-                            onDelete={(id, name) => {
-                                setItemToDelete({ id, title: name, type: 'enrollment' });
-                                setIsDeleteModalOpen(true);
-                            }}
-                            onAdd={() => { setModalType('student'); setItemToEdit(null); setIsModalOpen(true); }}
-                        />
+                        <StudentsTab data={fullData?.enrollments || []} role={role} onDelete={(id, name) => {
+                            setItemToDelete({ id, title: name, type: 'enrollment' });
+                            setIsDeleteModalOpen(true);
+                        }} onAdd={() => { setModalType('student'); setItemToEdit(null); setIsModalOpen(true); }} />
                     ) : (
                         <GenericContentTab
                             title={activeTab}
-                            // # USE MAPPING FOR TYPE TO FIX "QUIZZE" ERROR
                             type={TAB_TO_TYPE_MAP[activeTab] as any}
                             data={activeTabData}
                             role={role}
@@ -327,8 +291,6 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
                                 setIsModalOpen(true);
                             }}
                             onEditItem={(item, sectionId) => {
-                                // # PRE-FILL FIX: Ensuring nested data (questions) is passed to modal
-                                console.log("Editing Item Data:", item);
                                 setItemToEdit(item);
                                 setSelectedSectionId(sectionId);
                                 setModalType(TAB_TO_TYPE_MAP[activeTab]);
@@ -351,7 +313,6 @@ const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: st
                 fields={formFields}
                 onSubmit={handleFormSubmit}
                 loading={modalLoading}
-                // # ENSURING INITIAL DATA IS SPREAD CORRECTLY
                 initialData={itemToEdit}
             />
 
