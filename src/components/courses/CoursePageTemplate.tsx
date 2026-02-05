@@ -1,4 +1,3 @@
-// components/courses/CoursePageTemplate.tsx
 'use client';
 import React, { useState } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
@@ -15,8 +14,8 @@ interface TemplateProps {
   courses: Course[];
   basePath: string;
   placeholder?: string;
-  extraHeaderContent?: React.ReactNode; // Teacher ke blue button ke liye slot
-  showProgress?: boolean; // Progress bar dikhane ke liye
+  extraHeaderContent?: React.ReactNode;
+  showProgress?: boolean;
 }
 
 const CoursePageTemplate: React.FC<TemplateProps> = ({
@@ -43,24 +42,27 @@ const CoursePageTemplate: React.FC<TemplateProps> = ({
   };
 
   return (
-    <div className="w-full p-4 md:p-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div className="w-full p-4 md:p-8 transition-colors duration-300">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{title}</h1>
-          <p className="text-gray-600">{description}</p>
+          <h1 className="text-2xl md:text-4xl font-black text-text-main mb-1 uppercase tracking-tight">{title}</h1>
+          <p className="text-text-muted font-medium text-sm">{description}</p>
         </div>
-        {extraHeaderContent} {/* Blue button yahan show hoga agar pass kiya gaya */}
+        {extraHeaderContent}
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <SearchBar placeholder={placeholder || "Search..."} />
-        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">
-          <Filter size={16} />
-          <span>Filter</span>
+      {/* Toolbar */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <SearchBar placeholder={placeholder || "Search Protocol..."} />
+        <button className="flex items-center gap-2 px-6 py-2.5 bg-card-bg border border-border-subtle rounded-xl text-[11px] font-black uppercase tracking-widest text-text-main hover:bg-sidebar-to/10 transition-all shadow-sm">
+          <Filter size={16} className="text-accent-blue" />
+          <span>Filter Registry</span>
         </button>
       </div>
 
-      <div className="relative mb-8">
+      {/* Animated Course Grid */}
+      <div className="relative mb-12">
         <AnimatePresence initial={false} custom={direction} mode="wait">
           <motion.div key={currentPage} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" className="w-full">
             <CourseList courses={coursesToShow} basePath={basePath} showProgress={showProgress} />
@@ -68,17 +70,37 @@ const CoursePageTemplate: React.FC<TemplateProps> = ({
         </AnimatePresence>
       </div>
 
-      {/* Pagination (Aapka purana logic) */}
-      <nav className="flex items-center gap-2 text-sm">
-        <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} className="flex items-center gap-2 px-3 py-1 rounded-md disabled:opacity-50">
-          <ChevronLeft size={16} /> <span>Previous</span>
+      {/* Pagination: Themed with Accent Blue */}
+      <nav className="flex items-center justify-center sm:justify-start gap-3 text-[10px] font-black uppercase tracking-[0.15em]">
+        <button 
+          onClick={() => paginate(currentPage - 1)} 
+          disabled={currentPage === 1} 
+          className="flex items-center gap-2 px-4 py-2 text-text-muted hover:text-accent-blue disabled:opacity-30 transition-all"
+        >
+          <ChevronLeft size={16} /> <span>Prev</span>
         </button>
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-          <button key={number} onClick={() => paginate(number)} className={`px-3 py-1 rounded-md ${currentPage === number ? 'bg-black text-white' : 'hover:bg-gray-100'}`}>
-            {number}
-          </button>
-        ))}
-        <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} className="flex items-center gap-2 px-3 py-1 rounded-md disabled:opacity-50">
+        
+        <div className="flex items-center gap-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+            <button 
+                key={number} 
+                onClick={() => paginate(number)} 
+                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${
+                    currentPage === number 
+                    ? 'bg-accent-blue text-white border-accent-blue shadow-lg shadow-accent-blue/20 scale-110' 
+                    : 'bg-card-bg text-text-muted border-border-subtle hover:border-accent-blue/30'
+                }`}
+            >
+                {number}
+            </button>
+            ))}
+        </div>
+
+        <button 
+          onClick={() => paginate(currentPage + 1)} 
+          disabled={currentPage === totalPages} 
+          className="flex items-center gap-2 px-4 py-2 text-text-muted hover:text-accent-blue disabled:opacity-30 transition-all"
+        >
           <span>Next</span> <ChevronRight size={16} />
         </button>
       </nav>

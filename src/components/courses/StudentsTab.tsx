@@ -1,6 +1,6 @@
 'use client';
-import React from 'react';
-import { UserPlus, GraduationCap, Calendar } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { UserPlus, Calendar, Mail } from 'lucide-react';
 import UserManagementTable from '@/components/ui/UserManagementTable';
 
 interface StudentsTabProps {
@@ -8,49 +8,49 @@ interface StudentsTabProps {
     onAdd: () => void;
     role: string;
     loading?: boolean;
-    // # Naya prop add kiya gaya hai delete logic handle karne ke liye
     onDelete: (id: number, name: string) => void;
 }
 
 export const StudentsTab = ({ data, onAdd, role, onDelete, loading = false }: StudentsTabProps) => {
     if (role === 'student') return null;
 
-    // Enrollment list ke liye Column Configuration
-    const enrollmentColumns = [
+    // # 1. COLUMN CONFIGURATION (Using Central Design Tokens)
+    const enrollmentColumns = useMemo(() => [
         {
-            header: 'Student Info',
-            key: 'studentName',
+            header: 'Student Identity',
+            // Key changed to avoid internal Table conflict and ensure custom render is used
+            key: 'display_identity', 
             render: (item: any) => (
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold uppercase shadow-sm">
+                <div className="flex items-center gap-4">
+                    {/* Avatar: bg-app-bg handles Light/Dark switch automatically */}
+                    <div className="w-10 h-10 rounded-2xl bg-app-bg border border-border-subtle flex items-center justify-center font-black text-accent-blue text-xs shadow-sm uppercase ">
                         {item.studentName?.[0] || 'S'}
                     </div>
-                    <div>
-                        <p className="font-bold text-sm text-[#0F172A]">{item.studentName}</p>
-                    </div>
+                    {/* Name: text-text-main for high contrast in both themes */}
+                    <p className="font-black text-text-main text-sm uppercase tracking-tight">
+                        {item.studentName}
+                    </p>
                 </div>
             )
         },
         {
-            header: 'Student Email',
+            header: 'Email Address',
             key: 'studentEmail',
             render: (item: any) => (
-                <div className="flex items-center gap-3">
-                    <p className="font-bold text-sm text-[#0F172A]">{item.studentEmail}</p>
-
+                <div className="flex items-center gap-2 text-text-muted font-bold text-xs">
+                    <Mail size={12} className="text-accent-blue/60" />
+                    {item.studentEmail}
                 </div>
             )
         },
         {
-            header: 'Enrollment Date',
+            header: 'Enrolled On',
             key: 'enrolledAt',
             align: 'center' as const,
             render: (item: any) => (
-                <div className="flex flex-col items-center gap-1">
-                    <div className="flex items-center gap-1.5 text-gray-500 font-bold text-xs">
-                        <Calendar size={12} className="text-gray-300" />
-                        {item.enrolledAt ? new Date(item.enrolledAt).toLocaleDateString('en-GB') : 'N/A'}
-                    </div>
+                <div className="flex items-center justify-center gap-2 text-text-muted font-black text-[10px] uppercase">
+                    <Calendar size={13} className="text-accent-blue/40" />
+                    {item.enrolledAt ? new Date(item.enrolledAt).toLocaleDateString('en-GB') : 'N/A'}
                 </div>
             )
         },
@@ -59,52 +59,43 @@ export const StudentsTab = ({ data, onAdd, role, onDelete, loading = false }: St
             key: 'status',
             align: 'right' as const,
             render: (item: any) => (
-                <span className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">
+                <span className="px-4 py-1.5 bg-emerald-500/10 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-500/20">
                     {item.status || 'Active'}
                 </span>
             )
         }
-    ];
+    ], []);
 
     return (
         <div className="animate-in fade-in duration-500">
-            {/* Header Section */}
-            <div className="flex justify-between items-center mb-8 px-2">
+            {/* Header stays for titles but uses tokens */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 px-2">
                 <div>
-                    <h2 className="text-xl font-bold text-[#0F172A]">Enrolled Students</h2>
-                    <p className="text-gray-400 text-xs font-medium">List of students currently in this course</p>
+                    <h2 className="text-2xl font-black text-text-main uppercase tracking-tight">Course Roster</h2>
+                    <p className="text-text-muted text-xs font-medium underline decoration-accent-blue/20">Verified student directory for this intake.</p>
                 </div>
 
                 {role === 'admin' && (
                     <button
                         onClick={onAdd}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-[#0F172A] text-white rounded-xl font-bold text-sm hover:bg-black transition-all shadow-lg active:scale-95"
+                        className="flex items-center gap-2 px-6 py-3 bg-accent-blue text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-hover-blue transition-all shadow-xl shadow-accent-blue/20 active:scale-95"
                     >
-                        <UserPlus size={18} />
-                        <span>Add Student</span>
+                        <UserPlus size={16} strokeWidth={3} />
+                        <span>Enroll Student</span>
                     </button>
                 )}
             </div>
 
-            {/* Generic Table Integration */}
-            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
-                <UserManagementTable
-                    data={data}
-                    loading={loading}
-                    columnConfig={enrollmentColumns}
-                    type="enrollment"
-                    // # Edit button ko list se remove kar diya gaya hai
-                    // # Ab sirf delete aur view buttons nazar aayenge
-                    visibleActions={role === 'admin' ? ['delete', 'view'] : []}
-                    // # Delete confirmation logic ko integration ke liye update kiya gaya hai
-                    onDelete={(id) => {
-                        const student = data.find(s => s.id === id);
-                        onDelete(id, student?.studentName || "Student");
-                    }}
-                />
-            </div>
-
-            {/* Empty State Handled by Table component already */}
+            {/* # 2. TABLE INTEGRATION (No custom wrappers needed) */}
+            <UserManagementTable
+                data={data}
+                loading={loading}
+                columnConfig={enrollmentColumns}
+                type="enrollment"
+                visibleActions={role === 'admin' ? ['delete', 'view'] : []}
+                // Callback passes both ID and Name to parent for confirmation modal
+                onDelete={(id, name) => onDelete(id, name)} 
+            />
         </div>
     );
 };

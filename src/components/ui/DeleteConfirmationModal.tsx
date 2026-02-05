@@ -24,13 +24,13 @@ const DeleteConfirmationModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, 
                     <AlertTriangle size={40} className="text-red-500" />
                 </div>
 
-                <h2 className="text-2xl font-bold text-[#0F172A] mb-2">Pukka Delete Karna Hai?</h2>
-                <p className="text-gray-500 text-sm mb-8">Kya aap waqai <span className="font-bold text-gray-800">"{title}"</span> ko hatana chahte hain? Yeh amal wapas nahi ho sakega.</p>
+                <h2 className="text-2xl font-bold text-[#0F172A] mb-2">Are you sure you want to delete?</h2>
+                <p className="text-gray-500 text-sm mb-8">Are you sure you want to delete <span className="font-bold text-gray-800">"{title}"</span>? This action cannot be undone.</p>
 
                 <div className="flex gap-3">
-                    <button onClick={onClose} className="flex-1 px-6 py-3 rounded-xl font-bold text-gray-500 bg-gray-50 hover:bg-gray-100 transition-all">Nahi, Rehne do</button>
+                    <button onClick={onClose} className="flex-1 px-6 py-3 rounded-xl font-bold text-gray-500 bg-gray-50 hover:bg-gray-100 transition-all">No, Cancel</button>
                     <button onClick={onConfirm} disabled={loading} className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 shadow-lg transition-all active:scale-95 disabled:opacity-50">
-                        Haan, Hata do
+                        Yes, Delete
                     </button>
                 </div>
             </div>

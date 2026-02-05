@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import StoreProvider from '../components/providers/StoreProvider';
+import GlobalProgressBar from '@/components/ui/GlobalProgressBar';
+import { ThemeProvider } from '@/components/ui/ThemeProvider';
 // LayoutWrapper ko yahaan se hata dein
 
 const inter = Inter({ subsets: ['latin'] });
@@ -20,7 +22,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <StoreProvider>
-          {children}
+          <GlobalProgressBar />
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
         </StoreProvider>
       </body>
     </html>

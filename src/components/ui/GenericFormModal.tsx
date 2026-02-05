@@ -68,12 +68,10 @@ const QuestionBuilder = ({
         const currentQ = updated[qIndex];
 
         if (currentQ.question_type === 'MCQ') {
-            // MCQ: Only one can be correct
             currentQ.options.forEach((opt: any, i: number) => {
                 opt.is_correct = i === oIndex;
             });
         } else {
-            // BCQ: Multiple can be correct
             currentQ.options[oIndex].is_correct = !currentQ.options[oIndex].is_correct;
         }
 
@@ -125,36 +123,36 @@ const QuestionBuilder = ({
     };
 
     return (
-        <div className="md:col-span-2 space-y-6 bg-blue-50/20 p-8 rounded-[2.5rem] border-2 border-blue-50">
+        <div className="md:col-span-2 space-y-6 bg-app-bg p-8 rounded-[2.5rem] border-2 border-border-subtle transition-colors">
             <div className="flex justify-between items-center px-2">
-                <h3 className="text-sm font-black uppercase text-blue-900/60 tracking-widest">
+                <h3 className="text-sm font-black uppercase text-text-muted tracking-widest">
                     Quiz Designer
                 </h3>
                 <button
                     type="button"
                     onClick={addQuestion}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-blue-700 transition-all shadow-lg active:scale-95"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-accent-blue text-white rounded-2xl text-[10px] font-black uppercase hover:bg-hover-blue transition-all shadow-lg active:scale-95"
                 >
-                    <Plus size={14} /> Add Question
+                    <Plus size={14} strokeWidth={3} /> Add Question
                 </button>
             </div>
 
             {questions.map((q, qIndex) => (
                 <div
                     key={qIndex}
-                    className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6 animate-in slide-in-from-top-4 duration-300"
+                    className="bg-card-bg p-8 rounded-[2rem] border border-border-subtle shadow-sm space-y-6 animate-in slide-in-from-top-4 duration-300"
                 >
                     <div className="flex justify-between gap-4">
                         <input
                             placeholder="Enter Question Text..."
-                            className="flex-1 text-sm font-bold bg-transparent outline-none border-b-2 border-slate-50 focus:border-blue-500 py-2 transition-all"
+                            className="flex-1 text-sm font-bold bg-transparent outline-none border-b-2 border-border-subtle focus:border-accent-blue py-2 transition-all text-text-main"
                             value={q.question_text || ''}
                             onChange={(e) => updateQuestionText(qIndex, e.target.value)}
                         />
                         <button
                             type="button"
                             onClick={() => removeQuestion(qIndex)}
-                            className="text-red-300 hover:text-red-500 p-2 transition-colors"
+                            className="text-text-muted hover:text-red-500 p-2 transition-colors"
                         >
                             <Trash2 size={18} />
                         </button>
@@ -162,7 +160,7 @@ const QuestionBuilder = ({
 
                     <div className="grid grid-cols-2 gap-6">
                         <select
-                            className="w-full p-3 bg-slate-50 rounded-xl text-xs font-bold outline-none border border-transparent focus:border-blue-200"
+                            className="w-full p-3 bg-app-bg text-text-main rounded-xl text-xs font-bold outline-none border border-border-subtle focus:border-accent-blue transition-all"
                             value={q.question_type}
                             onChange={(e) => updateQuestionType(qIndex, e.target.value)}
                         >
@@ -172,7 +170,7 @@ const QuestionBuilder = ({
                         </select>
                         <input
                             type="number"
-                            className="w-full p-3 bg-slate-50 rounded-xl text-xs font-bold outline-none"
+                            className="w-full p-3 bg-app-bg text-text-main rounded-xl text-xs font-bold outline-none border border-border-subtle focus:border-accent-blue transition-all"
                             placeholder="Marks"
                             value={q.marks || 0}
                             onChange={(e) => updateMarks(qIndex, Number(e.target.value))}
@@ -180,12 +178,12 @@ const QuestionBuilder = ({
                     </div>
 
                     {q.question_type !== 'SHORT' && (
-                        <div className="space-y-3 pl-4 border-l-2 border-blue-50">
+                        <div className="space-y-3 pl-4 border-l-2 border-border-subtle">
                             {q.options?.map((opt: any, oIndex: number) => (
-                                <div key={oIndex} className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-50">
+                                <div key={oIndex} className="flex items-center gap-4 bg-app-bg p-2 rounded-2xl shadow-sm border border-border-subtle">
                                     <input
-                                        placeholder="Option..."
-                                        className="flex-1 text-xs font-medium bg-transparent px-3 outline-none"
+                                        placeholder="Option Text..."
+                                        className="flex-1 text-xs font-medium bg-transparent px-3 outline-none text-text-main"
                                         value={opt.option_text || ''}
                                         onChange={(e) => updateOptionText(qIndex, oIndex, e.target.value)}
                                     />
@@ -193,7 +191,7 @@ const QuestionBuilder = ({
                                         <button
                                             type="button"
                                             onClick={() => toggleCorrectOption(qIndex, oIndex)}
-                                            className={`p-1.5 rounded-lg transition-all ${opt.is_correct ? 'bg-green-500 text-white shadow-lg' : 'bg-slate-50 text-slate-200'
+                                            className={`p-1.5 rounded-lg transition-all ${opt.is_correct ? 'bg-emerald-500 text-white shadow-lg' : 'bg-card-bg text-text-muted border border-border-subtle'
                                                 }`}
                                         >
                                             <CheckCircle2 size={14} />
@@ -201,7 +199,7 @@ const QuestionBuilder = ({
                                         <button
                                             type="button"
                                             onClick={() => removeOption(qIndex, oIndex)}
-                                            className="p-1.5 text-red-200 hover:text-red-500 transition-colors"
+                                            className="p-1.5 text-text-muted hover:text-red-500 transition-colors"
                                         >
                                             <Trash2 size={14} />
                                         </button>
@@ -211,7 +209,7 @@ const QuestionBuilder = ({
                             <button
                                 type="button"
                                 onClick={() => addOption(qIndex)}
-                                className="text-[10px] font-black text-blue-500 uppercase hover:text-blue-700"
+                                className="text-[10px] font-black text-accent-blue uppercase hover:opacity-80 transition-all ml-1"
                             >
                                 + Add Option
                             </button>
@@ -247,8 +245,6 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
     useEffect(() => {
         if (isOpen && initialData) {
             const formattedData = { ...initialData };
-
-            // Map potential camelCase/snake_case keys from API
             const startTime = initialData.start_time || initialData.startTime;
             const endTime = initialData.end_time || initialData.endTime;
             const totalMarks = initialData.total_marks || initialData.totalMarks;
@@ -271,7 +267,6 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
 
         fields.forEach((field) => {
             const value = formValues[field.name];
-
             if (field.type === 'files') {
                 if (value && typeof value === 'object' && value instanceof File) {
                     formData.append(field.name, value);
@@ -286,30 +281,30 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
         try {
             await onSubmit(formData);
         } catch (err: any) {
-            console.log("ALERT: Submission failed - " + err.message);
+            console.error("Submission failed");
         }
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0F172A]/80 backdrop-blur-md">
-            <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-slate-800">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className="bg-card-bg w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-border-subtle transition-colors duration-300">
 
-                {/* HEADER */}
-                <div className="flex justify-between items-center px-10 py-8 border-b border-slate-700 bg-[#0F172A] text-white">
+                {/* HEADER: Applied .form-modal-header for Light Blue / Pitch Black switch */}
+                <div className="flex justify-between items-center px-10 py-8 form-modal-header transition-colors">
                     <div className="space-y-1">
                         <h2 className="text-3xl font-black tracking-tight uppercase">{title}</h2>
-                        <div className="h-1.5 w-16 bg-blue-500 rounded-full shadow-sm"></div>
+                        <div className="h-1.5 w-16 bg-accent-blue rounded-full shadow-sm"></div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-3 hover:bg-white/10 text-blue-400 rounded-2xl transition-all"
+                        className="p-3 hover:bg-white/10 dark:hover:bg-card-bg/20 rounded-2xl transition-all"
                     >
                         <X size={24} />
                     </button>
                 </div>
 
                 {/* FORM BODY */}
-                <form onSubmit={handleSubmit} className="overflow-y-auto no-scrollbar bg-white flex-1">
+                <form onSubmit={handleSubmit} className="overflow-y-auto no-scrollbar bg-card-bg flex-1">
                     <div className="px-10 py-10 space-y-10">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
                             {fields.map((field) => (
@@ -317,25 +312,24 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                                     key={field.name}
                                     className={(field.type === 'textarea' || field.type === 'quiz-builder') ? 'md:col-span-2' : ''}
                                 >
-                                    <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-blue-900/40 mb-4 ml-1">
-                                        {field.label} {field.required && <span className="text-blue-500">*</span>}
+                                    <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-text-muted mb-4 ml-1">
+                                        {field.label} {field.required && <span className="text-accent-blue">*</span>}
                                     </label>
 
-                                    {/* Field Type Switch */}
                                     {field.type === 'select' ? (
                                         <div className="relative group">
                                             <select
                                                 required={field.required}
                                                 value={formValues[field.name] || ''}
                                                 onChange={(e) => setFormValues({ ...formValues, [field.name]: e.target.value })}
-                                                className="w-full px-8 py-5 rounded-[1.5rem] border-2 border-slate-100 bg-slate-50/30 hover:border-blue-200 focus:bg-white focus:ring-4 focus:ring-blue-100/50 focus:border-blue-600 outline-none text-sm font-bold appearance-none cursor-pointer transition-all"
+                                                className="w-full px-8 py-5 rounded-[1.5rem] border-2 border-border-subtle bg-app-bg hover:border-accent-blue/50 focus:bg-card-bg focus:ring-4 focus:ring-accent-blue/10 focus:border-accent-blue outline-none text-sm font-bold text-text-main appearance-none cursor-pointer transition-all"
                                             >
-                                                <option value="" disabled>Choose {field.label}...</option>
+                                                <option value="" disabled className="bg-card-bg">Choose {field.label}...</option>
                                                 {field.options?.map((opt) => (
-                                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                    <option key={opt.value} value={opt.value} className="bg-card-bg text-text-main">{opt.label}</option>
                                                 ))}
                                             </select>
-                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-blue-500 group-focus-within:rotate-180 transition-transform duration-300">
+                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-accent-blue group-focus-within:rotate-180 transition-transform duration-300">
                                                 <ChevronDown size={22} strokeWidth={3} />
                                             </div>
                                         </div>
@@ -346,18 +340,9 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                                                 required={field.required}
                                                 min={getMinDateTime()}
                                                 value={formValues[field.name] || ''}
-                                                className="w-full px-8 py-5 rounded-[1.5rem] border-2 border-slate-100 bg-slate-50/30 focus:bg-white focus:border-blue-600 outline-none text-sm font-bold text-slate-700 transition-all custom-blue-calendar"
+                                                className="w-full px-8 py-5 rounded-[1.5rem] border-2 border-border-subtle bg-app-bg text-text-main focus:bg-card-bg focus:border-accent-blue outline-none text-sm font-bold transition-all custom-blue-calendar"
                                                 onChange={(e) => setFormValues({ ...formValues, [field.name]: e.target.value })}
                                             />
-                                            <style jsx>{`
-                        .custom-blue-calendar::-webkit-calendar-picker-indicator {
-                          display: block;
-                          background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>');
-                          cursor: pointer;
-                          width: 24px;
-                          height: 24px;
-                        }
-                      `}</style>
                                         </div>
                                     ) : field.type === 'quiz-builder' ? (
                                         <QuestionBuilder
@@ -369,14 +354,14 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                                             required={field.required}
                                             value={formValues[field.name] || ''}
                                             placeholder={field.placeholder}
-                                            className="w-full px-8 py-6 rounded-[2rem] border-2 border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-blue-100/50 focus:border-blue-600 outline-none min-h-[160px] text-sm font-bold text-slate-700 transition-all shadow-sm"
+                                            className="w-full px-8 py-6 rounded-[2rem] border-2 border-border-subtle bg-app-bg text-text-main focus:bg-card-bg focus:ring-4 focus:ring-accent-blue/10 focus:border-accent-blue outline-none min-h-[160px] text-sm font-bold transition-all shadow-sm"
                                             onChange={(e) => setFormValues({ ...formValues, [field.name]: e.target.value })}
                                         />
                                     ) : field.type === 'files' ? (
                                         <input
                                             type="file"
                                             onChange={(e) => setFormValues({ ...formValues, [field.name]: e.target.files?.[0] })}
-                                            className="w-full px-8 py-5 rounded-[1.5rem] border-2 border-slate-100 bg-slate-50/30 text-xs font-bold"
+                                            className="w-full px-8 py-5 rounded-[1.5rem] border-2 border-border-subtle bg-app-bg text-text-muted text-xs font-bold transition-all cursor-pointer"
                                         />
                                     ) : (
                                         <input
@@ -384,7 +369,7 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                                             required={field.required}
                                             placeholder={field.placeholder}
                                             value={formValues[field.name] || ''}
-                                            className="w-full px-8 py-5 rounded-[1.5rem] border-2 border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-blue-100/50 focus:border-blue-600 outline-none text-sm font-bold text-slate-700 transition-all shadow-sm"
+                                            className="w-full px-8 py-5 rounded-[1.5rem] border-2 border-border-subtle bg-app-bg text-text-main focus:bg-card-bg focus:ring-4 focus:ring-accent-blue/10 focus:border-accent-blue outline-none text-sm font-bold transition-all shadow-sm"
                                             onChange={(e) => setFormValues({ ...formValues, [field.name]: e.target.value })}
                                         />
                                     )}
@@ -394,27 +379,33 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                     </div>
 
                     {/* FOOTER */}
-                    <div className="px-10 py-12 bg-slate-50/50 flex flex-col sm:flex-row justify-end gap-6 border-t border-blue-50 mt-auto">
+                    <div className="px-10 py-12 bg-app-bg flex flex-col sm:flex-row justify-end gap-6 border-t border-border-subtle mt-auto transition-colors">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-10 py-5 text-[11px] font-black uppercase tracking-[0.25em] text-slate-400 hover:text-slate-600 transition-all"
+                            className="px-10 py-5 text-[11px] font-black uppercase tracking-[0.25em] text-text-muted hover:text-text-main transition-all"
                         >
                             Discard
                         </button>
                         <button
                             disabled={loading}
-                            className="px-14 py-5 bg-blue-600 text-white rounded-[1.75rem] font-black text-[11px] uppercase tracking-[0.3em] hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-4 transition-all active:scale-95 shadow-[0_20px_40px_rgba(37,99,235,0.3)]"
+                            className="px-14 py-5 bg-accent-blue text-white rounded-[1.75rem] font-black text-[11px] uppercase tracking-[0.3em] hover:bg-hover-blue disabled:opacity-50 flex items-center justify-center gap-4 transition-all active:scale-95 shadow-xl shadow-accent-blue/20"
                         >
                             {loading ? (
                                 <Loader2 size={20} className="animate-spin" />
                             ) : (
-                                submitText || 'Save All Changes'
+                                submitText || 'Apply Changes'
                             )}
                         </button>
                     </div>
                 </form>
             </div>
+            <style jsx>{`
+                .custom-blue-calendar::-webkit-calendar-picker-indicator {
+                  filter: invert(0.5) sepia(1) saturate(5) hue-rotate(200deg);
+                  cursor: pointer;
+                }
+            `}</style>
         </div>
     );
 };
