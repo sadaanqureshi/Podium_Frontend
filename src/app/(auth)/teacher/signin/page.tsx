@@ -28,13 +28,10 @@ const SignInPage = () => {
       const response = await loginUser({ email, password });
       const userRole = response.user.role.roleName.toLowerCase();
 
-      // # 1. ROLE CHECK & SESSION COOKIE SETTING (No Expiry = Logout on Browser Close)
       if (userRole === 'teacher') {
-        // Expiry property nahi di, toh yeh session cookie ban gayi
         Cookies.set('authToken', response.access_token);
         Cookies.set('userRole', response.user.role.roleName);
 
-        // # 2. REDUX AUTH UPDATE
         dispatch(setAuth({
           user: response.user,
           token: response.access_token,
@@ -57,51 +54,85 @@ const SignInPage = () => {
 
   return (
     <AuthLayout>
-      <div className="w-full">
-        <h1 className="text-3xl font-black mb-2 text-[#0F172A] tracking-tight leading-none uppercase">Teacher <span className="text-blue-600">Portal.</span></h1>
-        <p className="text-slate-500 font-medium mb-8 text-sm">Enter your details to manage your classes.</p>
+      <div className="w-full space-y-8 animate-in fade-in duration-500">
+        {/* Header Section Updated with Theme Tokens */}
+        <div>
+          <h1 className="text-3xl font-black mb-2 text-text-main uppercase tracking-tighter italic leading-none">
+            Teacher <span className="text-accent-blue">Portal.</span>
+          </h1>
+          <p className="text-text-muted font-medium text-sm">Enter your details to manage your classes.</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Work Email Node */}
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Work Email</label>
+            <label htmlFor="email" className="block text-[10px] font-black uppercase tracking-widest text-text-muted ml-3">
+              Work Email Node
+            </label>
             <input
-              type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              type="email" 
+              id="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="teacher@podium.edu"
-              className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-[1.25rem] focus:bg-white focus:border-blue-600 outline-none transition-all font-bold text-sm"
-              required disabled={isLoading}
+              className="w-full px-6 py-4 bg-app-bg border border-border-subtle rounded-2xl focus:border-accent-blue outline-none transition-all font-bold text-sm text-text-main shadow-inner"
+              required 
+              disabled={isLoading}
             />
           </div>
 
+          {/* Password Node */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between mb-1">
-              <label htmlFor="password" className="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Password</label>
-              <Link href="/forgotpassword" className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-800 transition-colors">Forgot?</Link>
+            <div className="flex items-center justify-between px-3">
+              <label htmlFor="password" className="block text-[10px] font-black uppercase tracking-widest text-text-muted">
+                Security Key
+              </label>
+              <Link href="/forgotpassword" className="text-[10px] font-black uppercase tracking-widest text-accent-blue hover:opacity-80 transition-opacity">
+                Forgot?
+              </Link>
             </div>
             <input
-              type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)}
+              type="password" 
+              id="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-[1.25rem] focus:bg-white focus:border-blue-600 outline-none transition-all font-bold text-sm"
-              required disabled={isLoading}
+              className="w-full px-6 py-4 bg-app-bg border border-border-subtle rounded-2xl focus:border-accent-blue outline-none transition-all font-bold text-sm text-text-main shadow-inner"
+              required 
+              disabled={isLoading}
             />
           </div>
 
+          {/* Error Message Feed */}
           {error && (
-            <div className="p-4 rounded-2xl bg-red-50 text-red-600 text-xs font-bold border border-red-100 animate-in fade-in slide-in-from-top-2">
+            <div className="p-4 rounded-2xl bg-red-500/10 text-red-500 text-[11px] font-black uppercase tracking-widest border border-red-500/20 animate-shake">
               {error}
             </div>
           )}
 
+          {/* Submit Action Button */}
           <button
-            type="submit" disabled={isLoading}
-            className="w-full py-4 bg-blue-600 text-white font-black uppercase text-xs tracking-[0.2em] rounded-[1.25rem] hover:bg-blue-700 transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-100 active:scale-95 disabled:opacity-50"
+            type="submit" 
+            disabled={isLoading}
+            className="w-full py-4 bg-accent-blue text-white font-black uppercase text-xs tracking-[0.2em] rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-3 shadow-xl shadow-accent-blue/20 active:scale-95 disabled:bg-accent-blue/50"
           >
-            {isLoading ? <><Loader2 className="animate-spin" size={18} /> Verifying...</> : 'Sign in to Dashboard'}
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin" size={18} strokeWidth={3} /> 
+                Verifying Terminal...
+              </>
+            ) : (
+              'Sign in to Dashboard'
+            )}
           </button>
         </form>
 
-        <p className="text-xs text-center text-slate-400 font-bold mt-8 uppercase tracking-widest">
+        {/* Footer Redirect */}
+        <p className="text-[10px] text-center text-text-muted font-black uppercase tracking-widest mt-8">
           New instructor?{' '}
-          <Link href="/auth/signup" className="text-blue-600 hover:underline">Apply here</Link>
+          <Link href="/auth/signup" className="text-accent-blue hover:underline decoration-2 underline-offset-4">
+            Apply here
+          </Link>
         </p>
       </div>
     </AuthLayout>

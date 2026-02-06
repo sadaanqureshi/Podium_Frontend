@@ -25,6 +25,25 @@ export const loginUser = async (credentials: { email: string; password: string }
     return await response.json();
 };
 
+// ==============================
+// STUDENT REGISTER API (NEW)
+// ==============================
+export const registerStudentAPI = async (data: any) => {
+    const response = await fetch(`${API_URL}/auth/signup/student`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        // Backend se aane wala error message ya default error
+        throw new Error(errorData.message || 'Registration Protocol Failed');
+    }
+
+    return await response.json();
+};
+
 export const forgotPasswordAPI = async (email: string) => {
     const response = await fetch(`${API_URL}/auth/forgot-password`, {
         method: 'POST',

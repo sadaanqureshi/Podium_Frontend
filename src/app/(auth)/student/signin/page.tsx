@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch } from '@/lib/store/hooks';
 import { logout, setAuth } from '@/lib/store/features/authSlice';
-import { loginUser, logoutLocal } from '@/lib/api/apiService'; // Centralized API service
+import { loginUser, logoutLocal } from '@/lib/api/apiService'; 
 import AuthLayout from '@/components/auth/AuthLayout';
 import Cookies from 'js-cookie';
 import { Loader2 } from 'lucide-react';
@@ -20,70 +20,20 @@ const SignInPage = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   dispatch(logout());
-  //   setError('');
-  //   setIsLoading(true);
-
-  //   try {
-  //     // 1. Centralized API call (NestJS backend)
-  //     const response = await loginUser({ email, password });
-
-  //     // 2. Redux state update (Response structure ke mutabiq)
-  //     dispatch(setAuth({
-  //       user: response.user,
-  //       token: response.access_token, // Backend se access_token mil raha hai
-  //       role: response.user.role.roleName // Role extract kiya
-  //       ,
-  //       sidebar: response.sidebar
-  //     }));
-
-  //     // 3. Role-based Redirection
-  //     const role = response.user.role.roleName;
-
-  //     // if (role === 'admin') {
-  //     //   router.push('/admin/dashboard');
-  //     // } else if (role === 'teacher') {
-  //     //   router.push('/teacher/dashboard');
-  //     // } else {
-  //     //   router.push('/dashboard'); // Default student dashboard
-  //     // }
-
-  //     if (role === 'student') {
-  //       router.replace('/dashboard'); 
-  //     } else {
-  //       setError('Unauthorized access for student login.');
-  //     }
-
-  //   } catch (err: any) {
-  //     // Backend se jo error message ayega wahi dikhayenge
-  //     setError(err.message || 'Login failed. Please try again.');
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(logout()); // Purana data clear karein
+    dispatch(logout()); 
     setError('');
     setIsLoading(true);
 
     try {
       const response = await loginUser({ email, password });
-
-      // Role ko check karein REDUX aur COOKIES set hone se pehle ya foran baad
       const userRole = response.user.role.roleName.toLowerCase();
 
       if (userRole === 'student') {
-        // 1. Agar Role sahi hai, TAB cookies set karein
         Cookies.set('authToken', response.access_token);
         Cookies.set('userRole', response.user.role.roleName);
-      }
-
-      if (userRole === 'student') {
-        // Sirf Student ke liye state update karein
+        
         dispatch(setAuth({
           user: response.user,
           token: response.access_token,
@@ -92,15 +42,10 @@ const SignInPage = () => {
         }));
         router.replace('/student/dashboard');
       } else {
-        // AGAR ADMIN YA TEACHER HAI: 
-        // 1. Cookies clear karein (Jo loginUser ne set ki thi)
         logoutLocal();
-        // 2. Redux clear karein
         dispatch(logout());
-        // 3. Error dikhayen
         setError('Unauthorized: Admins/Teachers must use their respective portals.');
       }
-
     } catch (err: any) {
       setError(err.message || 'Login failed.');
     } finally {
@@ -110,14 +55,18 @@ const SignInPage = () => {
 
   return (
     <AuthLayout>
-      <div className="w-full">
-        <h1 className="text-3xl font-bold mb-2 text-gray-900">Student Sign in</h1>
-        <p className="text-gray-600 mb-6">Please enter your details to access your portal</p>
+      <div className="w-full space-y-8 animate-in fade-in duration-500">
+        {/* Header Section */}
+        <div>
+          <h1 className="text-3xl font-black mb-2 text-text-main uppercase tracking-tighter italic">Student Sign in</h1>
+          <p className="text-text-muted font-medium">Please enter your details to access your portal</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Email Node */}
+          <div className="space-y-2">
+            <label htmlFor="email" className="block text-[10px] font-black uppercase tracking-widest text-text-muted ml-3">
+              Email Node
             </label>
             <input
               type="email"
@@ -125,23 +74,23 @@ const SignInPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full px-6 py-4 bg-app-bg border border-border-subtle text-text-main rounded-2xl outline-none focus:border-accent-blue shadow-inner font-bold transition-all disabled:opacity-50"
               required
               disabled={isLoading}
             />
           </div>
 
-          <div>
-            {/* FIX: Label aur Forgot Password link ko ek hi line mein adjust kiya */}
-            <div className="flex items-center justify-between mb-1">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+          {/* Password Node */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-3">
+              <label htmlFor="password" className="block text-[10px] font-black uppercase tracking-widest text-text-muted">
+                Security Key
               </label>
               <Link
                 href="/forgotpassword"
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                className="text-[10px] font-black uppercase tracking-widest text-accent-blue hover:opacity-80 transition-opacity"
               >
-                Forgot password?
+                Forgot?
               </Link>
             </div>
             <input
@@ -150,55 +99,59 @@ const SignInPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full px-6 py-4 bg-app-bg border border-border-subtle text-text-main rounded-2xl outline-none focus:border-accent-blue shadow-inner font-bold transition-all disabled:opacity-50"
               required
               disabled={isLoading}
             />
           </div>
 
-          {/* Error Message Display */}
+          {/* Error Feed */}
           {error && (
-            <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium border border-red-100">
+            <div className="p-4 rounded-2xl bg-red-500/10 text-red-500 text-[11px] font-black uppercase tracking-widest border border-red-500/20 animate-shake">
               {error}
             </div>
           )}
 
+          {/* Submit Action */}
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-400 disabled:cursor-not-allowed"
+            className="w-full py-4 bg-accent-blue text-white font-black rounded-2xl text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:opacity-90 transition-all shadow-xl shadow-accent-blue/20 active:scale-95 disabled:bg-accent-blue/50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>
-                <Loader2 className="animate-spin" size={20} />
-                Signing in...
+                <Loader2 className="animate-spin" size={18} strokeWidth={3} />
+                Authorizing...
               </>
             ) : (
-              'Sign in'
+              'Access Portal'
             )}
           </button>
         </form>
 
-        <p className="text-sm text-center text-gray-600 mt-6">
+        {/* Signup Redirect */}
+        <p className="text-sm text-center text-text-muted font-medium">
           Don&apos;t have an account?{' '}
-          <Link href="/auth/signup" className="font-medium text-blue-600 hover:underline">
+          <Link href="/student/signup" className="font-black text-accent-blue hover:underline decoration-2 underline-offset-4 uppercase text-[10px] tracking-widest">
             Signup
           </Link>
         </p>
 
-        <div className="flex items-center my-6">
-          <div className="flex-grow border-t border-gray-300"></div>
-          <span className="flex-shrink mx-4 text-sm text-gray-500 uppercase tracking-tighter">Or continue with</span>
-          <div className="flex-grow border-t border-gray-300"></div>
+        {/* Divider */}
+        <div className="flex items-center gap-4">
+          <div className="flex-grow border-t border-border-subtle"></div>
+          <span className="text-[10px] font-black text-text-muted uppercase tracking-widest opacity-50">Social Node</span>
+          <div className="flex-grow border-t border-border-subtle"></div>
         </div>
 
+        {/* Google Social Action */}
         <button
           type="button"
           disabled={isLoading}
-          className="w-full py-3 border border-gray-300 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="w-full py-4 bg-card-bg border border-border-subtle rounded-2xl flex items-center justify-center gap-3 hover:bg-app-bg transition-all shadow-sm active:scale-95 disabled:opacity-50"
         >
-          <FcGoogle size={22} />
-          <span className="font-medium text-gray-700">Google</span>
+          <FcGoogle size={20} />
+          <span className="font-black text-text-main text-[10px] uppercase tracking-widest">Connect with Google</span>
         </button>
       </div>
     </AuthLayout>
