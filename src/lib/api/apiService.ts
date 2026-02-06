@@ -7,13 +7,13 @@ const API_URL = 'http://localhost:3006';
 // process.env use karne se Next.js khud hi environment ke mutabiq URL utha lega
 // const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006';
 
-// ================================
+// =======================================
 // AUTH APIs
 // ================================
 export const loginUser = async (credentials: { email: string; password: string }) => {
     const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },//swad
         body: JSON.stringify(credentials),
     });
 
