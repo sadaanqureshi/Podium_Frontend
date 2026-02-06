@@ -41,7 +41,7 @@ export const MarketingNavbar = () => {
             />
           </div>
           
-          <div className="flex flex-col -space-y-1 justify-center">
+          <div className="flex flex-col space-y-1 justify-center">
             <span className="text-text-main font-black text-xl md:text-2xl tracking-tighter uppercase leading-none">
               PODIUM
             </span>
