@@ -1,129 +1,173 @@
-// app/available-courses/[courseId]/payment/page.tsx
 'use client';
-import React, { use } from 'react';
-import { ChevronRight, AlertCircle } from 'lucide-react';
-import Image from 'next/image';
+import React, { useState, use } from 'react';
+import {
+  Loader2, ArrowLeft, Upload, CheckCircle2,
+  CreditCard, Info, ShieldCheck, Send
+} from 'lucide-react';
 import Link from 'next/link';
-import { mockCourses } from '@/data/courses';
+import { useToast } from '@/context/ToastContext';
+import { useRouter } from 'next/navigation';
 
-const PaymentPage = ({ params }: { params: Promise<{ courseId: string }> }) => {
-  const actualParams = use(params);
-  const courseId = parseInt(actualParams.courseId, 10);
-  const course = mockCourses.find(c => c.id === courseId);
+const EnrollmentPaymentPage = ({ params }: { params: Promise<any> }) => {
+  const resolvedParams = use(params);
+  const courseId = Number(resolvedParams.courseId);
 
-  if (!course) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen text-center p-4">
-        <AlertCircle size={48} className="text-red-500 mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Course Not Found</h1>
+  const { showToast } = useToast();
+  const router = useRouter();
+
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // File change handler
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  // Form Submission Logic
+  // src/app/(student)/available-courses/[courseId]/payment/page.tsx
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file) {
+      showToast("Please upload payment screenshot", "error");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // # Yahan aapki real API call aayegi
+      // await enrollWithProofAPI(formData);
+
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Mock delay
+
+      showToast("Proof uploaded!", "success");
+
+      // Redirecting to the success page inside the payment folder
+      router.push(`/student/available-courses/${courseId}/payment/success`);
+    } catch (err) {
+      showToast("Upload failed.", "error");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (isSubmitted) return (
+    <div className="h-screen flex flex-col items-center justify-center bg-app-bg p-6 text-center">
+      <div className="bg-card-bg border border-emerald-500/20 rounded-[3rem] p-12 max-w-xl space-y-8 shadow-2xl animate-in zoom-in-95">
+        <div className="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto border border-emerald-500/20">
+          <CheckCircle2 size={50} className="text-emerald-500" />
+        </div>
+        <div className="space-y-4">
+          <h2 className="text-3xl font-black uppercase tracking-tight text-text-main">Request Logged!</h2>
+          <p className="text-text-muted text-sm font-medium leading-relaxed uppercase tracking-wider">
+            Aapka payment proof admin ko bhej dia gaya hai. <br />
+            **Admin verification** ke baad aapka course enroll ho jayega. <br />
+            Isme taqreeban 2-4 ghante lag sakte hain.
+          </p>
+        </div>
+        <Link
+          href="/student/dashboard"
+          className="inline-block w-full py-5 bg-text-main text-card-bg rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:opacity-90 transition-all"
+        >
+          Back to Dashboard
+        </Link>
       </div>
-    );
-  }
-
-  const subtotal = course.price;
-  const est = 2.00; // Example tax/fee
-  const total = subtotal + est;
+    </div>
+  );
 
   return (
-    <div className="w-full p-4 md:p-8">
-      {/* ... (Header / Bell Icon) ... */}
-      
-      {/* Breadcrumbs */}
-      <nav className="flex items-center text-sm text-gray-500 mb-8 flex-wrap">
-        <Link href="/available-courses" className="hover:underline">Available</Link>
-        <ChevronRight size={16} className="mx-1" />
-        <Link href={`/available-courses/${course.id}`} className="hover:underline">{course.title}</Link>
-        <ChevronRight size={16} className="mx-1" />
-        <span className="font-medium text-gray-700">Payment</span>
-      </nav>
+    <div className="min-h-screen bg-app-bg text-text-main pb-20 transition-all">
+      <div className="max-w-4xl mx-auto px-6 pt-12 space-y-12">
 
-      {/* Payment Layout (2 columns) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        
-        {/* Left: Form */}
-        <div className="max-w-lg">
-          <form className="space-y-5">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input type="email" id="email" className="w-full p-2 border border-gray-300 rounded-md" />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Card information</label>
-              <div className="relative">
-                <input type="text" placeholder="1234 1234 1234 1234" className="w-full p-2 border border-gray-300 rounded-md" />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
-                  {/* Card icons */}
-                </div>
-              </div>
-              <div className="flex gap-4 mt-4">
-                <input type="text" placeholder="MM / YY" className="w-1/2 p-2 border border-gray-300 rounded-md" />
-                <input type="text" placeholder="CVC" className="w-1/2 p-2 border border-gray-300 rounded-md" />
-              </div>
+        {/* Navigation */}
+        <Link href={`/student/available-courses/${courseId}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-[10px] uppercase tracking-widest transition-all">
+          <ArrowLeft size={16} /> Back to Course Detail
+        </Link>
+
+        {/* Header */}
+        <div className="hero-registry-card rounded-[2.5rem] p-8 md:p-12 border border-border-subtle shadow-xl relative overflow-hidden">
+          <div className="relative z-10">
+            <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none">Enrollment Registry</h1>
+            <p className="text-text-muted mt-4 font-medium uppercase text-[10px] tracking-[0.2em]">Finalize your access by providing payment proof.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+
+          {/* Podium Details Card */}
+          <div className="bg-card-bg border border-border-subtle rounded-[2.5rem] p-8 md:p-10 shadow-lg space-y-8">
+            <div className="flex items-center gap-4 text-accent-blue">
+              <CreditCard size={24} />
+              <h3 className="font-black uppercase tracking-widest text-xs">Podium Professional Account Details</h3>
             </div>
 
-            <div>
-              <label htmlFor="cardholder" className="block text-sm font-medium text-gray-700 mb-1">Cardholder name</label>
-              <input type="text" id="cardholder" placeholder="Full name on card" className="w-full p-2 border border-gray-300 rounded-md" />
-            </div>
-
-            <div className="flex gap-4">
-              <div className="w-1/2">
-                <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                <select id="country" className="w-full p-2 border border-gray-300 rounded-md">
-                  <option>United States</option>
-                  <option>Canada</option>
-                </select>
+            <div className="space-y-6 bg-app-bg p-6 rounded-3xl border border-border-subtle/50 shadow-inner">
+              <div>
+                <p className="text-[9px] font-bold text-text-muted uppercase mb-1">Account Title</p>
+                <p className="text-sm font-black uppercase tracking-tight">Academy Podium Professional</p>
               </div>
-              <div className="w-1/2">
-                <label htmlFor="zip" className="block text-sm font-medium text-gray-700 mb-1">ZIP</label>
-                <input type="text" id="zip" className="w-full p-2 border border-gray-300 rounded-md" />
+              <div>
+                <p className="text-[9px] font-bold text-text-muted uppercase mb-1">Account Number / IBAN</p>
+                <p className="text-sm font-black uppercase tracking-tighter">PK70 PODI 0000 1234 5678 9012</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-bold text-text-muted uppercase mb-1">Bank Name</p>
+                <p className="text-sm font-black uppercase tracking-tight">Standard Chartered Bank</p>
               </div>
             </div>
 
-            <Link href={`/available-courses/${course.id}/payment/success`} className="!mt-8 w-full block text-center py-3 bg-gray-900 text-white font-bold rounded-lg hover:bg-gray-800">
-              Pay ${total.toFixed(2)}
-            </Link>
+            <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl flex gap-4 items-start">
+              <Info size={20} className="text-amber-500 shrink-0" />
+              <p className="text-[10px] font-bold text-amber-500/80 leading-relaxed uppercase">
+                Transaction ID should be visible in the screenshot.
+              </p>
+            </div>
+          </div>
 
-            <p className="text-xs text-gray-500 text-center">
-              By clicking Pay, you agree to the Link Terms and Privacy Policy.
-            </p>
+          {/* Upload Form */}
+          <form onSubmit={handlePaymentSubmit} className="bg-card-bg border border-border-subtle rounded-[2.5rem] p-8 md:p-10 shadow-lg flex flex-col justify-between">
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 text-emerald-500">
+                <ShieldCheck size={24} />
+                <h3 className="font-black uppercase tracking-widest text-xs">Secure Evidence Upload</h3>
+              </div>
+
+              <label className="group relative cursor-pointer border-2 border-dashed border-border-subtle hover:border-accent-blue/50 rounded-[2rem] p-10 flex flex-col items-center justify-center transition-all bg-app-bg/30">
+                <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                {file ? (
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle2 className="text-emerald-500" />
+                    </div>
+                    <p className="text-xs font-black uppercase tracking-tight truncate max-w-[150px]">{file.name}</p>
+                  </div>
+                ) : (
+                  <div className="text-center space-y-4">
+                    <div className="w-16 h-16 bg-accent-blue/10 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-all">
+                      <Upload className="text-accent-blue" />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Attach Screenshot</p>
+                  </div>
+                )}
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={uploading || !file}
+              className="mt-10 w-full py-5 bg-accent-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-accent-blue/20 flex items-center justify-center gap-3 disabled:opacity-50 transition-all active:scale-95"
+            >
+              {uploading ? <Loader2 className="animate-spin" /> : <><Send size={18} /> Upload Screenshot</>}
+            </button>
           </form>
-        </div>
 
-        {/* Right: Order Summary */}
-        <div className="h-fit lg:sticky top-8">
-          <div className="border border-gray-200 rounded-lg p-4 flex items-center gap-4">
-            <Image src={course.imageUrl} alt={course.title} width={100} height={80} className="rounded-md object-cover" />
-            <div>
-              <h4 className="font-semibold">{course.title}</h4>
-              <p className="text-xl font-bold mt-1">${course.price.toFixed(2)}</p>
-            </div>
-          </div>
-          
-          <div className="border border-gray-200 rounded-lg p-6 mt-6">
-            <h4 className="text-lg font-semibold mb-4">Payment Details</h4>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Course Price</span>
-                <span>${subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Est.</span>
-                <span>${est.toFixed(2)}</span>
-              </div>
-              <div className="border-t border-gray-200 my-2"></div>
-              <div className="flex justify-between font-bold text-base">
-                <span>Total</span>
-                <span>${total.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
         </div>
-
       </div>
     </div>
   );
 };
 
-export default PaymentPage;
+export default EnrollmentPaymentPage;

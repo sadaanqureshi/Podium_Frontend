@@ -26,7 +26,6 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
     const { courseContent, loading: reduxCourseLoading } = useAppSelector((state) => state.course);
     const { submissionsCache, loading: reduxSubLoading } = useAppSelector((state) => state.assignment);
     
-    // Assignment Metadata from Course Cache
     const fullData = courseContent[courseId];
     const assignment = useMemo(() => {
         if (!fullData?.sections) return null;
@@ -35,18 +34,15 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
             .find((a: any) => a.id === assignmentId);
     }, [fullData, assignmentId]);
 
-    // Submissions from Assignment Cache
     const submissions = submissionsCache[assignmentId] || [];
     const isTableLoading = reduxSubLoading[assignmentId];
 
     const [showSubmissions, setShowSubmissions] = useState(false);
     
-    // Grading Modal States
     const [selectedSub, setSelectedSub] = useState<any>(null);
     const [gradeData, setGradeData] = useState({ marksObtained: '', comments: '' });
     const [gradeLoading, setGradeLoading] = useState(false);
 
-    // # 2. HYDRATION: Cache sync for reload/direct access
     useEffect(() => {
         if (!fullData && courseId) {
             dispatch(fetchCourseContent(courseId));
@@ -55,17 +51,15 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
 
     const handleViewSubmissions = () => {
         setShowSubmissions(!showSubmissions);
-        // Only fetch if not already in cache
         if (!submissionsCache[assignmentId]) {
             dispatch(fetchSubmissions(assignmentId));
         }
     };
 
     const handleGradeSubmit = async () => {
-        if (!gradeData.marksObtained) return console.log("ALERT: Marks are mandatory");
+        if (!gradeData.marksObtained) return;
         setGradeLoading(true);
         try {
-            // # 3. DISPATCH REDUX THUNK: Redux will auto-update the table list
             await dispatch(submitGrade({
                 assignmentId,
                 studentId: selectedSub.studentId,
@@ -74,11 +68,9 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
                     comments: gradeData.comments 
                 }
             })).unwrap();
-
-            console.log("ALERT: Grade successfully updated in Redux!");
             setSelectedSub(null);
         } catch (err) {
-            console.log("ALERT: Grading failed - " + err);
+            console.error("Grading failed");
         } finally {
             setGradeLoading(false);
         }
@@ -89,13 +81,13 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
         {
             header: 'Student', key: 'firstName',
             render: (item: any) => (
-                <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-[10px] uppercase">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-2xl bg-app-bg border border-border-subtle text-accent-blue flex items-center justify-center font-black text-xs shadow-sm uppercase">
                         {item.firstName?.[0] || 'S'}
                     </div>
                     <div>
-                        <p className="font-bold text-sm text-[#0F172A]">{item.firstName} {item.lastName}</p>
-                        <p className="text-[10px] text-slate-400 font-medium">{item.email}</p>
+                        <p className="font-black text-sm text-text-main uppercase tracking-tight">{item.firstName} {item.lastName}</p>
+                        <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider">{item.email}</p>
                     </div>
                 </div>
             )
@@ -103,7 +95,7 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
         {
             header: 'Submitted', key: 'submittedAt',
             render: (item: any) => (
-                <span className="text-xs font-bold text-slate-500">
+                <span className="text-xs font-black text-text-muted">
                     {new Date(item.submittedAt).toLocaleString('en-GB')}
                 </span>
             )
@@ -113,7 +105,7 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
             render: (item: any) => (
                 <div className="flex justify-center gap-2">
                     {item.submissionFiles?.map((f: string, i: number) => (
-                        <a key={i} href={f} target="_blank" className="p-2 bg-slate-50 rounded-lg text-slate-400 hover:text-blue-600 border border-slate-100">
+                        <a key={i} href={f} target="_blank" className="p-2.5 bg-app-bg rounded-xl text-text-muted hover:text-accent-blue border border-border-subtle transition-all shadow-sm">
                             <Download size={14} />
                         </a>
                     ))}
@@ -121,13 +113,13 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
             )
         },
         {
-            header: 'Obtained Marks', key: 'marksObtained', align: 'center' as const,
+            header: 'Marks', key: 'marksObtained', align: 'center' as const,
             render: (item: any) => {
                 const score = item.marksObtained ?? item.grade ?? item.score;
                 const total = assignment?.totalMarks || 0;
                 const isGraded = score !== null && score !== undefined && score !== "";
                 return (
-                    <span className={`text-xs font-black ${isGraded ? 'text-blue-600' : 'text-slate-300'}`}>
+                    <span className={`text-xs font-black ${isGraded ? 'text-accent-blue' : 'text-text-muted opacity-30'}`}>
                         {isGraded ? `${score} / ${total}` : '-'}
                     </span>
                 );
@@ -143,45 +135,54 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
                             setSelectedSub(item);
                             setGradeData({ marksObtained: item.marksObtained?.toString() || '', comments: item.comments || '' });
                         }}
-                        className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all ${isGraded ? 'bg-emerald-500 text-white shadow-emerald-100' : 'bg-blue-600 text-white shadow-blue-100'}`}
+                        className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 ${
+                            isGraded 
+                            ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
+                            : 'bg-accent-blue text-white'
+                        }`}
                     >
-                        {isGraded ? 'Graded' : 'Grade'}
+                        {isGraded ? 'Graded' : 'Mark Grade'}
                     </button>
                 );
             }
         }
     ];
 
-    if (!assignment && reduxCourseLoading.courseContent[courseId]) return <div className="h-screen flex items-center justify-center bg-gray-50"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+    if (!assignment && reduxCourseLoading.courseContent[courseId]) return (
+        <div className="h-screen flex items-center justify-center bg-app-bg">
+            <Loader2 className="animate-spin text-accent-blue" size={48} />
+        </div>
+    );
     
     if (!assignment) return (
-        <div className="h-screen flex flex-col items-center justify-center p-6 text-center">
+        <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-app-bg">
             <AlertCircle className="text-red-500 mb-4" size={48} />
-            <h2 className="text-xl font-black text-[#0F172A]">Assignment Missing</h2>
-            <Link href={`/teacher/assigned-courses/${courseId}`} className="mt-4 text-blue-600 font-bold underline">Back to Course</Link>
+            <h2 className="text-xl font-black text-text-main uppercase tracking-tight">Assignment Data Missing</h2>
+            <Link href={`/teacher/assigned-courses/${courseId}`} className="mt-4 text-accent-blue font-black uppercase text-xs underline decoration-accent-blue/30 underline-offset-8">Return to Dashboard</Link>
         </div>
     );
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 text-[#0F172A] font-sans">
-            <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-xs uppercase tracking-widest transition-all">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 bg-app-bg min-h-screen text-text-main transition-colors duration-300">
+            
+            <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-xs uppercase tracking-widest transition-all">
                 <ArrowLeft size={16} /> Back to Dashboard
             </Link>
 
-            {/* Header Card */}
-            <div className="bg-[#0F172A] rounded-[2.5rem] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
+            {/* Header Card: Now using hero-registry-card for Light Blue (Light) / Navy (Dark) */}
+            <div className="hero-registry-card rounded-[2.5rem] p-8 md:p-12 shadow-xl relative overflow-hidden transition-all duration-300">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
                 <div className="relative z-10">
-                    <span className="px-4 py-1.5 bg-blue-500/20 text-blue-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-500/30">Review Material</span>
-                    <h1 className="text-3xl md:text-5xl font-black mt-4 tracking-tight leading-tight uppercase">{assignment.title}</h1>
+                    <span className="px-4 py-1.5 bg-accent-blue/10 text-accent-blue rounded-full text-[10px] font-black uppercase tracking-widest border border-accent-blue/20">Evaluation Registry</span>
+                    <h1 className="text-3xl md:text-5xl font-black mt-4 tracking-tighter uppercase leading-none">{assignment.title}</h1>
                     <div className="flex flex-wrap gap-6 mt-8">
-                        <div className="flex items-center gap-3 bg-white/5 px-5 py-3 rounded-2xl border border-white/10">
-                            <Calendar size={20} className="text-blue-400" />
-                            <div><p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Submission Deadline</p><p className="text-sm font-bold">{assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString('en-GB') : 'N/A'}</p></div>
+                        <div className="flex items-center gap-3 bg-app-bg/40 backdrop-blur-sm px-5 py-3 rounded-2xl border border-border-subtle">
+                            <Calendar size={20} className="text-accent-blue" />
+                            <div><p className="text-[10px] text-text-muted font-black uppercase tracking-widest">Target Date</p><p className="text-sm font-bold">{assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString('en-GB') : 'N/A'}</p></div>
                         </div>
-                        <div className="flex items-center gap-3 bg-white/5 px-5 py-3 rounded-2xl border border-white/10">
-                            <ClipboardList size={20} className="text-purple-400" />
-                            <div><p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Max Score</p><p className="text-sm font-bold">{assignment.totalMarks || 0} pts</p></div>
+                        <div className="flex items-center gap-3 bg-app-bg/40 backdrop-blur-sm px-5 py-3 rounded-2xl border border-border-subtle">
+                            <ClipboardList size={20} className="text-purple-500" />
+                            <div><p className="text-[10px] text-text-muted font-black uppercase tracking-widest">Weightage</p><p className="text-sm font-bold">{assignment.totalMarks || 0} pts</p></div>
                         </div>
                     </div>
                 </div>
@@ -189,56 +190,74 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
-                    <section className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
-                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-blue-600 mb-4">Objective</h3>
-                        <p className="text-slate-600 font-medium leading-relaxed">{assignment.objective || 'Objective not specified.'}</p>
-                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-purple-600 mt-8 mb-4">Deliverable</h3>
-                        <p className="text-slate-600 font-medium leading-relaxed">{assignment.deliverable || 'No deliverable details provided.'}</p>
+                    <section className="bg-card-bg rounded-[2rem] p-8 border border-border-subtle shadow-sm transition-all">
+                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-accent-blue mb-4">Objective</h3>
+                        <p className="text-text-muted font-medium leading-relaxed">{assignment.objective || 'No objective data provided.'}</p>
+                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-purple-500 mt-8 mb-4">Requirements</h3>
+                        <p className="text-text-muted font-medium leading-relaxed">{assignment.deliverable || 'No deliverable data provided.'}</p>
                     </section>
                 </div>
 
                 <div className="space-y-6">
-                    <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm text-center">
-                        <h4 className="font-black text-lg mb-2 uppercase tracking-tighter">Student Work</h4>
-                        <p className="text-slate-400 text-xs font-medium mb-6 italic">Manage all received submissions and grade them.</p>
-                        <button onClick={handleViewSubmissions} className="w-full py-4 bg-[#0F172A] text-white rounded-2xl font-black text-xs uppercase shadow-xl hover:bg-black transition-all active:scale-95">
-                            {showSubmissions ? 'Refresh & Sync List' : 'Access Submissions'}
+                    <div className="bg-card-bg rounded-[2rem] p-8 border border-border-subtle shadow-sm text-center">
+                        <h4 className="font-black text-lg mb-2 uppercase tracking-tighter text-text-main">Audit Control</h4>
+                        <p className="text-text-muted text-xs font-medium mb-6">Manage student work and grading history.</p>
+                        <button onClick={handleViewSubmissions} className="w-full py-4 bg-text-main text-card-bg rounded-2xl font-black text-xs uppercase shadow-xl hover:opacity-90 transition-all active:scale-95">
+                            {showSubmissions ? 'Re-Sync Intel' : 'Fetch Submissions'}
                         </button>
                     </div>
                 </div>
             </div>
 
             {showSubmissions && (
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden p-2 animate-in slide-in-from-bottom-5">
-                    <div className="px-10 py-6 flex justify-between items-center border-b border-slate-50">
-                        <h3 className="font-black uppercase tracking-widest text-xs text-[#0F172A]">Class Effort History</h3>
+                <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle shadow-2xl overflow-hidden p-4 animate-in slide-in-from-bottom-5">
+                    <div className="px-8 py-6 border-b border-border-subtle mb-4">
+                        <h3 className="font-black uppercase tracking-[0.2em] text-[10px] text-text-muted">Class Effort Log</h3>
                     </div>
                     <UserManagementTable data={submissions} loading={isTableLoading} columnConfig={columnConfig} type="Submission" />
                 </div>
             )}
 
-            {/* Grading Modal */}
+            {/* Grading Modal: Fully tokenize logic for Dark/Light transition */}
             {selectedSub && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#0F172A]/80 backdrop-blur-md">
-                    <div className="bg-white w-full max-w-lg rounded-[3rem] p-10 shadow-2xl animate-in zoom-in-95">
-                        <div className="mb-8 flex justify-between items-start">
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                    <div className="bg-card-bg w-full max-w-lg rounded-[3rem] shadow-2xl animate-in zoom-in-95 border border-border-subtle overflow-hidden">
+                        
+                        {/* Modal Header: Uses .form-modal-header for Light Blue/Pitch Black switch */}
+                        <div className="flex justify-between items-center px-10 py-8 form-modal-header transition-colors">
                             <div className="space-y-1">
-                                <h3 className="text-2xl font-black tracking-tight uppercase">Award Score</h3>
-                                <p className="text-sm font-bold text-blue-600">{selectedSub.firstName} {selectedSub.lastName}</p>
+                                <h3 className="text-2xl font-black tracking-tight uppercase">Manual Audit</h3>
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-60">{selectedSub.firstName} {selectedSub.lastName}</p>
                             </div>
-                            <button onClick={() => setSelectedSub(null)} className="p-2 hover:bg-slate-100 rounded-full transition-all"><X size={20} /></button>
+                            <button onClick={() => setSelectedSub(null)} className="p-3 hover:bg-white/10 dark:hover:bg-card-bg/20 rounded-2xl transition-all"><X size={22} /></button>
                         </div>
-                        <div className="space-y-6">
+
+                        <div className="p-10 space-y-8">
                             <div>
-                                <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1 tracking-widest">Score (Max: {assignment.totalMarks})</label>
-                                <input type="number" value={gradeData.marksObtained} onChange={(e) => setGradeData({ ...gradeData, marksObtained: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-4 focus:ring-blue-50 font-black text-slate-700" />
+                                <label className="block text-[10px] font-black uppercase text-text-muted mb-3 ml-2 tracking-[0.2em]">Award Score (Max: {assignment.totalMarks})</label>
+                                <input 
+                                    type="number" 
+                                    value={gradeData.marksObtained} 
+                                    onChange={(e) => setGradeData({ ...gradeData, marksObtained: e.target.value })} 
+                                    className="w-full p-5 bg-app-bg text-text-main rounded-2xl border border-border-subtle outline-none focus:border-accent-blue font-black transition-all shadow-inner" 
+                                />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1 tracking-widest">Feedback Comment</label>
-                                <textarea rows={4} value={gradeData.comments} onChange={(e) => setGradeData({ ...gradeData, comments: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-4 focus:ring-blue-50 font-medium text-slate-700" placeholder="Type feedback..." />
+                                <label className="block text-[10px] font-black uppercase text-text-muted mb-3 ml-2 tracking-[0.2em]">Feedback Intel</label>
+                                <textarea 
+                                    rows={4} 
+                                    value={gradeData.comments} 
+                                    onChange={(e) => setGradeData({ ...gradeData, comments: e.target.value })} 
+                                    className="w-full p-5 bg-app-bg text-text-main rounded-2xl border border-border-subtle outline-none focus:border-accent-blue font-medium transition-all shadow-inner" 
+                                    placeholder="Type assessment notes..." 
+                                />
                             </div>
-                            <button onClick={handleGradeSubmit} disabled={gradeLoading} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50">
-                                {gradeLoading ? <Loader2 className="animate-spin" size={20} /> : <><CheckCircle2 size={20} /> Complete Grading</>}
+                            <button 
+                                onClick={handleGradeSubmit} 
+                                disabled={gradeLoading} 
+                                className="w-full py-5 bg-accent-blue text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-accent-blue/20 flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                {gradeLoading ? <Loader2 className="animate-spin" size={20} /> : <><CheckCircle2 size={20} /> Deploy Grade</>}
                             </button>
                         </div>
                     </div>

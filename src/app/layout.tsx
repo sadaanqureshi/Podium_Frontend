@@ -4,7 +4,7 @@ import './globals.css';
 import StoreProvider from '../components/providers/StoreProvider';
 import GlobalProgressBar from '@/components/ui/GlobalProgressBar';
 import { ThemeProvider } from '@/components/ui/ThemeProvider';
-// LayoutWrapper ko yahaan se hata dein
+import { ToastProvider } from '@/context/ToastContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -19,12 +19,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <StoreProvider>
           <GlobalProgressBar />
           <ThemeProvider>
+            <ToastProvider>
             {children}
+            </ToastProvider>
           </ThemeProvider>
         </StoreProvider>
       </body>

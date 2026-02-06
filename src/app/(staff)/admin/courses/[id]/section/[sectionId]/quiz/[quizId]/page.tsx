@@ -90,12 +90,21 @@ const AdminQuizDetailPage = ({ params }: { params: Promise<any> }) => {
         if (!gradeData.marks) return;
         setGradeLoading(true);
         try {
-            await gradeQuizAttemptAPI(selectedAttempt.attemptId || selectedAttempt.id, { marksObtained: Number(gradeData.marks), comments: gradeData.comments });
+            // API requirements ke mutabiq payload structure sahi kiya gaya hai
+            await gradeQuizAttemptAPI(selectedAttempt.attemptId || selectedAttempt.id, { 
+                comments: gradeData.comments,
+                // TypeScript 'questions' maang raha hai, isliye attempt se questions pass kar diye
+                questions: selectedAttempt.questions || [] 
+            });
+    
             setSelectedAttempt(null);
             const res = await getQuizSubmissionsAPI(quizId);
             setSubmissions(res.data || res || []);
-        } catch (err) { console.error("Grading failed"); }
-        finally { setGradeLoading(false); }
+        } catch (err) { 
+            console.error("Grading failed"); 
+        } finally { 
+            setGradeLoading(false); 
+        }
     };
 
     const handleUpdateSubmit = async (formData: FormData) => {

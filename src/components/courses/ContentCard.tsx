@@ -23,16 +23,25 @@ const iconMap = {
 
 const ContentCard = ({ id, title, subtitle, type, role, onEdit, onDelete, sectionId }: ContentCardProps) => {
     const params = useParams();
-    const courseId = params.courseId || params.id;
+    
+    // Course ID extraction (Dono cases handle kar liye hain)
+    const courseId = params.courseId || params.id || params.courseid;
 
-    const basePath = role === 'student' ? '/student/my-courses' : role === 'admin' ? '/admin/courses' : '/teacher/assigned-courses';
+    // # 1. DYNAMIC PATHING: Har role ke liye alag base path
+    const basePath = role === 'student' 
+        ? '/student/enrolled-courses' // Student ke liye ye path ensure kiya hai
+        : role === 'admin' 
+            ? '/admin/courses' 
+            : '/teacher/assigned-courses';
+
+    // Detail URL construction
     const detailUrl = `${basePath}/${courseId}/section/${sectionId}/${type}/${id}`;
 
     return (
-        // Container ab card-bg aur text-text-main use kar raha hai
         <div className="flex items-center justify-between p-4 bg-card-bg rounded-2xl border border-border-subtle hover:border-accent-blue/30 hover:bg-sidebar-to/10 transition-all group shadow-sm">
+            
+            {/* Main Content Area: Link covers Icon and Title */}
             <Link href={detailUrl} className="flex items-center gap-4 flex-1">
-                {/* Icon Wrapper: bg-app-bg for contrast on cards */}
                 <div className="w-12 h-12 rounded-xl bg-app-bg border border-border-subtle flex items-center justify-center group-hover:scale-105 transition-all shadow-inner">
                     {iconMap[type]}
                 </div>
@@ -40,27 +49,43 @@ const ContentCard = ({ id, title, subtitle, type, role, onEdit, onDelete, sectio
                     <h4 className="font-black text-sm text-text-main group-hover:text-accent-blue transition-colors uppercase tracking-tight">
                         {title}
                     </h4>
-                    {subtitle && <p className="text-[10px] text-text-muted mt-0.5 font-bold uppercase tracking-wider">{subtitle}</p>}
+                    {subtitle && (
+                        <p className="text-[10px] text-text-muted mt-0.5 font-bold uppercase tracking-wider">
+                            {subtitle}
+                        </p>
+                    )}
                 </div>
             </Link>
 
             <div className="flex items-center gap-2">
+                {/* # 2. TEACHER/ADMIN ONLY: Edit aur Delete sirf unko dikhenge */}
                 {(role === 'admin' || role === 'teacher') && (
                     <div className="flex items-center gap-1">
-                        <button onClick={(e) => { e.stopPropagation(); onEdit?.(); }} className="p-2 text-text-muted hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-all">
+                        <button 
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit?.(); }} 
+                            className="p-2 text-text-muted hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-all"
+                        >
                             <Edit size={16} />
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); onDelete?.(); }} className="p-2 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all">
+                        <button 
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete?.(); }} 
+                            className="p-2 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                        >
                             <Trash2 size={16} />
                         </button>
                     </div>
                 )}
-                {/* View Link: Themed Badge style */}
-                <Link href={detailUrl} className="flex items-center gap-2 px-4 py-2 bg-accent-blue/10 text-accent-blue rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent-blue hover:text-white transition-all border border-accent-blue/20">
-                    Audit <ArrowRight size={14} />
+
+                {/* # 3. SHARED VIEW BUTTON: Student aur Teacher dono ke liye button common hai */}
+                <Link 
+                    href={detailUrl} 
+                    className="flex items-center gap-2 px-4 py-2 bg-accent-blue/10 text-accent-blue rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent-blue hover:text-white transition-all border border-accent-blue/20"
+                >
+                    {role === 'student' ? 'Access' : 'View'} <ArrowRight size={14} />
                 </Link>
             </div>
         </div>
     );
 };
+
 export default ContentCard;

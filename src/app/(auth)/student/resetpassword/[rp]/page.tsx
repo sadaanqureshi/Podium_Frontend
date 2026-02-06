@@ -6,8 +6,8 @@ import Link from 'next/link';
 import { Loader2, Lock, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 // Relative paths use kiye hain taaki import ka masla na ho
-import AuthLayout from '../../../../components/auth/AuthLayout';
-import { resetPasswordAPI } from '../../../../lib/api/apiService';
+import AuthLayout from '../../../../../components/auth/AuthLayout';
+import { resetPasswordAPI } from '../../../../../lib/api/apiService';
 
 const ResetPasswordPage = () => {
   const router = useRouter();

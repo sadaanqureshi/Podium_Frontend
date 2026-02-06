@@ -37,7 +37,7 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       dispatch(logout());
       dispatch(clearCourseCache());
       logoutLocal();
-      window.location.href = '/signin';
+      window.location.href = '/';
     }
   };
 

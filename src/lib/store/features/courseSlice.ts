@@ -1,10 +1,11 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { 
-    getAssignedCoursesAPI, 
+import {
+    getAssignedCoursesAPI,
     getCourseWithContentAPI,
     getAllCoursesAPI,
     getCourseCategoriesAPI,
-    getTeachersAPI 
+    getTeachersAPI,
+    getMyEnrolledCoursesAPI,
 } from '@/lib/api/apiService';
 
 // ==============================
@@ -13,19 +14,23 @@ import {
 interface CourseContent {
     course: any;
     sections: any[];
-    enrollments?: any[]; 
+    enrollments?: any[];
 }
 
 interface CourseState {
-    assignedCourses: any[]; 
+    assignedCourses: any[];
     adminCourses: { data: any[]; meta: any | null };
     categories: any[];
     teachers: any[];
-    courseContent: Record<number, CourseContent>; 
-    preflightedCourses: number[]; 
+    courseContent: Record<number, CourseContent>;
+    enrolledCourses: any[];
+    availableCourses: { data: any[]; meta: any | null };
+    preflightedCourses: number[];
     loading: {
+        enrolledCourses: boolean;
         assignedCourses: boolean;
         adminCourses: boolean;
+        availableCourses: boolean;
         metadata: boolean;
         courseContent: Record<number, boolean>;
     };
@@ -39,9 +44,13 @@ const initialState: CourseState = {
     teachers: [],
     courseContent: {},
     preflightedCourses: [],
+    enrolledCourses: [],
+    availableCourses: { data: [], meta: {} },
     loading: {
+        enrolledCourses: false,
         assignedCourses: false,
         adminCourses: false,
+        availableCourses: false,
         metadata: false,
         courseContent: {},
     },
@@ -71,7 +80,7 @@ export const fetchAdminCourses = createAsyncThunk(
     async ({ page, limit }: { page: number; limit: number }, { rejectWithValue }) => {
         try {
             const response = await getAllCoursesAPI(page, limit);
-            return response; 
+            return response;
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to fetch admin courses');
         }
@@ -114,6 +123,31 @@ export const fetchCourseContent = createAsyncThunk(
     }
 );
 
+export const fetchEnrolledCourses = createAsyncThunk(
+    'course/fetchEnrolledCourses',
+    async (_, { rejectWithValue }) => {
+        try {
+            return await getMyEnrolledCoursesAPI();
+        } catch (err: any) {
+            return rejectWithValue(err.response?.data?.message || "Failed to fetch enrolled courses");
+        }
+    }
+
+
+);
+
+export const fetchAllCourses = createAsyncThunk(
+    'course/fetchAllCourses',
+    async ({ page, limit }: { page?: number; limit?: number } = {}, { rejectWithValue }) => {
+        try {
+            const response = await getAllCoursesAPI(page, limit);
+            return response; // Ismein { data: [], meta: {} } aayega
+        } catch (error: any) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
 // ==============================
 // SLICE DEFINITION
 // ==============================
@@ -126,6 +160,7 @@ export const courseSlice = createSlice({
             state.adminCourses = { data: [], meta: null };
             state.courseContent = {};
             state.preflightedCourses = [];
+            state.enrolledCourses = [];
             state.categories = [];
             state.teachers = [];
             state.error = null;
@@ -193,13 +228,29 @@ export const courseSlice = createSlice({
             .addCase(fetchCourseContent.fulfilled, (state, action) => {
                 const { courseId, content, fromCache } = action.payload;
                 if (!fromCache) state.courseContent[courseId] = content;
-            });
+            })
+
+            .addCase(fetchEnrolledCourses.pending, (state) => {
+                state.loading.enrolledCourses = true;
+            })
+            .addCase(fetchEnrolledCourses.fulfilled, (state, action) => {
+                state.loading.enrolledCourses = false;
+                state.enrolledCourses = action.payload;
+            })
+            .addCase(fetchEnrolledCourses.rejected, (state) => {
+                state.loading.enrolledCourses = false;
+            })
+
+            // FETCH ALL COURSES cases
+            .addCase(fetchAllCourses.pending, (state) => { state.loading.availableCourses = true; })
+            .addCase(fetchAllCourses.fulfilled, (state, action) => { state.loading.availableCourses = false; state.availableCourses = action.payload; })
+            .addCase(fetchAllCourses.rejected, (state, action) => { state.loading.availableCourses = false; state.error = action.payload as string; });
     },
 });
 
-export const { 
-    clearCourseCache, refreshCourseContent, 
-    removeLectureLocal, removeResourceLocal, removeCourseFromAdminList 
+export const {
+    clearCourseCache, refreshCourseContent,
+    removeLectureLocal, removeResourceLocal, removeCourseFromAdminList
 } = courseSlice.actions;
 
 export default courseSlice.reducer;

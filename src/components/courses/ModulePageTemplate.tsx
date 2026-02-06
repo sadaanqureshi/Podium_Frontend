@@ -118,7 +118,7 @@ const ModulePageTemplate: React.FC<ModulePageTemplateProps> = ({
                             subtitle={item.courseName || 'General'}
                             type={type as any}
                             role={role}
-                            onAction={() => alert(`${role} action on ${type}`)}
+                            // onAction={() => alert(`${role} action on ${type}`)}
                             onEdit={() => alert(`Edit ${type}`)}
                             onDelete={() => alert(`Delete ${type}`)}
                         />

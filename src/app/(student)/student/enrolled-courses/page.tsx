@@ -1,134 +1,73 @@
 'use client';
-
-import { useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState, useMemo } from 'react';
 import CoursePageTemplate from '@/components/courses/CoursePageTemplate';
-import { Course } from '@/data/courses';
-import Cookies from 'js-cookie';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { fetchEnrolledCourses } from '@/lib/store/features/courseSlice';
+import { useToast } from '@/context/ToastContext';
 
-export default function StudentPage() {
-  const router = useRouter();
-  const dispatch = useAppDispatch();
-  
-  // Get enrolled courses and loading state from Redux
-  const enrolledCourses = useAppSelector((state) => state.course.enrolledCourses);
-  const loading = useAppSelector((state) => state.course.loading.enrolledCourses);
-  const error = useAppSelector((state) => state.course.error);
-  const lastFetched = useAppSelector((state) => state.course.lastFetched);
+export default function EnrolledCoursesPage() {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => { setMounted(true); }, []);
 
-  useEffect(() => {
-    // Check authentication
-    const token = Cookies.get('authToken');
-    if (!token) {
-      router.push('/signin');
-      return;
-    }
+    const { showToast } = useToast();
+    const dispatch = useAppDispatch();
+    const { enrolledCourses = [], loading } = useAppSelector((state) => state.course);
 
-    // Only fetch if we don't have enrolled courses in cache
-    // or if cache is older than 5 minutes (optional: refresh stale data)
-    const shouldFetch = enrolledCourses.length === 0 || 
-                       !lastFetched || 
-                       (Date.now() - lastFetched > 5 * 60 * 1000); // 5 minutes
+    useEffect(() => {
+        dispatch(fetchEnrolledCourses());
+    }, [dispatch]);
 
-    if (shouldFetch && !loading) {
-      dispatch(fetchEnrolledCourses());
-    }
-  }, [dispatch, router, enrolledCourses.length, lastFetched, loading]);
+    // # FIX: Mapping keys to match exactly what 'Course[]' type expects
+    // # FIX: Dual Mapping - Dono keys bhejo takay UI aur TS dono chalein
+const mappedCourses = useMemo(() => {
+    return enrolledCourses.map((item: any) => ({
+        // 1. Common ID
+        id: item.course.id,
 
-  // Map backend response to Course interface
-  const courses: Course[] = useMemo(() => {
-    return enrolledCourses.map((enrollment: any) => {
-      const course = enrollment.course || enrollment;
-      
-      // Extract teacher information
-      const teacher = course.teacher || {};
-      const teacherName = teacher.firstName && teacher.lastName
-        ? `${teacher.firstName} ${teacher.lastName}`.trim()
-        : teacher.firstName || teacher.lastName || 'Instructor';
-      
-      // Calculate progress percentage if totalLectures is available
-      const totalLessons = course.totalLectures || 0;
-      const currentLesson = enrollment.lectureViewed || 0;
-      const progress = totalLessons > 0 
-        ? Math.round((currentLesson / totalLessons) * 100) 
-        : 0;
-      
-      // Parse price
-      const price = course.price ? parseFloat(course.price) : 0;
-      
-      // Parse rating
-      const avgRating = course.avgRating ? parseFloat(course.avgRating) : 0;
-      
-      return {
-        id: course.id,
-        title: course.courseName || 'Untitled Course',
-        author: teacherName,
-        authorImageUrl: teacher.profilePicture || 'https://picsum.photos/seed/instructor/40/40',
-        description: course.shortDescription || course.longDescription || '',
-        longDescription: course.longDescription || course.shortDescription || '',
-        rating: avgRating,
-        totalRatings: '(0 ratings)',
-        enrollmentDate: enrollment.createdAt 
-          ? new Date(enrollment.createdAt).toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: 'numeric', 
-              year: 'numeric' 
-            })
-          : 'N/A',
-        progress: progress,
-        currentLesson: currentLesson,
-        totalLessons: totalLessons,
-        imageUrl: course.coverImg || 'https://picsum.photos/id/1060/400/200',
-        videoPreviewUrl: course.coverImg || 'https://picsum.photos/id/1060/800/450',
-        price: price,
-        recordedLectures: [],
-        onlineClasses: [],
-        quizzes: [],
-        assignments: [],
-        resources: [],
-      };
-    });
-  }, [enrolledCourses]);
+        // 2. Title Logic (Dono keys bhejo takay undefined na ho)
+        courseName: item.course.courseName, 
+        title: item.course.courseName,
 
-  if (loading) {
-    return (
-      <div className="w-full p-4 md:p-8 flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-gray-600">Loading enrolled courses...</p>
+        // 3. Description Logic
+        shortDescription: item.course.shortDescription || "Specialized training module.",
+        description: item.course.shortDescription || "Specialized training module.",
+
+        // 4. Image Logic
+        coverImg: item.course.coverImg || '',
+        thumbnail: item.course.coverImg || '',
+
+        // 5. Teacher/Author Logic
+        teacher: item.course.teacher || { firstName: 'Academy', lastName: 'Faculty' },
+        author: `${item.course.teacher?.firstName || 'Academy'} ${item.course.teacher?.lastName || 'Faculty'}`,
+        authorImageUrl: item.course.teacher?.profileImg || '',
+
+        // 6. Stats
+        avgRating: item.course.avgRating || 0,
+        rating: item.course.avgRating || 0,
+        progress: Math.min(Math.round((item.lectureViewed / (item.course.totalLectures || 10)) * 100), 100),
+        totalLectures: item.course.totalLectures || 0,
+    })) as any[]; // 'as any[]' se 14 properties wala error khatam ho jayega
+}, [enrolledCourses]);
+
+    if (!mounted) return <div className="h-screen bg-app-bg transition-none" />;
+
+    if (loading.enrolledCourses && enrolledCourses.length === 0) return (
+        <div className="h-screen flex flex-col items-center justify-center bg-app-bg">
+            <Loader2 className="animate-spin text-accent-blue mb-4" size={48} />
+            <p className="text-text-muted font-black uppercase tracking-[0.2em] text-[10px]">Syncing Registry...</p>
         </div>
-      </div>
     );
-  }
 
-  if (error) {
     return (
-      <div className="w-full p-4 md:p-8 flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <AlertCircle className="w-12 h-12 text-red-500" />
-          <h2 className="text-xl font-semibold text-gray-900">Error Loading Courses</h2>
-          <p className="text-gray-600">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Try Again
-          </button>
+        <div className="bg-app-bg min-h-screen">
+            <CoursePageTemplate
+                title="Enrolled Courses"
+                description="Manage and track your active training modules."
+                courses={mappedCourses} // Error should be gone now
+                basePath="/student/enrolled-courses"
+                showProgress={true} 
+            />
         </div>
-      </div>
     );
-  }
-
-  return (
-    <CoursePageTemplate
-      title="Enrolled Courses"
-      description="Continue your learning journey."
-      courses={courses}
-      basePath="/enroll-courses"
-      showProgress={true}
-    />
-  );
 }
