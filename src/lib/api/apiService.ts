@@ -3,9 +3,9 @@ import Cookies from 'js-cookie';
 // ==============================
 // BASE URL
 // ==============================
-// const API_URL = 'http://localhost:3006';
+const API_URL = 'http://localhost:3006';
 // process.env use karne se Next.js khud hi environment ke mutabiq URL utha lega
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006';
+// const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006';
 
 // ==============================
 // AUTH APIs
