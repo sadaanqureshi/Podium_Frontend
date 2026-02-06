@@ -1,28 +1,52 @@
+'use client';
 import React from 'react';
 import Image from 'next/image';
 import { Star } from 'lucide-react';
 
 export const CourseInfoCard = ({ data }: { data: any }) => (
-    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm md:p-8 mb-8 flex flex-col md:flex-row justify-between items-start gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
-        <div className="flex-1 space-y-4">
-            <div className="flex items-center gap-1.5 text-sm font-bold">
+    // Container: bg-card-bg aur border-border-subtle automatic theme sync handle karenge
+    <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle shadow-sm md:p-8 p-6 mb-8 flex flex-col md:flex-row justify-between items-start gap-8 animate-in fade-in slide-in-from-top-4 duration-700 transition-colors">
+        
+        <div className="flex-1 space-y-5">
+            {/* Rating Section: Using text-text-main aur text-text-muted */}
+            <div className="flex items-center gap-1.5 text-sm font-black uppercase tracking-widest">
                 <Star size={18} className="text-yellow-400 fill-yellow-400" />
-                <span className="text-gray-900">{data?.averageRating || "4.7"}</span>
-                <span className="text-gray-400 font-medium">({data?.ratingCount || "2,345"} ratings)</span>
+                <span className="text-text-main">{data?.averageRating || "4.7"}</span>
+                <span className="text-text-muted opacity-60">({data?.ratingCount || "2,345"} Registry)</span>
             </div>
+
             <div>
-                <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#0F172A] mb-1">{data?.courseName || "Loading..."}</h1>
-                <p className="text-sm text-gray-500 font-medium">
-                    Created by: <span className="text-blue-600 cursor-pointer hover:underline">{data?.teacher.firstName + data?.teacher.lastName || "Expert Instructor"}</span>
+                {/* Course Name: text-text-main for high contrast */}
+                <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-text-main mb-2 uppercase leading-tight">
+                    {data?.courseName || "Loading Asset..."}
+                </h1>
+                <p className="text-xs text-text-muted font-bold uppercase tracking-wider">
+                    Lead Instructor: <span className="text-accent-blue cursor-pointer hover:underline underline-offset-4 decoration-accent-blue/30">
+                        {data?.teacher ? `${data.teacher.firstName} ${data.teacher.lastName}` : "Expert Agent"}
+                    </span>
                 </p>
             </div>
-            <div className="pt-2">
-                <h3 className="text-lg font-bold text-[#0F172A] mb-1">Introduction</h3>
-                <p className="text-gray-500 text-sm leading-relaxed max-w-2xl">{data?.shortDescription || "Learn the fundamentals with expert-led curriculum and hands-on projects."}</p>
+
+            {/* Introduction Section */}
+            <div className="pt-2 border-l-4 border-accent-blue/20 pl-6">
+                <h3 className="text-sm font-black text-text-main uppercase tracking-[0.2em] mb-2">Description</h3>
+                <p className="text-text-muted text-sm leading-relaxed max-w-2xl font-medium">
+                    {data?.shortDescription || "Analyzing core fundamentals with expert-led curriculum and hands-on simulation projects."}
+                </p>
             </div>
         </div>
-        <div className="relative w-full md:w-64 h-44 rounded-2xl overflow-hidden shadow-lg flex-shrink-0 border-4 border-white bg-gray-50">
-            <Image src={data?.coverImg || "/blankcover.jpg"} alt="Course" fill className="object-cover" unoptimized />
+
+        {/* Cover Image Container: border-card-bg taaki dark mode mein border background se match kare */}
+        <div className="relative w-full md:w-72 h-48 rounded-[2rem] overflow-hidden shadow-2xl flex-shrink-0 border-[6px] border-app-bg bg-app-bg group transition-all">
+            <Image 
+                src={data?.coverImg || "/blankcover.jpg"} 
+                alt="Course Visual" 
+                fill 
+                className="object-cover group-hover:scale-110 transition-transform duration-700" 
+                unoptimized 
+            />
+            {/* Overlay for subtle depth in dark mode */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
         </div>
     </div>
 );

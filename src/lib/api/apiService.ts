@@ -3,9 +3,9 @@ import Cookies from 'js-cookie';
 // ==============================
 // BASE URL
 // ==============================
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006';
+// const API_URL = 'http://localhost:3006';
 // process.env use karne se Next.js khud hi environment ke mutabiq URL utha lega
-// const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006';
 
 // ==============================
 // AUTH APIs
@@ -76,7 +76,7 @@ export const logoutLocal = () => {
     const role = Cookies.get('userRole');
     if (role === 'admin') window.location.href = '/admin/signin';
     else if (role === 'teacher') window.location.href = '/teacher/signin';
-    else window.location.href = '/signin';
+    else window.location.href = '/student/signin';
     Cookies.remove('userRole');
 };
 
@@ -293,6 +293,64 @@ export const createAssignmentAPI = async (formData: FormData) => {
     if (!response.ok) throw new Error('Assignment upload fail ho gaya');
     return await response.json();
 };
+
+// # ASSIGNMENT DELETE API
+export const deleteAssignmentAPI = async (id: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/assignments/delete/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Assignment delete fail ho gayi');
+    return await response.json();
+};
+// ==============================
+// SUBMIT ASSIGNMENT (FINAL FIXED)
+// ==============================
+export const submitAssignmentAPI = async (assignmentId: number, formData: FormData) => {
+    // 1. Aapki file ke mutabiq Cookies se token uthayen
+    const token = Cookies.get('authToken');
+    
+    if (!token) throw new Error('Authentication token missing. Please login again.');
+
+    // 2. Exact URL matching your Swagger image
+    const fullUrl = `${API_URL}/assignments/${assignmentId}/submit`;
+    console.log("🚀 Executing Protocol at:", fullUrl);
+
+    const response = await fetch(fullUrl, {
+        method: 'POST',
+        headers: {
+            // Correct header nesting
+            'Authorization': `Bearer ${token}`
+            // Content-Type: multipart/form-data YAHAN NAHI LIKHNA (fetch khud handles boundaries)
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        // Agar status 404 hai toh iska matlab backend par route nahi hai
+        if (response.status === 404) {
+            throw new Error(`Critical Alert: Route Not Found [404] at ${fullUrl}`);
+        }
+        const errorData = await response.json().catch(() => ({ message: 'Submission Protocol Interrupted' }));
+        throw new Error(errorData.message || 'Submission failed');
+    }
+
+    return await response.json();
+};
+
+// # FUTURE ASSIGNMENT UPDATE API (Commented for now)
+/* export const updateAssignmentAPI = async (id: number, formData: FormData) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/assignments/update/${id}`, {
+        method: 'PATCH', // ya PUT, backend ke mutabiq
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+    });
+    if (!response.ok) throw new Error('Assignment update fail ho gaya');
+    return await response.json();
+};
+*/
 
 export const getAssignmentDetailAPI = async (id: string | number) => {
     const token = Cookies.get('authToken');
@@ -706,6 +764,24 @@ export const getSpecificQuizAPI = async (id: number) => {
     return await response.json();
 };
 
+// apiService.ts mein add karein
+export const submitQuizAnswersAPI = async (payload: any) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/submit`, {
+        method: 'POST',
+        headers: { 
+            'Authorization': `Bearer ${token}`, 
+            'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Submission failed');
+    }
+    return await response.json();
+};
+
 // # QUIZ SUBMISSIONS & GRADING APIs
 export const getQuizSubmissionsAPI = async (quizId: number) => {
     const token = Cookies.get('authToken');
@@ -727,14 +803,50 @@ export const getQuizAttemptDetailAPI = async (attemptId: number) => {
     return await response.json();
 };
 
-export const gradeQuizAttemptAPI = async (attemptId: number, data: { marksObtained: number, comments: string }) => {
+// export const gradeQuizAttemptAPI = async (attemptId: number, data: { marksObtained: number, comments: string }) => {
+//     const token = Cookies.get('authToken');
+//     const response = await fetch(`${API_URL}/quizzes/grade/${attemptId}`, {
+//         method: 'POST',
+//         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+//         body: JSON.stringify(data)
+//     });
+//     if (!response.ok) throw new Error('Grading fail ho gayi');
+//     return await response.json();
+// };
+
+// ==============================
+// QUIZ GRADING API (PATCH)
+// ==============================
+export const gradeQuizAttemptAPI = async (attemptId: number, data: { comments: string, questions: any[] }) => {
     const token = Cookies.get('authToken');
+    
+    if (!token) throw new Error('Authentication token missing.');
+
     const response = await fetch(`${API_URL}/quizzes/grade/${attemptId}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        method: 'PATCH',
+        headers: { 
+            'Authorization': `Bearer ${token}`, 
+            'Content-Type': 'application/json' 
+        },
         body: JSON.stringify(data)
     });
-    if (!response.ok) throw new Error('Grading fail ho gayi');
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Grading failed');
+    }
+
+    return await response.json();
+};
+
+// student views their own graded quiz result
+export const getStudentQuizResultAPI = async (attemptId: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/my-result/${attemptId}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Result fetch protocol failed');
     return await response.json();
 };
 

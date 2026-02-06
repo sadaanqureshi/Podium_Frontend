@@ -1,40 +1,47 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import CoursePageTemplate from '@/components/courses/CoursePageTemplate';
-import { getAssignedCoursesAPI } from '@/lib/api/apiService';
 import { Loader2 } from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import { fetchAssignedCourses } from '@/lib/store/features/courseSlice';
 
 export default function TeacherPage() {
-    const [courses, setCourses] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    // 1. MOUNTED STATE: Hydration error aur white flash se bachne ke liye
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => { setMounted(true); }, []);
+
+    const dispatch = useAppDispatch();
+    const { assignedCourses, loading } = useAppSelector((state) => state.course);
+    const isPageLoading = loading.assignedCourses;
 
     useEffect(() => {
-        const fetchAssigned = async () => {
-            try {
-                const res = await getAssignedCoursesAPI();
-                setCourses(res.data || []);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchAssigned();
-    }, []);
+        dispatch(fetchAssignedCourses());
+    }, [dispatch]);
 
-    if (loading) return (
-        <div className="h-screen flex items-center justify-center">
-            <Loader2 className="animate-spin text-blue-600" size={48} />
+    // 2. INITIAL GUARD: Jab tak client side confirm na ho jaye, sirf dark background dikhao
+    if (!mounted) {
+        return <div className="h-screen bg-app-bg transition-none" />;
+    }
+
+    // 3. UI LOADER FIX: Hardcoded colors hata kar theme variables lagaye hain
+    if (isPageLoading && assignedCourses.length === 0) return (
+        <div className="h-screen flex flex-col items-center justify-center bg-app-bg transition-colors duration-300">
+            <Loader2 className="animate-spin text-accent-blue mb-4" size={48} />
+            <p className="text-text-muted font-black uppercase tracking-[0.2em] text-[10px]">
+                Loading Assets...
+            </p>
         </div>
     );
 
     return (
-        <CoursePageTemplate
-            title="Assigned Courses"
-            description="Manage and update your assigned courses."
-            courses={courses}
-            basePath="/teacher/assigned-courses"
-            showProgress={false} // Teacher ke liye progress band
-        />
+        <div className="bg-app-bg min-h-screen transition-colors duration-300">
+            <CoursePageTemplate
+                title="Assigned Courses"
+                description="Manage and update your assigned courses."
+                courses={assignedCourses}
+                basePath="/teacher/assigned-courses"
+                showProgress={false} 
+            />
+        </div>
     );
 }

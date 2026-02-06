@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { Menu, X, Settings, User, Bell, LogOut } from 'lucide-react';
+import { Menu, X, Settings, User, Bell, LogOut, Sun, Moon } from 'lucide-react';
 import WebSidebar from '@/components/sidebar/WebSidebar';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
 
-// Redux aur API Imports
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { logout } from '@/lib/store/features/authSlice';
 import { clearCourseCache } from '@/lib/store/features/courseSlice';
@@ -19,68 +19,37 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
   const dispatch = useAppDispatch();
   const pathname = usePathname();
 
-  // Role aur Path Detection
+  useEffect(() => { setMounted(true); }, []);
+
   const user = useAppSelector((state) => state.auth.user);
   const userRole = user?.role?.roleName || (typeof user?.role === 'string' ? user.role : "");
   const profilePath = getRolePath(userRole, "profile");
 
-  // --- 1. LOGOUT LOGIC ---
   const handleLogout = async () => {
     try { await logoutUserAPI(); } catch (err) { console.error('Logout error:', err); }
     finally {
       dispatch(logout());
-      dispatch(clearCourseCache()); // Clear course cache on logout
+      dispatch(clearCourseCache());
       logoutLocal();
-      window.location.href = '/signin';
+      window.location.href = '/';
     }
   };
 
-  // --- 2. SESSION EXPIRY LOGIC (1 Hour Check) ---
-  useEffect(() => {
-    const checkSession = () => {
-      const lastActivity = localStorage.getItem('lastTabClosedAt');
-      if (lastActivity) {
-        const diffInMs = Date.now() - parseInt(lastActivity);
-        const diffInHours = diffInMs / (1000 * 60 * 60);
-
-        // Agar 1 ghante se zyada gap ho toh logout
-        if (diffInHours >= 1) {
-          handleLogout();
-        }
-        localStorage.removeItem('lastTabClosedAt');
-      }
-    };
-
-    checkSession();
-
-    // Browser/Tab band karte waqt waqt save karna
-    const handleUnload = () => {
-      localStorage.setItem('lastTabClosedAt', Date.now().toString());
-    };
-
-    window.addEventListener('beforeunload', handleUnload);
-    return () => window.removeEventListener('beforeunload', handleUnload);
-  }, []);
-
-  // Dropdown ko bahar click karne par band karna
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsDropdownOpen(false);
-      }
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setIsDropdownOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const sidebarVariants: Variants = {
-    hidden: { x: '-100%' },
-    show: { x: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } },
-    exit: { x: '-100%', transition: { duration: 0.2, ease: 'easeOut' } },
-  };
+  if (!mounted) return <div className="min-h-screen bg-app-bg" />;
 
   const iconVariants: Variants = {
     hidden: { rotate: -90, opacity: 0, scale: 0.5 },
@@ -89,24 +58,34 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-[#F8FAFC]">
+    // bg-app-bg khud ko light/dark ke hisab se adjust karega
+    <div className="flex min-h-screen w-full bg-app-bg transition-colors duration-300">
 
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block flex-shrink-0 w-[260px] h-screen sticky top-0 border-r border-gray-200 bg-white z-50">
+      {/* Desktop Sidebar Wrapper */}
+      <div className="hidden lg:block flex-shrink-0 w-[260px] h-screen sticky top-0 border-r border-border-subtle z-50">
         <WebSidebar />
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">
 
-        {/* HEADER: Dark Blue & Slim */}
-        <header className="h-14 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-[40] bg-gradient-to-r from-white to-blue-100 ">
+        {/* HEADER: Gradient using sidebar tokens for seamless look */}
+        <header className="h-14 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-[40] bg-gradient-to-r from-sidebar-from to-sidebar-to transition-all">
 
           <div className="lg:hidden w-10"></div>
 
           <div className="flex items-center gap-4 ml-auto">
-            <button className="p-2 text-slate-400 hover:text-white transition-all relative">
+            
+            {/* THEME TOGGLE */}
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-2 rounded-xl bg-card-bg border border-border-subtle text-text-main shadow-sm hover:scale-110 active:scale-95 transition-all"
+            >
+              {theme === 'dark' ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-accent-blue" />}
+            </button>
+
+            <button className="p-2 text-text-muted hover:text-accent-blue transition-all relative">
               <Bell size={18} />
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-accent-blue rounded-full"></span>
             </button>
 
             {/* PROFILE DROPDOWN */}
@@ -114,7 +93,7 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <button
                 onMouseEnter={() => setIsDropdownOpen(true)}
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-white hover:bg-slate-700 transition-all active:scale-95 shadow-inner"
+                className="w-9 h-9 rounded-xl bg-text-main border border-border-subtle flex items-center justify-center text-card-bg hover:opacity-90 transition-all active:scale-95 shadow-inner"
               >
                 <User size={18} />
               </button>
@@ -126,24 +105,24 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-[100] origin-top-right overflow-hidden"
+                    className="absolute right-0 mt-3 w-56 bg-card-bg rounded-2xl shadow-2xl border border-border-subtle p-2 z-[100] origin-top-right overflow-hidden"
                   >
-                    <div className="px-4 py-3 mb-2 border-b border-gray-50">
-                      <p className="text-xs font-black text-[#0F172A] uppercase tracking-widest truncate">{user?.firstName || 'Account'}</p>
-                      <p className="text-[9px] text-gray-400 font-bold uppercase">{userRole || 'Member'}</p>
+                    <div className="px-4 py-3 mb-2 border-b border-border-subtle">
+                      <p className="text-xs font-black text-text-main uppercase tracking-widest truncate">{user?.firstName || 'Account'}</p>
+                      <p className="text-[9px] text-text-muted font-bold uppercase">{userRole || 'Member'}</p>
                     </div>
 
                     <Link
                       href={profilePath}
                       onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-bold text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all mb-1"
+                      className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-bold text-text-muted hover:bg-sidebar-to hover:text-accent-blue rounded-xl transition-all mb-1"
                     >
                       <Settings size={16} /> Profile Settings
                     </Link>
 
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-bold text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                      className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-bold text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
                     >
                       <LogOut size={16} /> Logout
                     </button>
@@ -154,7 +133,6 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
         </header>
 
-        {/* CONTENT AREA: Minimized padding */}
         <main className="lg:px-10 lg:pt-4 lg:pb-10 w-full flex-1">
           <div className="animate-in fade-in slide-in-from-top-1 duration-500">
             {children}
@@ -162,36 +140,37 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         </main>
       </div>
 
-      {/* Mobile Hamburger Logic (Same as your code) */}
+      {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="lg:hidden p-2 fixed top-2.5 left-4 z-[60] bg-white border border-slate-200 rounded-lg shadow-xl"
+        className="lg:hidden p-2 fixed top-2.5 left-4 z-[60] bg-card-bg border border-border-subtle rounded-lg shadow-xl"
       >
         <AnimatePresence mode="wait">
           {!isMobileMenuOpen ? (
             <motion.div key="menu" variants={iconVariants} initial="hidden" animate="visible" exit="exit">
-              <Menu size={20} className="text-[#0F172A]" />
+              <Menu size={20} className="text-text-main" />
             </motion.div>
           ) : (
             <motion.div key="close" variants={iconVariants} initial="hidden" animate="visible" exit="exit">
-              <X size={20} className="text-[#0F172A]" />
+              <X size={20} className="text-text-main" />
             </motion.div>
           )}
         </AnimatePresence>
       </button>
 
-      {/* Mobile Menu Drawer (Same as your code) */}
+      {/* Mobile Side Drawer */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
             <motion.div
-              className="lg:hidden fixed inset-0 bg-[#0F172A]/40 backdrop-blur-sm z-40"
+              className="lg:hidden fixed inset-0 bg-text-main/40 backdrop-blur-sm z-40"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <motion.aside
-              className="lg:hidden fixed top-0 left-0 h-full z-50 shadow-2xl bg-white"
-              variants={sidebarVariants} initial="hidden" animate="show" exit="exit"
+              className="lg:hidden fixed top-0 left-0 h-full z-50 shadow-2xl"
+              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
               <WebSidebar onLinkClick={() => setIsMobileMenuOpen(false)} />
             </motion.aside>

@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import StoreProvider from '../components/providers/StoreProvider';
-// LayoutWrapper ko yahaan se hata dein
+import GlobalProgressBar from '@/components/ui/GlobalProgressBar';
+import { ThemeProvider } from '@/components/ui/ThemeProvider';
+import { ToastProvider } from '@/context/ToastContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -17,10 +19,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <StoreProvider>
-          {children}
+          <GlobalProgressBar />
+          <ThemeProvider>
+            <ToastProvider>
+            {children}
+            </ToastProvider>
+          </ThemeProvider>
         </StoreProvider>
       </body>
     </html>

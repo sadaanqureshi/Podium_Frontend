@@ -1,264 +1,256 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { getMyEnrolledCoursesAPI, getCourseWithContentAPI } from '@/lib/api/apiService';
+import {
+    getAssignedCoursesAPI,
+    getCourseWithContentAPI,
+    getAllCoursesAPI,
+    getCourseCategoriesAPI,
+    getTeachersAPI,
+    getMyEnrolledCoursesAPI,
+} from '@/lib/api/apiService';
 
 // ==============================
 // TYPES & INTERFACES
 // ==============================
 interface CourseContent {
-  course: any;
-  sections: any[];
-  enrollments?: any[];
-  enrollmentCount?: number;
+    course: any;
+    sections: any[];
+    enrollments?: any[];
 }
 
 interface CourseState {
-  enrolledCourses: any[];
-  courseContent: Record<number, CourseContent>; // Keyed by courseId
-  loading: {
-    enrolledCourses: boolean;
-    courseContent: Record<number, boolean>; // Keyed by courseId
-    preflighting: boolean;
-  };
-  preflightedCourses: number[]; // Array of course IDs that have been preflighted
-  lastFetched: number | null;
-  error: string | null;
+    assignedCourses: any[];
+    adminCourses: { data: any[]; meta: any | null };
+    categories: any[];
+    teachers: any[];
+    courseContent: Record<number, CourseContent>;
+    enrolledCourses: any[];
+    availableCourses: { data: any[]; meta: any | null };
+    preflightedCourses: number[];
+    loading: {
+        enrolledCourses: boolean;
+        assignedCourses: boolean;
+        adminCourses: boolean;
+        availableCourses: boolean;
+        metadata: boolean;
+        courseContent: Record<number, boolean>;
+    };
+    error: string | null;
 }
 
 const initialState: CourseState = {
-  enrolledCourses: [],
-  courseContent: {},
-  loading: {
-    enrolledCourses: false,
+    assignedCourses: [],
+    adminCourses: { data: [], meta: null },
+    categories: [],
+    teachers: [],
     courseContent: {},
-    preflighting: false,
-  },
-  preflightedCourses: [],
-  lastFetched: null,
-  error: null,
+    preflightedCourses: [],
+    enrolledCourses: [],
+    availableCourses: { data: [], meta: {} },
+    loading: {
+        enrolledCourses: false,
+        assignedCourses: false,
+        adminCourses: false,
+        availableCourses: false,
+        metadata: false,
+        courseContent: {},
+    },
+    error: null,
 };
 
 // ==============================
 // ASYNC THUNKS
 // ==============================
 
-/**
- * Fetch enrolled courses and automatically preflight all course content
- */
-export const fetchEnrolledCourses = createAsyncThunk(
-  'course/fetchEnrolledCourses',
-  async (_, { dispatch, rejectWithValue }) => {
-    try {
-      const response = await getMyEnrolledCoursesAPI();
-      
-      // Extract course IDs from enrolled courses
-      const courseIds = response.map((enrollment: any) => {
-        const course = enrollment.course || enrollment;
-        return course.id;
-      }).filter((id: number) => id != null);
-
-      // Automatically preflight all course content in parallel (fire and forget)
-      if (courseIds.length > 0) {
-        // Dispatch preflight asynchronously - don't wait for it
-        dispatch(preflightCourseContent(courseIds));
-      }
-
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to fetch enrolled courses');
-    }
-  }
-);
-
-/**
- * Preflight course content for multiple courses in parallel
- */
-export const preflightCourseContent = createAsyncThunk(
-  'course/preflightCourseContent',
-  async (courseIds: number[], { getState, rejectWithValue }) => {
-    try {
-      const state = getState() as { course: CourseState };
-      const { courseContent, preflightedCourses } = state.course;
-
-      // Filter out courses that are already preflighted
-      const coursesToFetch = courseIds.filter(
-        (id) => !preflightedCourses.includes(id) && !courseContent[id]
-      );
-
-      if (coursesToFetch.length === 0) {
-        return { courseIds: [], content: {} };
-      }
-
-      // Fetch all course content in parallel
-      const fetchPromises = coursesToFetch.map(async (courseId) => {
+// Teacher: Get assigned courses
+export const fetchAssignedCourses = createAsyncThunk(
+    'course/fetchAssignedCourses',
+    async (_, { rejectWithValue }) => {
         try {
-          const content = await getCourseWithContentAPI(courseId);
-          return { courseId, content };
-        } catch (error) {
-          console.error(`Failed to preflight course ${courseId}:`, error);
-          return { courseId, content: null };
+            const response = await getAssignedCoursesAPI();
+            return response.data || response;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to fetch assigned courses');
         }
-      });
-
-      const results = await Promise.all(fetchPromises);
-
-      // Build content map
-      const contentMap: Record<number, CourseContent> = {};
-      const successfulIds: number[] = [];
-
-      results.forEach(({ courseId, content }) => {
-        if (content) {
-          contentMap[courseId] = content;
-          successfulIds.push(courseId);
-        }
-      });
-
-      return { courseIds: successfulIds, content: contentMap };
-    } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to preflight course content');
     }
-  }
 );
 
-/**
- * Fetch course content for a single course (checks cache first)
- * Returns immediately from cache if available, no API call
- */
+// Admin: Get all courses (Paginated)
+export const fetchAdminCourses = createAsyncThunk(
+    'course/fetchAdminCourses',
+    async ({ page, limit }: { page: number; limit: number }, { rejectWithValue }) => {
+        try {
+            const response = await getAllCoursesAPI(page, limit);
+            return response;
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to fetch admin courses');
+        }
+    }
+);
+
+// Admin: Get Categories and Teachers for Modals
+export const fetchAdminMetadata = createAsyncThunk(
+    'course/fetchAdminMetadata',
+    async (_, { rejectWithValue }) => {
+        try {
+            const [catRes, teacherRes] = await Promise.all([
+                getCourseCategoriesAPI(),
+                getTeachersAPI()
+            ]);
+            return {
+                categories: catRes.data || catRes,
+                teachers: teacherRes.data || teacherRes
+            };
+        } catch (error: any) {
+            return rejectWithValue(error.message || 'Failed to fetch metadata');
+        }
+    }
+);
+
+// Shared: Fetch Specific Course Content (With Cache Check)
 export const fetchCourseContent = createAsyncThunk(
-  'course/fetchCourseContent',
-  async (courseId: number, { getState, rejectWithValue }) => {
-    try {
-      const state = getState() as { course: CourseState };
-      const { courseContent } = state.course;
-
-      // Check if course content is already in cache - return immediately
-      if (courseContent[courseId]) {
-        // Return synchronously from cache - no loading state needed
-        return { courseId, content: courseContent[courseId], fromCache: true };
-      }
-
-      // Fetch from API if not in cache
-      const content = await getCourseWithContentAPI(courseId);
-      return { courseId, content, fromCache: false };
-    } catch (error: any) {
-      return rejectWithValue(error.message || `Failed to fetch course content for course ${courseId}`);
+    'course/fetchCourseContent',
+    async (courseId: number, { getState, rejectWithValue }) => {
+        try {
+            const state = getState() as { course: CourseState };
+            if (state.course.courseContent[courseId]) {
+                return { courseId, content: state.course.courseContent[courseId], fromCache: true };
+            }
+            const content = await getCourseWithContentAPI(courseId);
+            return { courseId, content, fromCache: false };
+        } catch (error: any) {
+            return rejectWithValue(error.message || `Course ${courseId} load nahi ho saka`);
+        }
     }
-  },
-  {
-    // Condition to prevent dispatch if data already exists
-    condition: (courseId: number, { getState }) => {
-      const state = getState() as { course: CourseState };
-      // Don't dispatch if we already have the data
-      return !state.course.courseContent[courseId];
+);
+
+export const fetchEnrolledCourses = createAsyncThunk(
+    'course/fetchEnrolledCourses',
+    async (_, { rejectWithValue }) => {
+        try {
+            return await getMyEnrolledCoursesAPI();
+        } catch (err: any) {
+            return rejectWithValue(err.response?.data?.message || "Failed to fetch enrolled courses");
+        }
     }
-  }
+
+
+);
+
+export const fetchAllCourses = createAsyncThunk(
+    'course/fetchAllCourses',
+    async ({ page, limit }: { page?: number; limit?: number } = {}, { rejectWithValue }) => {
+        try {
+            const response = await getAllCoursesAPI(page, limit);
+            return response; // Ismein { data: [], meta: {} } aayega
+        } catch (error: any) {
+            return rejectWithValue(error.message);
+        }
+    }
 );
 
 // ==============================
-// SLICE
+// SLICE DEFINITION
 // ==============================
-const courseSlice = createSlice({
-  name: 'course',
-  initialState,
-  reducers: {
-    setEnrolledCourses: (state, action: PayloadAction<any[]>) => {
-      state.enrolledCourses = action.payload;
-    },
-    setCourseContent: (state, action: PayloadAction<{ courseId: number; content: CourseContent }>) => {
-      state.courseContent[action.payload.courseId] = action.payload.content;
-      if (!state.preflightedCourses.includes(action.payload.courseId)) {
-        state.preflightedCourses.push(action.payload.courseId);
-      }
-    },
-    clearCourseCache: (state) => {
-      state.enrolledCourses = [];
-      state.courseContent = {};
-      state.preflightedCourses = [];
-      state.lastFetched = null;
-      state.error = null;
-      state.loading = {
-        enrolledCourses: false,
-        courseContent: {},
-        preflighting: false,
-      };
-    },
-    refreshCourseContent: (state, action: PayloadAction<number>) => {
-      // Remove specific course from cache to force refresh
-      delete state.courseContent[action.payload];
-      state.preflightedCourses = state.preflightedCourses.filter(id => id !== action.payload);
-    },
-  },
-  extraReducers: (builder) => {
-    // fetchEnrolledCourses
-    builder
-      .addCase(fetchEnrolledCourses.pending, (state) => {
-        state.loading.enrolledCourses = true;
-        state.error = null;
-      })
-      .addCase(fetchEnrolledCourses.fulfilled, (state, action) => {
-        state.loading.enrolledCourses = false;
-        state.enrolledCourses = action.payload;
-        state.lastFetched = Date.now();
-        state.error = null;
-      })
-      .addCase(fetchEnrolledCourses.rejected, (state, action) => {
-        state.loading.enrolledCourses = false;
-        state.error = action.payload as string;
-      });
-
-    // preflightCourseContent
-    builder
-      .addCase(preflightCourseContent.pending, (state) => {
-        state.loading.preflighting = true;
-        state.error = null;
-      })
-      .addCase(preflightCourseContent.fulfilled, (state, action) => {
-        state.loading.preflighting = false;
-        // Store all preflighted course content
-        Object.entries(action.payload.content).forEach(([courseIdStr, content]) => {
-          const courseId = parseInt(courseIdStr, 10);
-          state.courseContent[courseId] = content as CourseContent;
-          if (!state.preflightedCourses.includes(courseId)) {
-            state.preflightedCourses.push(courseId);
-          }
-        });
-        state.error = null;
-      })
-      .addCase(preflightCourseContent.rejected, (state, action) => {
-        state.loading.preflighting = false;
-        state.error = action.payload as string;
-      });
-
-    // fetchCourseContent
-    builder
-      .addCase(fetchCourseContent.pending, (state, action) => {
-        // Only set loading if not from cache (condition prevents dispatch if cached)
-        const courseId = action.meta.arg;
-        // Only set loading if we don't already have the data
-        if (!state.courseContent[courseId]) {
-          state.loading.courseContent[courseId] = true;
+export const courseSlice = createSlice({
+    name: 'course',
+    initialState,
+    reducers: {
+        clearCourseCache: (state) => {
+            state.assignedCourses = [];
+            state.adminCourses = { data: [], meta: null };
+            state.courseContent = {};
+            state.preflightedCourses = [];
+            state.enrolledCourses = [];
+            state.categories = [];
+            state.teachers = [];
+            state.error = null;
+            state.loading = initialState.loading;
+        },
+        refreshCourseContent: (state, action: PayloadAction<number>) => {
+            delete state.courseContent[action.payload];
+            state.preflightedCourses = state.preflightedCourses.filter(id => id !== action.payload);
+        },
+        // # OPTIMISTIC DELETE FOR ADMIN LIST (Ready for use)
+        removeCourseFromAdminList: (state, action: PayloadAction<number>) => {
+            state.adminCourses.data = state.adminCourses.data.filter(c => c.id !== action.payload);
+        },
+        // Optimistic Delete for Lectures
+        removeLectureLocal: (state, action: PayloadAction<{ courseId: number; sectionId: number; lectureId: number }>) => {
+            const content = state.courseContent[action.payload.courseId];
+            if (content?.sections) {
+                const section = content.sections.find((s: any) => s.id === action.payload.sectionId);
+                if (section) {
+                    section.lectures = section.lectures.filter((l: any) => l.id !== action.payload.lectureId);
+                }
+            }
+        },
+        // Optimistic Delete for Resources
+        removeResourceLocal: (state, action: PayloadAction<{ courseId: number; sectionId: number; resourceId: number }>) => {
+            const content = state.courseContent[action.payload.courseId];
+            if (content?.sections) {
+                const section = content.sections.find((s: any) => s.id === action.payload.sectionId);
+                if (section) {
+                    section.resources = section.resources.filter((r: any) => r.id !== action.payload.resourceId);
+                }
+            }
         }
-        state.error = null;
-      })
-      .addCase(fetchCourseContent.fulfilled, (state, action) => {
-        const { courseId, content } = action.payload;
-        state.loading.courseContent[courseId] = false;
-        // Only store if not from cache (already stored)
-        if (!action.payload.fromCache) {
-          state.courseContent[courseId] = content;
-          if (!state.preflightedCourses.includes(courseId)) {
-            state.preflightedCourses.push(courseId);
-          }
-        }
-        state.error = null;
-      })
-      .addCase(fetchCourseContent.rejected, (state, action) => {
-        const courseId = action.meta.arg;
-        state.loading.courseContent[courseId] = false;
-        state.error = action.payload as string;
-      });
-  },
+    },
+    extraReducers: (builder) => {
+        builder
+            // Teacher Assigned Courses
+            .addCase(fetchAssignedCourses.pending, (state) => { state.loading.assignedCourses = true; })
+            .addCase(fetchAssignedCourses.fulfilled, (state, action) => {
+                state.loading.assignedCourses = false;
+                state.assignedCourses = action.payload;
+            })
+            .addCase(fetchAssignedCourses.rejected, (state, action) => {
+                state.loading.assignedCourses = false;
+                state.error = action.payload as string;
+            })
+
+            // Admin Courses List
+            .addCase(fetchAdminCourses.pending, (state) => { state.loading.adminCourses = true; })
+            .addCase(fetchAdminCourses.fulfilled, (state, action) => {
+                state.loading.adminCourses = false;
+                state.adminCourses.data = action.payload.data;
+                state.adminCourses.meta = action.payload.meta;
+            })
+
+            // Admin Metadata
+            .addCase(fetchAdminMetadata.pending, (state) => { state.loading.metadata = true; })
+            .addCase(fetchAdminMetadata.fulfilled, (state, action) => {
+                state.loading.metadata = false;
+                state.categories = action.payload.categories;
+                state.teachers = action.payload.teachers;
+            })
+
+            // Course Content (Cache)
+            .addCase(fetchCourseContent.fulfilled, (state, action) => {
+                const { courseId, content, fromCache } = action.payload;
+                if (!fromCache) state.courseContent[courseId] = content;
+            })
+
+            .addCase(fetchEnrolledCourses.pending, (state) => {
+                state.loading.enrolledCourses = true;
+            })
+            .addCase(fetchEnrolledCourses.fulfilled, (state, action) => {
+                state.loading.enrolledCourses = false;
+                state.enrolledCourses = action.payload;
+            })
+            .addCase(fetchEnrolledCourses.rejected, (state) => {
+                state.loading.enrolledCourses = false;
+            })
+
+            // FETCH ALL COURSES cases
+            .addCase(fetchAllCourses.pending, (state) => { state.loading.availableCourses = true; })
+            .addCase(fetchAllCourses.fulfilled, (state, action) => { state.loading.availableCourses = false; state.availableCourses = action.payload; })
+            .addCase(fetchAllCourses.rejected, (state, action) => { state.loading.availableCourses = false; state.error = action.payload as string; });
+    },
 });
 
-export const { setEnrolledCourses, setCourseContent, clearCourseCache, refreshCourseContent } = courseSlice.actions;
-export default courseSlice.reducer;
+export const {
+    clearCourseCache, refreshCourseContent,
+    removeLectureLocal, removeResourceLocal, removeCourseFromAdminList
+} = courseSlice.actions;
 
+export default courseSlice.reducer;

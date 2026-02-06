@@ -1,0 +1,4165 @@
+acha ab mjhe pura courseSlice dedo
+assigned-courses/page.tsx
+'use client';
+import React, { useState, useEffect } from 'react';
+import CoursePageTemplate from '@/components/courses/CoursePageTemplate';
+import { getAssignedCoursesAPI } from '@/lib/api/apiService';
+import { Loader2 } from 'lucide-react';
+
+export default function TeacherPage() {
+    const [courses, setCourses] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAssigned = async () => {
+            try {
+                const res = await getAssignedCoursesAPI();
+                setCourses(res.data || []);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAssigned();
+    }, []);
+
+    if (loading) return (
+        <div className="h-screen flex items-center justify-center">
+            <Loader2 className="animate-spin text-blue-600" size={48} />
+        </div>
+    );
+
+    return (
+        <CoursePageTemplate
+            title="Assigned Courses"
+            description="Manage and update your assigned courses."
+            courses={courses}
+            basePath="/teacher/assigned-courses"
+            showProgress={false} // Teacher ke liye progress band
+        />
+    );
+}
+
+assigned-courses/[courseId]/page.tsx
+import UnifiedCourseDetail from '@/components/courses/UnifiedCourseDetail'
+
+export default function Page({ params }: any) {
+    return <UnifiedCourseDetail params={params} role="teacher" />;
+}
+
+unifiedcoursedetail
+'use client';
+
+import React, { useState, useEffect, useMemo, use } from 'react';
+import {
+    Users, FileText, BookOpen, Layers, Plus, ArrowLeft,
+    Loader2, Video, ClipboardList
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+// API aur Components Imports
+import {
+    getCourseWithContentAPI,
+    getStudentsAPI,
+    createSectionAPI,
+    createResourceAPI,
+    createRecordedLectureAPI,
+    dismissStudentAPI,
+    createLiveLectureAPI,
+    createAssignmentAPI,
+    // updateAssignmentAPI,   // # ADDED
+    // deleteAssignmentAPI,   // # ADDED
+    enrollStudentAPI,
+    deleteLectureAPI,
+    updateLectureAPI,
+    deleteResourceAPI,
+    updateResourceAPI,
+    createQuizAPI,
+    updateQuizAPI,
+    deleteQuizAPI,
+    deleteAssignmentAPI
+} from '@/lib/api/apiService';
+import { CourseInfoCard } from '@/components/courses/CourseInfoCard';
+import { StudentsTab } from '@/components/courses/StudentsTab';
+import { GenericContentTab } from '@/components/courses/GenericContentTab';
+import GenericFormModal, { FormField } from '@/components/ui/GenericFormModal';
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
+
+// # PROFESSIONAL MAPPING TO FIX "QUIZZE" ERROR
+const TAB_TO_TYPE_MAP: Record<string, ModalType> = {
+    students: 'student',
+    lectures: 'lecture',
+    quizzes: 'quiz',
+    assignments: 'assignment',
+    resources: 'resource'
+};
+
+type ModalType = 'student' | 'lecture' | 'quiz' | 'assignment' | 'resource' | 'section';
+
+const UnifiedCourseDetail = ({ params, role }: { params: Promise<{ courseId?: string; id?: string }>, role: 'admin' | 'teacher' }) => {
+    const actualParams = use(params) as any;
+    const courseId = actualParams.courseId || actualParams.id;
+
+    const [activeTab, setActiveTab] = useState('students');
+    const [activeLectureSubTab, setActiveLectureSubTab] = useState<'recorded' | 'online'>('recorded');
+
+    const [fullData, setFullData] = useState<any>(null);
+    const [allAvailableStudents, setAllAvailableStudents] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [modalLoading, setModalLoading] = useState(false);
+    const [modalType, setModalType] = useState<ModalType>('lecture');
+    const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
+
+    const [itemToEdit, setItemToEdit] = useState<any>(null);
+    const [itemToDelete, setItemToDelete] = useState<any>(null);
+
+    const tabs = [
+        { id: 'students', label: 'Students', icon: Users },
+        { id: 'lectures', label: 'Lectures', icon: Video },
+        { id: 'quizzes', label: 'Quizzes', icon: FileText },
+        { id: 'assignments', label: 'Assignments', icon: ClipboardList },
+        { id: 'resources', label: 'Resources', icon: Layers },
+    ];
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const contentRes = await getCourseWithContentAPI(Number(courseId));
+            setFullData(contentRes);
+
+            if (role === 'admin') {
+                try {
+                    const studentsRes = await getStudentsAPI();
+                    const rawStudents = studentsRes.data || [];
+                    setAllAvailableStudents(rawStudents.map((s: any) => ({
+                        label: `${s.firstName} ${s.lastName} (${s.email})`,
+                        value: s.id
+                    })));
+                } catch (studentErr) {
+                    console.error("Admin student list fetch error:", studentErr);
+                }
+            }
+        } catch (err: any) {
+            console.error("Main Content Fetch Error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchData(); }, [courseId]);
+
+    const activeTabData = useMemo(() => {
+        if (!fullData?.sections) return [];
+        return fullData.sections.map((sec: any) => ({
+            id: sec.id,
+            sectionName: sec.title,
+            items: sec[activeTab] || []
+        }));
+    }, [fullData, activeTab]);
+
+    const formFields = useMemo(() => {
+        const lectureTypeToUse = itemToEdit ? itemToEdit.lectureType : activeLectureSubTab;
+
+        const configs: Record<string, FormField[]> = {
+            section: [
+                { name: 'title', label: 'Section Title', type: 'text', required: true },
+                { name: 'description', label: 'Brief Description', type: 'textarea' }
+            ],
+            lecture: lectureTypeToUse === 'online' ? [
+                { name: 'title', label: 'Session Title', type: 'text', required: true },
+                { name: 'description', label: 'Agenda/Description', type: 'textarea' },
+                { name: 'liveStart', label: 'Start Date & Time', type: 'datetime-local', required: true },
+                { name: 'lectureOrder', label: 'Order', type: 'number', required: true }
+            ] : [
+                { name: 'title', label: 'Lecture Title', type: 'text', required: true },
+                { name: 'description', label: 'Description', type: 'textarea' },
+                { name: 'video', label: 'Video File', type: 'files', required: !itemToEdit },
+                { name: 'lectureOrder', label: 'Order', type: 'number', required: true }
+            ],
+            assignment: [
+                { name: 'title', label: 'Assignment Title', type: 'text', required: true },
+                { name: 'objective', label: 'Objective', type: 'textarea' },
+                { name: 'deliverable', label: 'Deliverable description', type: 'textarea' },
+                { name: 'totalMarks', label: 'Total Marks', type: 'number' },
+                { name: 'dueDate', label: 'Due Date', type: 'date' },
+                { name: 'file', label: 'Attachment', type: 'files', required: false }
+            ],
+            resource: [
+                { name: 'title', label: 'Resource Title', type: 'text', required: true },
+                { name: 'resourceType', label: 'Type', type: 'select', options: [{ label: 'PDF', value: 'pdf' }, { label: 'Video', value: 'video' }], required: true },
+                { name: 'file', label: 'Upload File', type: 'files', required: !itemToEdit }
+            ],
+            student: [{ name: 'studentId', label: 'Select Student', type: 'select', options: allAvailableStudents, required: true }],
+            quiz: [
+                { name: 'title', label: 'Quiz Title', type: 'text', required: true },
+                { name: 'description', label: 'Quiz Description', type: 'textarea' },
+                { name: 'total_marks', label: 'Total Marks', type: 'number', required: true },
+                { name: 'start_time', label: 'Start Time', type: 'datetime-local', required: false },
+                { name: 'end_time', label: 'End Time', type: 'datetime-local', required: false },
+                { name: 'is_Published', label: 'Publish Status', type: 'select', options: [{ label: 'Yes', value: 'true' }, { label: 'No', value: 'false' }] },
+                { name: 'questions', label: 'Quiz Questions', type: 'quiz-builder', required: true }
+            ],
+        };
+        return configs[modalType] || [];
+    }, [modalType, activeLectureSubTab, allAvailableStudents, itemToEdit]);
+
+    const handleFormSubmit = async (formData: FormData) => {
+        setModalLoading(true);
+        try {
+            const courseIdNum = Number(courseId);
+            const rawData = Object.fromEntries(formData);
+
+            if (itemToEdit) {
+                // # UPDATE LOGIC FOR ASSIGNMENT ADDED
+                // if (modalType === 'assignment') {
+                //     formData.append('course_id', courseId.toString()); // Snake case for consistency
+                //     formData.append('section_id', selectedSectionId!.toString());
+                //     await updateAssignmentAPI(itemToEdit.id, formData);
+                // }
+                if (modalType === 'quiz') {
+                    const payload = {
+                        ...rawData,
+                        questions: JSON.parse(rawData.questions as string),
+                        total_marks: Number(rawData.total_marks),
+                        is_Published: rawData.is_Published === 'true'
+                    };
+                    await updateQuizAPI(itemToEdit.id, payload);
+                }
+                else if (modalType === 'lecture') await updateLectureAPI(itemToEdit.id, courseIdNum, formData);
+                else if (modalType === 'resource') await updateResourceAPI(courseIdNum, selectedSectionId!, itemToEdit.id, formData);
+                alert("Kamyabi se update ho gaya!");
+            } else {
+                if (modalType === 'section') await createSectionAPI(courseIdNum, { title: rawData.title as string, description: rawData.description as string });
+                // # CREATE ASSIGNMENT FIX: Snake case keys for consistency with Quiz
+                else if (modalType === 'assignment') {
+                    formData.append('course_id', courseId.toString());
+                    formData.append('section_id', selectedSectionId!.toString());
+                    await createAssignmentAPI(formData);
+                }
+                else if (modalType === 'student') await enrollStudentAPI({ courseId: courseIdNum, studentId: Number(rawData.studentId) });
+
+                else if (modalType === 'quiz') {
+                    await createQuizAPI({
+                        ...rawData,
+                        course_id: courseIdNum,
+                        section_id: selectedSectionId,
+                        total_marks: Number(rawData.total_marks),
+                        is_Published: rawData.is_Published === 'true',
+                        questions: JSON.parse(rawData.questions as string)
+                    });
+                }
+                else if (modalType === 'lecture') {
+                    if (activeLectureSubTab === 'online') {
+                        await createLiveLectureAPI({
+                            title: rawData.title, description: rawData.description,
+                            courseId: courseIdNum, sectionId: selectedSectionId,
+                            liveStart: new Date(rawData.liveStart as string).toISOString(),
+                            lectureOrder: Number(rawData.lectureOrder)
+                        });
+                    } else {
+                        formData.append('courseId', courseId.toString());
+                        formData.append('sectionId', selectedSectionId!.toString());
+                        await createRecordedLectureAPI(formData);
+                    }
+                }
+                else if (modalType === 'resource') await createResourceAPI(courseIdNum, selectedSectionId!, formData);
+                alert("Naya content add ho gaya!");
+            }
+
+            await fetchData();
+            setIsModalOpen(false);
+            setItemToEdit(null);
+        } catch (err: any) { alert(err.message || "Operation fail ho gaya"); }
+        finally { setModalLoading(false); }
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!itemToDelete) return;
+        setModalLoading(true);
+        try {
+            const courseIdNum = Number(courseId);
+            const itemId = Number(itemToDelete.id);
+
+            if (itemToDelete.type === 'enrollment') await dismissStudentAPI(itemId, courseIdNum, itemToDelete.studentId);
+            else if (itemToDelete.type === 'quiz') await deleteQuizAPI(itemId);
+            else if (itemToDelete.type === 'lecture') await deleteLectureAPI(itemId, courseIdNum);
+            else if (itemToDelete.type === 'resource') await deleteResourceAPI(courseIdNum, itemToDelete.sectionId, itemId);
+            // # ADDED ASSIGNMENT DELETE
+           else if (itemToDelete.type === 'assignment') await deleteAssignmentAPI(itemId);
+
+            setIsDeleteModalOpen(false);
+            await fetchData(); 
+            alert("Item permanent delete ho gaya!");
+        } catch (err: any) { alert(err.message); }
+        finally { setModalLoading(false); setItemToDelete(null); }
+    };
+
+    if (loading && !fullData) return <div className="h-screen flex items-center justify-center bg-gray-50"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+
+    return (
+        <div className="w-full bg-gray-50 min-h-screen font-sans text-[#0F172A] pt-0">
+            {/* Header, Tabs, aur StudentsTab logic preserved as is */}
+            <div className="flex justify-between items-center mb-4 p-8 pb-0">
+                <Link href={role === 'admin' ? "/admin/courses" : "/teacher/assigned-courses"} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-bold transition-all text-sm uppercase tracking-widest">
+                    <ArrowLeft size={16} /> Back to Dashboard
+                </Link>
+            </div>
+
+            <div className="p-8 pt-4">
+                <CourseInfoCard data={fullData?.course} />
+
+                <div className="flex gap-2 bg-white p-1.5 rounded-2xl border border-slate-100 my-6 overflow-x-auto no-scrollbar shadow-sm">
+                    {tabs.map((tab) => (
+                        <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
+                            <tab.icon size={18} /> {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8 min-h-[450px]">
+                    {activeTab === 'students' ? (
+                        <StudentsTab data={fullData?.enrollments || []} role={role} onDelete={(id, name) => {
+                            setItemToDelete({ id, title: name, type: 'enrollment' });
+                            setIsDeleteModalOpen(true);
+                        }} onAdd={() => { setModalType('student'); setItemToEdit(null); setIsModalOpen(true); }} />
+                    ) : (
+                        <GenericContentTab
+                            title={activeTab}
+                            type={TAB_TO_TYPE_MAP[activeTab] as any}
+                            data={activeTabData}
+                            role={role}
+                            onAddSection={() => { setModalType('section'); setItemToEdit(null); setIsModalOpen(true); }}
+                            onSubTabChange={(tab: any) => setActiveLectureSubTab(tab)}
+                            onAddItem={(sectionId) => {
+                                setSelectedSectionId(sectionId);
+                                setModalType(TAB_TO_TYPE_MAP[activeTab]);
+                                setItemToEdit(null);
+                                setIsModalOpen(true);
+                            }}
+                            onEditItem={(item, sectionId) => {
+                                setItemToEdit(item);
+                                setSelectedSectionId(sectionId);
+                                setModalType(TAB_TO_TYPE_MAP[activeTab]);
+                                setIsModalOpen(true);
+                            }}
+                            onDeleteItem={(item, sectionId) => {
+                                setItemToDelete({ ...item, type: TAB_TO_TYPE_MAP[activeTab], sectionId });
+                                setIsDeleteModalOpen(true);
+                            }}
+                        />
+                    )}
+                </div>
+            </div>
+
+            <GenericFormModal
+                isOpen={isModalOpen}
+                onClose={() => { setIsModalOpen(false); setItemToEdit(null); }}
+                title={itemToEdit ? `Update ${modalType}` : `Add New ${modalType}`}
+                submitText={itemToEdit ? "Update Changes" : "Save Changes"}
+                fields={formFields}
+                onSubmit={handleFormSubmit}
+                loading={modalLoading}
+                initialData={itemToEdit}
+            />
+
+            <DeleteConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleDeleteConfirm}
+                title={itemToDelete?.title || "Item"}
+                loading={modalLoading}
+            />
+        </div>
+    );
+};
+
+export default UnifiedCourseDetail;
+
+uske baad [courseId]/section/[sectionId]/assignment/[assignmentId]/page.tsx
+'use client';
+
+import React, { useState, useEffect, use } from 'react';
+import {
+    Calendar, ClipboardList, Download, FileText,
+    CheckCircle2, Loader2, ArrowLeft, AlertCircle
+} from 'lucide-react';
+import Link from 'next/link';
+import {
+    getAssignmentDetailAPI,
+    getAssignmentSubmissionsAPI,
+    gradeSubmissionAPI
+} from '@/lib/api/apiService';
+
+// Aapka component call ho raha hai yahan
+import UserManagementTable from '@/components/ui/UserManagementTable';
+
+const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
+    const resolvedParams = use(params);
+    const assignmentId = resolvedParams.assignmentId || resolvedParams.id;
+    const courseId = resolvedParams.courseId;
+
+    const [assignment, setAssignment] = useState<any>(null);
+    const [submissions, setSubmissions] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [tableLoading, setTableLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [showSubmissions, setShowSubmissions] = useState(false);
+
+    // Grading Modal States
+    const [selectedSub, setSelectedSub] = useState<any>(null);
+    const [gradeData, setGradeData] = useState({ marksObtained: '', comments: '' });
+    const [gradeLoading, setGradeLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchAssignment = async () => {
+            if (!assignmentId) return;
+            setLoading(true);
+            try {
+                const data = await getAssignmentDetailAPI(assignmentId);
+                setAssignment(data.data || data);
+            } catch (err: any) {
+                setError(err.message || "Assignment detail load nahi ho saki");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAssignment();
+    }, [assignmentId]);
+
+    const handleViewSubmissions = async () => {
+        setTableLoading(true);
+        try {
+            const res = await getAssignmentSubmissionsAPI(assignmentId);
+            console.log('Submissions', res);
+            setSubmissions(res.data || []);
+            setShowSubmissions(true);
+        } catch (err) {
+            alert("Submissions load nahi ho sakeen");
+        } finally {
+            setTableLoading(false);
+        }
+    };
+
+    const handleGradeSubmit = async () => {
+        if (!gradeData.marksObtained) return alert("Marks likhna zaroori hain");
+        setGradeLoading(true);
+        try {
+            // 1. API Call
+            const response = await gradeSubmissionAPI(assignmentId, selectedSub.studentId, {
+                marksObtained: Number(gradeData.marksObtained),
+                comments: gradeData.comments
+            });
+
+            // 2. Response extraction (Jo JSON aapne mujhe dikhaya)
+            const updatedItem = response.data || response;
+
+            // 3. LOCAL STATE UPDATE: Bina fetch kiye table ko update karein
+            // Hum purani list mein se us student ko dhoond kar uska data naye data se badal denge
+            setSubmissions((prevSubmissions) =>
+                prevSubmissions.map((sub) =>
+                    sub.studentId === updatedItem.studentId
+                        ? { ...sub, marksObtained: updatedItem.marksObtained, comments: updatedItem.comments }
+                        : sub
+                )
+            );
+
+            alert("Grade kamyabi se update ho gaya!");
+            setSelectedSub(null);
+
+        } catch (err) {
+            alert("Grading failed");
+        } finally {
+            setGradeLoading(false);
+        }
+    };
+
+    // --- TABLE COLUMN CONFIGURATION ---
+    const columnConfig = [
+        {
+            header: 'Student',
+            key: 'firstName',
+            render: (item: any) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-[10px] uppercase">
+                        {item.firstName?.[0] || 'S'}
+                    </div>
+                    <div>
+                        <p className="font-bold text-sm text-[#0F172A]">{item.firstName} {item.lastName}</p>
+                        <p className="text-[10px] text-slate-400 font-medium">{item.email}</p>
+                    </div>
+                </div>
+            )
+        },
+        {
+            header: 'Submitted Date',
+            key: 'submittedAt',
+            render: (item: any) => (
+                <span className="text-xs font-bold text-slate-500">
+                    {new Date(item.submittedAt).toLocaleString('en-GB')}
+                </span>
+            )
+        },
+        {
+            header: 'Files',
+            key: 'submissionFiles',
+            align: 'center' as const,
+            render: (item: any) => (
+                <div className="flex justify-center gap-2">
+                    {item.submissionFiles?.map((f: string, i: number) => (
+                        <a key={i} href={f} target="_blank" className="p-2 bg-slate-50 rounded-lg text-slate-400 hover:text-blue-600 transition-colors border border-slate-100">
+                            <Download size={14} />
+                        </a>
+                    ))}
+                </div>
+            )
+        },
+        {
+            header: 'Obtained Marks',
+            key: 'marksObtained',
+            align: 'center' as const,
+            render: (item: any) => {
+                // 1. Backend key check (kabhi kabhi grade ya score hota hai)
+                const score = item.marksObtained ?? item.grade ?? item.score;
+
+                // 2. Total marks safe access
+                const total = assignment?.totalMarks || 0;
+
+                // 3. Condition handling (0 ko bhi valid score maanna hai)
+                const isActuallyGraded = score !== null && score !== undefined && score !== "";
+
+                return (
+                    <span className={`text-xs font-black ${isActuallyGraded ? 'text-blue-600' : 'text-slate-300'}`}>
+                        {isActuallyGraded ? `${score} / ${total}` : '-'}
+                    </span>
+                );
+            }
+        },
+        {
+            header: 'Action',
+            key: 'action',
+            align: 'right' as const,
+            render: (item: any) => {
+                const isGraded = item.marksObtained !== null && item.marksObtained !== undefined;
+                return (
+                    <button
+                        onClick={() => {
+                            setSelectedSub(item);
+                            setGradeData({
+                                marksObtained: item.marksObtained?.toString() || '',
+                                comments: item.comments || ''
+                            });
+                        }}
+                        className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95 ${isGraded
+                            ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-100'
+                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100'
+                            }`}
+                    >
+                        {isGraded ? 'Graded' : 'Grade'}
+                    </button>
+                );
+            }
+        }
+    ];
+
+    if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+
+    return (
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 text-[#0F172A]">
+
+            <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-xs uppercase tracking-widest transition-all">
+                <ArrowLeft size={16} /> Back to Course
+            </Link>
+
+            <div className="bg-[#0F172A] rounded-[2.5rem] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden">
+                <div className="relative z-10">
+                    <span className="px-4 py-1.5 bg-blue-500/20 text-blue-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-500/30">Assignment Details</span>
+                    <h1 className="text-3xl md:text-5xl font-black mt-4 tracking-tight leading-tight">{assignment?.title}</h1>
+                    <div className="flex flex-wrap gap-6 mt-8">
+                        <div className="flex items-center gap-3 bg-white/5 px-5 py-3 rounded-2xl border border-white/10">
+                            <Calendar size={20} className="text-blue-400" />
+                            <div>
+                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Due Date</p>
+                                <p className="text-sm font-bold">{assignment?.dueDate ? new Date(assignment.dueDate).toLocaleDateString('en-GB') : 'N/A'}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 bg-white/5 px-5 py-3 rounded-2xl border border-white/10">
+                            <ClipboardList size={20} className="text-purple-400" />
+                            <div>
+                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Max Marks</p>
+                                <p className="text-sm font-bold">{assignment?.totalMarks || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-6">
+                    <section className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-blue-600 mb-4">Objective</h3>
+                        <p className="text-slate-600 font-medium leading-relaxed">{assignment?.objective || 'No objective provided.'}</p>
+                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-purple-600 mt-8 mb-4">Deliverable</h3>
+                        <p className="text-slate-600 font-medium leading-relaxed">{assignment?.deliverable || 'No deliverable details.'}</p>
+                    </section>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm text-center">
+                        <h4 className="font-black text-lg mb-2">Submissions</h4>
+                        <p className="text-slate-400 text-xs font-medium mb-6">Review student work and grade them accordingly.</p>
+                        <button
+                            onClick={handleViewSubmissions}
+                            className="w-full py-4 bg-[#0F172A] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95"
+                        >
+                            View All Submissions
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* INTEGRATING YOUR USERMANAGEMENTTABLE */}
+            {showSubmissions && (
+                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden animate-in slide-in-from-bottom-10 duration-700 p-2">
+                    <div className="px-10 py-6 flex justify-between items-center border-b border-slate-50">
+                        <h3 className="font-black uppercase tracking-widest text-xs">Student Work List</h3>
+                        <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-[10px] font-black">{submissions.length} Total</span>
+                    </div>
+                    {/* Component Call */}
+                    <UserManagementTable
+                        data={submissions}
+                        loading={tableLoading}
+                        columnConfig={columnConfig}
+                        type="Submission"
+                    />
+                </div>
+            )}
+
+            {/* Grading Modal */}
+            {selectedSub && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#0F172A]/60 backdrop-blur-md">
+                    <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="mb-8 flex justify-between items-start">
+                            <div>
+                                <h3 className="text-2xl font-black">Grade Submission</h3>
+                                <p className="text-sm font-bold text-blue-600">{selectedSub.firstName} {selectedSub.lastName}</p>
+                            </div>
+                            <button onClick={() => setSelectedSub(null)} className="text-slate-300 hover:text-slate-600 transition-colors font-bold">Close</button>
+                        </div>
+                        <div className="space-y-6">
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Marks Obtained (Max: {assignment?.totalMarks})</label>
+                                <input type="number" value={gradeData.marksObtained} onChange={(e) => setGradeData({ ...gradeData, marksObtained: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-4 focus:ring-blue-50 font-bold text-sm text-slate-700" placeholder="e.g. 85" />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Feedback Comments</label>
+                                <textarea rows={4} value={gradeData.comments} onChange={(e) => setGradeData({ ...gradeData, comments: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-4 focus:ring-blue-50 font-bold text-sm text-slate-700" placeholder="Excellent work, keep it up!" />
+                            </div>
+                            <div className="flex gap-3 pt-2">
+                                <button onClick={() => setSelectedSub(null)} className="flex-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
+                                <button onClick={handleGradeSubmit} disabled={gradeLoading} className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-xl disabled:opacity-50">
+                                    {gradeLoading ? <Loader2 className="animate-spin" size={18} /> : <><CheckCircle2 size={18} /> Save Grade</>}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default AssignmentDetailPage;
+
+
+[courseId]/section/[sectionId]/lecture/[lectureId]/page.tsx
+'use client';
+
+import React, { useState, useEffect, use } from 'react';
+import { Loader2, PlayCircle, ArrowLeft, AlertCircle, Info, Globe, Calendar, Clock, Video } from 'lucide-react';
+import Link from 'next/link';
+// # API import for section lectures
+import { getLecturesBySectionAPI } from '@/lib/api/apiService';
+
+const LectureDetailPage = ({ params }: { params: Promise<any> }) => {
+    const resolvedParams = use(params);
+    const { courseId, sectionId, lectureId } = resolvedParams;
+
+    const [lecture, setLecture] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchAndFilterLecture = async () => {
+            const cId = Number(courseId);
+            const sId = Number(sectionId);
+            const lId = Number(lectureId);
+
+            if (isNaN(cId) || isNaN(sId) || isNaN(lId)) return;
+
+            setLoading(true);
+            try {
+                const response = await getLecturesBySectionAPI(cId, sId);
+                const lecturesList = response?.lectures || [];
+
+                if (lecturesList.length === 0) {
+                    throw new Error("Is section mein koi lectures nahi mile.");
+                }
+
+                const foundLecture = lecturesList.find((l: any) => l.id === lId);
+
+                if (foundLecture) {
+                    let finalUrl = foundLecture.videoUrl;
+                    setLecture({ ...foundLecture, videoUrl: finalUrl });
+                } else {
+                    throw new Error("Lecture list mein nahi mila.");
+                }
+            } catch (err: any) {
+                console.error("Fetch Error:", err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAndFilterLecture();
+    }, [courseId, sectionId, lectureId]);
+
+    if (loading) return (
+        <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
+            <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
+            <p className="text-slate-500 font-black uppercase tracking-widest text-xs">Loading Video Player...</p>
+        </div>
+    );
+
+    if (error || !lecture) return (
+        <div className="h-screen flex flex-col items-center justify-center p-6 text-center">
+            <AlertCircle className="text-red-500 mb-4" size={48} />
+            <h2 className="text-xl font-black text-[#0F172A]">Lecture Nahi Mil Saka</h2>
+            <p className="text-slate-500 mt-2 mb-6 max-w-md">{error}</p>
+            <Link href={`/teacher/assigned-courses/${courseId}`} className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl">Back to Course</Link>
+        </div>
+    );
+
+    return (
+        <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+            {/* Back Navigation */}
+            <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-xs uppercase tracking-widest transition-all">
+                <ArrowLeft size={16} /> Back to Course
+            </Link>
+
+            {/* # Video / Meeting UI Logic */}
+            <div className="bg-black rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white aspect-video relative group flex items-center justify-center">
+                {lecture.lectureType === 'recorded' && lecture.videoUrl ? (
+                    <video key={lecture.videoUrl} controls className="w-full h-full object-contain">
+                        <source src={lecture.videoUrl} type="video/mp4" />
+                        Your browser does not support the video tag.
+                    </video>
+                ) : lecture.lectureType === 'online' ? (
+                    <div className="text-center p-10 w-full max-w-2xl bg-[#0F172A] h-full flex flex-col items-center justify-center">
+                        <div className="w-24 h-24 bg-blue-500/10 rounded-[2.5rem] flex items-center justify-center mb-10 border border-blue-500/20 shadow-inner">
+                            <Globe size={48} className="text-blue-400 animate-pulse" />
+                        </div>
+
+                        <h3 className="text-white text-3xl font-black tracking-tight mb-4">Google Meet Live Session</h3>
+
+                        <div className="flex gap-6 mb-12">
+                            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
+                                <Calendar size={14} className="text-blue-500" />
+                                {new Date(lecture.liveStart).toLocaleDateString('en-GB')}
+                            </div>
+                            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
+                                <Clock size={14} className="text-blue-500" />
+                                {new Date(lecture.liveStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                        </div>
+
+                        {/* # PREMIUM JOIN BUTTON */}
+                        <a
+                            href={lecture.meetingLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group relative inline-flex items-center gap-4 px-14 py-6 bg-blue-600 text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-blue-700 transition-all shadow-[0_20px_50px_rgba(37,99,235,0.3)] active:scale-95"
+                        >
+                            <Video size={24} className="group-hover:rotate-12 transition-transform" />
+                            <span>Join Meeting Now</span>
+                            <div className="absolute inset-0 rounded-3xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        </a>
+                    </div>
+                ) : (
+                    <div className="text-center">
+                        <AlertCircle size={48} className="text-slate-600 mx-auto mb-4" />
+                        <p className="text-slate-400 font-bold tracking-widest uppercase text-xs">No Content Available</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Lecture Content Details */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-100 shadow-sm">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+                                <PlayCircle size={28} className="text-blue-600" />
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Currently Playing</span>
+                                <h1 className="text-2xl md:text-3xl font-black text-[#0F172A] tracking-tight">{lecture.title}</h1>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                <Info size={14} /> Description
+                            </h3>
+                            <p className="text-slate-600 leading-relaxed font-medium">
+                                {lecture.description || "Is lecture ke liye koi tafseel faraham nahi ki gayi."}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="bg-[#0F172A] rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-6">Lecture Metadata</h4>
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                                <span className="text-xs text-slate-400 font-bold">Duration</span>
+                                <span className="text-xs font-black">{lecture.duration || 'N/A'} mins</span>
+                            </div>
+                            <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                                <span className="text-xs text-slate-400 font-bold">Lecture Order</span>
+                                <span className="text-xs font-black"># {lecture.lectureOrder}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs text-slate-400 font-bold">Type</span>
+                                <span className="text-xs font-black uppercase bg-blue-600 px-2 py-1 rounded-md">{lecture.lectureType}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default LectureDetailPage;
+
+
+[courseId]/section/[sectionId]/quiz/[quizId]/page.tsx
+'use client';
+import React, { useState, useEffect, use, useMemo } from 'react';
+import {
+    Loader2, ArrowLeft, ClipboardList, HelpCircle,
+    AlertCircle, Clock, Edit3, Settings2, CheckCircle2, X, Eye, Award
+} from 'lucide-react';
+import Link from 'next/link';
+import {
+    getSpecificQuizAPI, updateQuizAPI,
+    getQuizSubmissionsAPI, getQuizAttemptDetailAPI, gradeQuizAttemptAPI
+} from '@/lib/api/apiService';
+import GenericFormModal, { FormField } from '@/components/ui/GenericFormModal';
+import UserManagementTable from '@/components/ui/UserManagementTable';
+
+const QuizDetailPage = ({ params }: { params: Promise<any> }) => {
+    const resolvedParams = use(params);
+    const { courseId, quizId } = resolvedParams;
+
+    const [quiz, setQuiz] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [submissions, setSubmissions] = useState<any[]>([]);
+    const [showSubmissions, setShowSubmissions] = useState(false);
+    const [tableLoading, setTableLoading] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [modalLoading, setModalLoading] = useState(false);
+
+    // Grading Modal States
+    const [selectedAttempt, setSelectedAttempt] = useState<any>(null);
+    const [gradeData, setGradeData] = useState({ marks: '', comments: '' });
+    const [gradeLoading, setGradeLoading] = useState(false);
+
+    // # 1. FETCH DATA FUNCTION
+    const fetchQuiz = async () => {
+        try {
+            const data = await getSpecificQuizAPI(Number(quizId));
+            setQuiz(data);
+        } catch (err) {
+            console.error("Quiz Fetch Error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchQuiz();
+    }, [quizId]);
+
+    // # 2. FETCH SUBMISSIONS (Students List)
+    const handleViewSubmissions = async () => {
+        setTableLoading(true);
+        setShowSubmissions(!showSubmissions); // Toggle behavior
+        try {
+            const res = await getQuizSubmissionsAPI(Number(quizId));
+            setSubmissions(res.data || res || []);
+        } catch (err) {
+            alert("Submissions load nahi ho sakeen");
+        } finally {
+            setTableLoading(false);
+        }
+    };
+
+    // # 3. FETCH ATTEMPT DETAIL (For Reviewing student answers)
+    const handleReviewAttempt = async (attemptId: number) => {
+        setLoading(true);
+        try {
+            const data = await getQuizAttemptDetailAPI(attemptId);
+            const attempt = data.data || data;
+            setSelectedAttempt(attempt);
+            // Pre-fill placeholder from totalMarksObtained
+            setGradeData({
+                marks: (attempt.totalMarksObtained || attempt.totalMarks || '').toString(),
+                comments: attempt.comments || ''
+            });
+        } catch (err) {
+            alert("Attempt details load nahi ho sakin");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGradeSubmit = async () => {
+        if (!gradeData.marks) return alert("Marks obtained likhna zaroori hain");
+        setGradeLoading(true);
+        try {
+            await gradeQuizAttemptAPI(selectedAttempt.attemptId || selectedAttempt.id, {
+                marksObtained: Number(gradeData.marks),
+                comments: gradeData.comments
+            });
+            alert("Grading completed!");
+            setSelectedAttempt(null);
+            await handleViewSubmissions(); // Table sync
+        } catch (err) {
+            alert("Grading failed");
+        } finally {
+            setGradeLoading(false);
+        }
+    };
+
+    // # 4. DATE FORMATTER HELPER
+    const formatSafeDate = (dateStr: any) => {
+        if (!dateStr) return "Not Scheduled";
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return "Invalid Date Format";
+        return d.toLocaleString('en-GB', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: true
+        });
+    };
+
+    // # 5. TABLE COLUMN CONFIGURATION
+    const columnConfig = [
+        {
+            header: 'Student Name',
+            key: 'studentName',
+            render: (item: any) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-[10px] uppercase">
+                        {item.studentName?.[0] || 'S'}
+                    </div>
+                    <span className="font-bold text-sm text-[#0F172A]">{item.studentName}</span>
+                </div>
+            )
+        },
+        { header: 'Submission Date', key: 'submittedAt', render: (item: any) => formatSafeDate(item.submittedAt) },
+        {
+            header: 'Score',
+            key: 'totalMarks',
+            align: 'center' as const,
+            render: (item: any) => (
+                <span className="font-black text-blue-600">{item.totalMarks} / {quiz?.total_marks || quiz?.totalMarks}</span>
+            )
+        },
+        {
+            header: 'Action',
+            key: 'action',
+            align: 'right' as const,
+            render: (item: any) => (
+                <button
+                    onClick={() => handleReviewAttempt(item.id)}
+                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95 ${item.isGraded ? 'bg-emerald-500 text-white shadow-emerald-100' : 'bg-blue-600 text-white shadow-blue-100'}`}
+                >
+                    {item.isGraded ? 'Graded' : 'Review & Grade'}
+                </button>
+            )
+        }
+    ];
+
+    const formFields: FormField[] = useMemo(() => [
+        { name: 'title', label: 'Quiz Title', type: 'text', required: true },
+        { name: 'description', label: 'Quiz Description', type: 'textarea' },
+        { name: 'total_marks', label: 'Total Marks', type: 'number', required: true },
+        { name: 'start_time', label: 'Start Time', type: 'datetime-local', required: true },
+        { name: 'end_time', label: 'End Time', type: 'datetime-local', required: true },
+        { name: 'is_Published', label: 'Publish Status', type: 'select', options: [{ label: 'Published', value: 'true' }, { label: 'Draft', value: 'false' }] },
+        { name: 'questions', label: 'Manage Questions', type: 'quiz-builder', required: true }
+    ], []);
+
+    const handleUpdateSubmit = async (formData: FormData) => {
+        setModalLoading(true);
+        try {
+            const rawData = Object.fromEntries(formData);
+            const payload = {
+                ...rawData,
+                total_marks: Number(rawData.total_marks),
+                is_Published: rawData.is_Published === 'true',
+                questions: JSON.parse(rawData.questions as string)
+            };
+            await updateQuizAPI(Number(quizId), payload);
+            alert("Quiz & Questions updated successfully!");
+            setIsEditModalOpen(false);
+            await fetchQuiz();
+        } catch (err: any) { alert(err.message || "Update failed"); }
+        finally { setModalLoading(false); }
+    };
+
+    if (loading && !quiz) return <div className="h-screen flex items-center justify-center bg-gray-50"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+    if (!quiz) return <div className="text-center p-20 flex flex-col items-center"><AlertCircle size={48} className="text-red-500 mb-4" /><p className="font-bold text-slate-800">Quiz details not found.</p></div>;
+
+    return (
+        <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+            {/* Header Navigation */}
+            <div className="flex justify-between items-center">
+                <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-xs uppercase tracking-widest transition-all"><ArrowLeft size={16} /> Back to Section</Link>
+                <div className="flex gap-4">
+                    <button onClick={handleViewSubmissions} className="px-6 py-2.5 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-blue-700">Submissions List</button>
+                    <button onClick={() => setIsEditModalOpen(true)} className="px-6 py-2.5 bg-[#0F172A] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95"><Settings2 size={14} /> Edit Quiz & Builder</button>
+                </div>
+            </div>
+
+            {/* Quiz Info Card */}
+            <div className="bg-[#0F172A] rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
+                <div className="flex items-center gap-8 relative z-10">
+                    <div className="w-20 h-20 bg-blue-600/20 rounded-3xl flex items-center justify-center border border-blue-500/30 shadow-inner"><ClipboardList size={40} className="text-blue-400" /></div>
+                    <div className="space-y-2">
+                        <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-[9px] font-black uppercase tracking-widest">Assessment Detail</span>
+                        <h1 className="text-4xl font-black tracking-tight">{quiz.title}</h1>
+                        <p className="text-slate-400 font-medium max-w-xl">{quiz.description}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="p-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                    <div className="bg-slate-50 p-7 rounded-[2rem] border border-slate-100 flex items-center gap-5">
+                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600"><Clock size={20} /></div>
+                        <div>
+                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Time Window</p>
+                            <p className="font-bold text-xs text-slate-700 leading-relaxed">
+                                {formatSafeDate(quiz.start_time || quiz.startTime)} <br />
+                                <span className="text-blue-400">to</span> {formatSafeDate(quiz.end_time || quiz.endTime)}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="bg-slate-50 p-7 rounded-[2rem] border border-slate-100 flex items-center gap-5">
+                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600"><HelpCircle size={20} /></div>
+                        <div>
+                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Total Marks</p>
+                            <p className="font-black text-2xl text-[#0F172A]">{quiz.total_marks || quiz.totalMarks} <span className="text-xs text-slate-400 font-bold ml-1 uppercase">Marks</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* # NEW: SUBMISSIONS TABLE */}
+                {showSubmissions && (
+                    <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden p-6 animate-in slide-in-from-bottom-5 mb-10">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-[#0F172A] mb-6 px-4">Class Attempt History</h3>
+                        <UserManagementTable data={submissions} loading={tableLoading} columnConfig={columnConfig} type="Submission" />
+                    </div>
+                )}
+
+                {/* # PRESERVED: Original Questions List rendering */}
+                <div className="space-y-6">
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 px-2">Questions List ({quiz.questions?.length || 0})</h3>
+                    {quiz.questions?.map((q: any, index: number) => (
+                        <div key={index} className="p-8 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm hover:shadow-md transition-all group">
+                            <div className="flex justify-between items-start mb-6">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Question {index + 1} ({q.question_type})</p>
+                                    <p className="font-bold text-lg text-slate-800 leading-tight">{q.question_text}</p>
+                                </div>
+                                <span className="px-4 py-1.5 bg-slate-50 text-slate-500 rounded-xl text-[9px] font-black uppercase tracking-widest border border-slate-100">
+                                    {q.question_type} • {q.marks} pts
+                                </span>
+                            </div>
+                            {q.options && q.options.length > 0 && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {q.options.map((opt: any, i: number) => (
+                                        <div key={i} className={`p-4 rounded-2xl border text-sm font-bold flex items-center gap-3 transition-all ${opt.is_correct ? 'bg-green-50/50 border-green-200 text-green-700 shadow-sm shadow-green-100' : 'bg-slate-50 border-slate-100 text-slate-500'}`}>
+                                            <div className={`w-2 h-2 rounded-full ${opt.is_correct ? 'bg-green-500' : 'bg-slate-200'}`}></div>
+                                            {opt.option_text}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* ATTEMPT REVIEW MODAL */}
+            {selectedAttempt && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#0F172A]/80 backdrop-blur-md">
+                    <div className="bg-white w-full max-w-5xl rounded-[3.5rem] overflow-hidden flex flex-col max-h-[92vh] border border-slate-800 shadow-2xl">
+                        {/* Header strictly Dark Blue */}
+                        <div className="bg-[#0F172A] p-10 text-white flex justify-between items-center border-b border-slate-700">
+                            <div className="space-y-1">
+                                <h3 className="text-3xl font-black tracking-tight">{selectedAttempt.studentName}</h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Total Scored: {selectedAttempt.totalMarksObtained} pts</p>
+                            </div>
+                            <button onClick={() => setSelectedAttempt(null)} className="p-3 hover:bg-white/10 rounded-2xl transition-all"><X size={28} /></button>
+                        </div>
+
+                        <div className="p-12 overflow-y-auto space-y-10 bg-white no-scrollbar">
+                            {selectedAttempt.answers.map((ans: any, idx: number) => (
+                                <div key={idx} className="p-10 bg-slate-50/50 rounded-[3rem] border border-slate-100 space-y-8 relative overflow-hidden group">
+                                    <div className="flex justify-between items-start">
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black uppercase text-blue-500 tracking-[0.2em]">Question {idx + 1} ({ans.questionType})</p>
+                                            <p className="font-bold text-[#0F172A] text-xl leading-tight">{ans.questionText}</p>
+                                        </div>
+                                        <span className={`px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border shadow-sm ${ans.isCorrect ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-red-50 border-red-100 text-red-600'}`}>
+                                            {ans.isCorrect ? 'Correct' : 'Incorrect'}
+                                        </span>
+                                    </div>
+
+                                    {/* MCQ/BCQ Options Display */}
+                                    {ans.allOptions.length > 0 && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {ans.allOptions.map((opt: any) => {
+                                                const isSelected = ans.studentSelectedOptions.includes(opt.id);
+                                                return (
+                                                    <div key={opt.id} className={`p-5 rounded-[1.5rem] border-2 text-sm font-bold flex items-center gap-4 transition-all ${opt.isCorrect ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm' :
+                                                            isSelected ? 'border-red-400 bg-red-50 text-red-700' : 'bg-white border-slate-100'
+                                                        }`}>
+                                                        <div className={`w-3 h-3 rounded-full ${opt.isCorrect ? 'bg-emerald-500' : isSelected ? 'bg-red-500' : 'bg-slate-200'}`}></div>
+                                                        {opt.text}
+                                                        {isSelected && <span className="ml-auto text-[8px] font-black uppercase bg-red-100 text-red-600 px-2 py-1 rounded-lg">Choice</span>}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {/* SHORT ANSWER logic */}
+                                    {ans.questionType === 'SHORT' && (
+                                        <div className="p-6 bg-white rounded-[2rem] border-2 border-dashed border-blue-100">
+                                            <p className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Student Response:</p>
+                                            <p className="text-sm font-bold text-[#0F172A] leading-relaxed italic">"{ans.studentAnswerText || 'No response provided.'}"</p>
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-end gap-3 text-[11px] font-black uppercase text-blue-600 bg-blue-50 py-3 px-6 rounded-2xl w-fit ml-auto shadow-sm">
+                                        Weightage: {ans.marksObtained} / {ans.marksAllocated}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Grading Action Section */}
+                        <div className="p-12 border-t bg-slate-50/50">
+                            <div className="flex flex-col md:flex-row gap-8 items-end">
+                                <div className="flex-1 space-y-3">
+                                    <label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Award Final Score</label>
+                                    <input
+                                        type="number"
+                                        className="w-full p-6 bg-white border-2 border-slate-100 rounded-[1.5rem] font-black text-lg outline-none focus:border-blue-600 shadow-sm text-blue-600"
+                                        value={gradeData.marks}
+                                        placeholder={`${selectedAttempt.totalMarksObtained}`}
+                                        onChange={(e) => setGradeData({ ...gradeData, marks: e.target.value })}
+                                    />
+                                </div>
+                                <div className="flex-[2] space-y-3">
+                                    <label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Final Comments</label>
+                                    <input
+                                        type="text"
+                                        className="w-full p-6 bg-white border-2 border-slate-100 rounded-[1.5rem] font-bold outline-none focus:border-blue-600 shadow-sm"
+                                        value={gradeData.comments}
+                                        placeholder="Add comment..."
+                                        onChange={(e) => setGradeData({ ...gradeData, comments: e.target.value })}
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleGradeSubmit}
+                                    disabled={gradeLoading}
+                                    className="h-[72px] px-16 bg-blue-600 text-white rounded-[1.5rem] font-black uppercase text-[11px] tracking-[0.3em] hover:bg-blue-700 transition-all shadow-2xl active:scale-95 disabled:opacity-50"
+                                >
+                                    {gradeLoading ? <Loader2 className="animate-spin mx-auto" /> : 'Complete Grading'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* PRE-FILLED EDIT MODAL */}
+            <GenericFormModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                title="Edit Assessment Structure"
+                submitText="Update Quiz"
+                fields={formFields}
+                onSubmit={handleUpdateSubmit}
+                loading={modalLoading}
+                initialData={{
+                    ...quiz,
+                    start_time: (quiz?.start_time || quiz?.startTime) ? new Date(quiz?.start_time || quiz?.startTime).toISOString().slice(0, 16) : '',
+                    end_time: (quiz?.end_time || quiz?.endTime) ? new Date(quiz?.end_time || quiz?.endTime).toISOString().slice(0, 16) : '',
+                    total_marks: quiz?.total_marks || quiz?.totalMarks,
+                    is_Published: String(quiz?.is_Published)
+                }}
+            />
+        </div>
+    );
+};
+export default QuizDetailPage;
+
+
+[courseId]/section/[sectionId]/resource/[resourceId]/page.tsx
+'use client';
+
+import React, { useState, useEffect, use } from 'react';
+import { Loader2, ArrowLeft, AlertCircle, FileText, Download, FileJson, Globe } from 'lucide-react';
+import Link from 'next/link';
+// # Ab specific API use kar rahe hain
+import { getSpecificResourceAPI } from '@/lib/api/apiService';
+
+const ResourceDetailPage = ({ params }: { params: Promise<any> }) => {
+    const resolvedParams = use(params);
+    // # Folder structure ke mutabiq params extraction
+    const { courseId, sectionId, resourceId } = resolvedParams;
+
+    const [resource, setResource] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchResourceData = async () => {
+            if (!courseId || !sectionId || !resourceId) return;
+
+            setLoading(true);
+            try {
+                // # 1. Specific Resource API Call
+                const response = await getSpecificResourceAPI(
+                    Number(courseId),
+                    Number(sectionId),
+                    Number(resourceId)
+                );
+
+                // # Data handling as per your API response structure
+                const resourceData = response.data || response;
+                setResource(resourceData);
+
+                // # Note: Redirect logic ko user ki request par hata diya gaya hai
+            } catch (err: any) {
+                console.error("Resource Fetch Error:", err);
+                setError(err.message || "Resource load karne mein masla hua.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchResourceData();
+    }, [courseId, sectionId, resourceId]);
+
+    if (loading) return (
+        <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
+            <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
+            <p className="text-slate-500 font-black uppercase tracking-widest text-xs">Loading Resource Details...</p>
+        </div>
+    );
+
+    if (error || !resource) return (
+        <div className="h-screen flex flex-col items-center justify-center p-6 text-center">
+            <AlertCircle className="text-red-500 mb-4" size={48} />
+            <h2 className="text-xl font-black text-[#0F172A]">Masla Aa Gaya</h2>
+            <p className="text-slate-500 mt-2 mb-6 max-w-md">{error || "Data load nahi ho saka."}</p>
+            <Link href={`/teacher/assigned-courses/${courseId}`} className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl">Back to Course</Link>
+        </div>
+    );
+
+    return (
+        <div className="p-6 md:p-12 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+            {/* Navigation Header */}
+            <div className="flex items-center justify-between">
+                <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-xs uppercase tracking-widest transition-all">
+                    <ArrowLeft size={16} /> Back to Course
+                </Link>
+            </div>
+
+            {/* Resource Preview Card */}
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl overflow-hidden">
+                <div className="bg-[#0F172A] p-10 text-white relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+
+                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                        <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center border border-white/20 shadow-inner">
+                            <FileText size={48} className="text-blue-400" />
+                        </div>
+                        <div className="text-center md:text-left">
+                            <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border border-blue-500/30">Resource Material</span>
+                            <h1 className="text-3xl md:text-4xl font-black mt-3 tracking-tight">{resource.title}</h1>
+                            <p className="text-slate-400 text-sm mt-2 font-medium">Course ID: {courseId} • Section ID: {sectionId}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-8 md:p-12 space-y-10">
+                    {/* File Info Section */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-6">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50 pb-2">Description</h3>
+                            <p className="text-slate-600 font-medium leading-relaxed">
+                                {resource.description || "Is resource ke liye koi description faraham nahi ki gayi."}
+                            </p>
+                        </div>
+
+                        <div className="bg-slate-50/50 rounded-3xl p-8 border border-slate-100 space-y-6">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">File Details</h3>
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                    <span className="text-xs text-slate-400 font-bold">File Name</span>
+                                    {/* # Filename dikhane ka requirement */}
+                                    <span className="text-xs text-[#0F172A] font-black truncate max-w-[200px]">{resource.fileName || 'N/A'}</span>
+                                </div>
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                    <span className="text-xs text-slate-400 font-bold">Format</span>
+                                    <span className="text-xs text-blue-600 font-black uppercase">{resource.resourceType || 'PDF'}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs text-slate-400 font-bold">Size</span>
+                                    <span className="text-xs text-[#0F172A] font-black">
+                                        {resource.fileSize ? `${(resource.fileSize / 1048576).toFixed(2)} MB` : 'N/A'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Download Action Section */}
+                    <div className="pt-6 border-t border-slate-50 flex flex-col items-center">
+                        {/* # Link jo click karne par naye tab mein file download ya open karega */}
+                        <a
+                            href={resource.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group relative inline-flex items-center gap-4 px-12 py-5 bg-[#0F172A] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-black transition-all shadow-2xl active:scale-95"
+                        >
+                            <Download size={20} className="group-hover:translate-y-0.5 transition-transform" />
+                            <span>Download Resource</span>
+                            <div className="absolute inset-0 rounded-2xl bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        </a>
+                        <p className="text-[10px] text-slate-400 mt-4 font-bold italic text-center">
+                            Note: Yeh file Cloudinary secure storage se open hogi.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default ResourceDetailPage;
+
+import Cookies from 'js-cookie';
+
+// ==============================
+// BASE URL
+// ==============================
+const API_URL = 'http://localhost:3006';
+// process.env use karne se Next.js khud hi environment ke mutabiq URL utha lega
+// const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+// ==============================
+// AUTH APIs
+// ==============================
+export const loginUser = async (credentials: { email: string; password: string }) => {
+    const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Login failed');
+    }
+
+    return await response.json();
+};
+
+export const forgotPasswordAPI = async (email: string) => {
+    const response = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send reset email');
+    }
+
+    return await response.json();
+};
+
+export const resetPasswordAPI = async (token: string, newPassword: any) => {
+    const response = await fetch(`${API_URL}/auth/reset-password`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, newPassword }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to reset password. Link might be expired.');
+    }
+
+    return await response.json();
+};
+
+export const logoutUserAPI = async () => {
+    const token = Cookies.get('authToken');
+    if (!token) return;
+
+    const response = await fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (!response.ok) throw new Error('Backend logout failed');
+    return await response.json();
+};
+
+export const logoutLocal = () => {
+    Cookies.remove('authToken');
+    const role = Cookies.get('userRole');
+    if (role === 'admin') window.location.href = '/admin/signin';
+    else if (role === 'teacher') window.location.href = '/teacher/signin';
+    else window.location.href = '/student/signin';
+    Cookies.remove('userRole');
+};
+
+// ==============================
+// USER PROFILE
+// ==============================
+export const updateUserProfileAPI = async (userId: number, data: any) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Profile update fail ho gaya');
+    }
+    return await response.json();
+};
+
+// ==============================
+// COURSE APIs
+// ==============================
+export const getAllCoursesAPI = async (page = 1, limit = 10) => {
+    const token = Cookies.get('authToken');
+    if (!token) throw new Error('No authentication token found');
+
+    const response = await fetch(`${API_URL}/courses/all?page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch courses');
+    }
+
+    return await response.json();
+};
+
+export const createCourseAPI = async (formData: FormData) => {
+    const token = Cookies.get('authToken');
+    if (!token) throw new Error('Authentication token missing');
+
+    const response = await fetch(`${API_URL}/courses/create`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Course create karne mein masla hua');
+    }
+
+    return await response.json();
+};
+
+export const getCourseCategoriesAPI = async () => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/courses/categories/all`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Categories load nahi ho sakeen');
+    return await response.json();
+};
+
+export const getCourseByIdAPI = async (id: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/courses/${id}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Course details load nahi ho sakeen');
+    return await response.json();
+};
+
+export const getCourseWithContentAPI = async (courseId: number) => {
+    const token = Cookies.get('authToken');
+    if (!token) throw new Error('No authentication token found');
+
+    const response = await fetch(`${API_URL}/courses/${courseId}/with-content`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch course content');
+    }
+
+    return await response.json();
+};
+
+export const getMyEnrolledCoursesAPI = async () => {
+    const token = Cookies.get('authToken');
+    if (!token) throw new Error('No authentication token found');
+    
+    const response = await fetch(`${API_URL}/enrollments/my-courses`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch enrolled courses');
+    }
+    
+    return await response.json();
+};
+
+export const updateCourseAPI = async (id: number, formData: FormData) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/courses/${id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+    });
+    if (!response.ok) throw new Error('Course update nahi ho saka');
+    return await response.json();
+};
+
+export const getCourseDetailsAPI = async (id: string) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/courses/${id}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await response.json();
+};
+
+// ==============================
+// SECTION & LECTURES
+// ==============================
+export const createSectionAPI = async (courseId: number, data: { title: string; description: string }) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/courses/${courseId}/sections`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) throw new Error('Section create nahi ho saka');
+    return await response.json();
+};
+
+export const createRecordedLectureAPI = async (formData: FormData) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/lectures/recorded`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+    });
+    if (!response.ok) throw new Error('Recorded lecture upload fail ho gaya');
+    return await response.json();
+};
+
+export const createLiveLectureAPI = async (data: any) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/lectures/live`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Live lecture schedule nahi ho saka');
+    return await response.json();
+};
+
+// ==============================
+// RESOURCES
+// ==============================
+export const createResourceAPI = async (courseId: number, sectionId: number, formData: FormData) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/resources/${courseId}/sections/${sectionId}/resources`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+    });
+
+    if (!response.ok) throw new Error('Resource upload nahi ho saka');
+    return await response.json();
+};
+
+// ==============================
+// ASSIGNMENTS
+// ==============================
+export const createAssignmentAPI = async (formData: FormData) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/assignments`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+    });
+    if (!response.ok) throw new Error('Assignment upload fail ho gaya');
+    return await response.json();
+};
+
+// # ASSIGNMENT DELETE API
+export const deleteAssignmentAPI = async (id: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/assignments/delete/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Assignment delete fail ho gayi');
+    return await response.json();
+};
+
+// # FUTURE ASSIGNMENT UPDATE API (Commented for now)
+/* export const updateAssignmentAPI = async (id: number, formData: FormData) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/assignments/update/${id}`, {
+        method: 'PATCH', // ya PUT, backend ke mutabiq
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+    });
+    if (!response.ok) throw new Error('Assignment update fail ho gaya');
+    return await response.json();
+};
+*/
+
+export const getAssignmentDetailAPI = async (id: string | number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/assignments/${id}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Assignment detail load nahi ho saki');
+    return await response.json();
+};
+
+export const uploadAssignmentSubmissionAPI = async (assignmentId: string | number, files: File[]) => {
+    const token = Cookies.get('authToken');
+    if (!token) throw new Error('Authentication token missing');
+    
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    
+    const response = await fetch(`${API_URL}/assignments/${assignmentId}/submit`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Submission upload failed');
+    }
+    return await response.json();
+};
+
+export const getAssignmentSubmissionsAPI = async (id: string | number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/assignments/${id}/submissions`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Submissions load nahi ho sakeen');
+    return await response.json();
+};
+
+export const gradeSubmissionAPI = async (
+    assignmentId: string | number,
+    studentId: string | number,
+    data: { marksObtained: number; comments: string }
+) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/assignments/${assignmentId}/submissions/${studentId}/grade`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error('Grading fail ho gayi');
+    return await response.json();
+};
+
+// ==============================
+// ENROLLMENT
+// ==============================
+export const enrollStudentAPI = async (payload: { courseId: number; studentId: number }) => {
+    const token = Cookies.get('authToken');
+
+    const response = await fetch(`${API_URL}/enrollments`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Enrollment fail ho gayi');
+    }
+
+    return await response.json();
+};
+
+export const getEnrolledStudentsAPI = async (courseId: string) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/admin/enrollments/course/${courseId}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return await response.json();
+};
+
+// ==============================
+// STUDENT APIs
+// ==============================
+export const createStudentsAPI = async (data: any) => {
+    const token = Cookies.get('authToken');
+    const res = await fetch(`${API_URL}/admin/users/students`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Student create nahi ho saka');
+    return await res.json();
+};
+
+export const getAllStudentsAPI = async (page = 1, limit = 10) => {
+    const token = Cookies.get('authToken');
+    const res = await fetch(`${API_URL}/admin/users/students?page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Students load nahi ho sakay');
+    return await res.json();
+};
+
+export const updateStudentsAPI = async (userId: number, data: any) => {
+    const token = Cookies.get('authToken');
+    const res = await fetch(`${API_URL}/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Student update nahi ho saka');
+    return await res.json();
+};
+
+export const deleteStudentsAPI = async (id: number) => {
+    const token = Cookies.get('authToken');
+    const res = await fetch(`${API_URL}/admin/users/students/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Student delete nahi ho saka');
+    return true;
+};
+
+export const getStudentsAPI = async () => {
+    const token = Cookies.get('authToken');
+    if (!token) throw new Error('Authentication token missing');
+
+    const response = await fetch(`${API_URL}/admin/users/students`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Students load karne mein masla hua');
+    }
+    return await response.json();
+};
+
+// ==============================
+// TEACHER APIs
+// ==============================
+export const createTeachersAPI = async (data: any) => {
+    const token = Cookies.get('authToken');
+    const res = await fetch(`${API_URL}/admin/users/teachers`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Teacher create nahi ho saka');
+    return await res.json();
+};
+
+export const getTeachersAPI = async () => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/admin/users/teachers`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Teachers list load nahi ho saki');
+    return await response.json();
+};
+
+export const getAllTeachersAPI = async (page = 1, limit = 10) => {
+    const token = Cookies.get('authToken');
+    const res = await fetch(`${API_URL}/admin/users/teachers?page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Teachers load nahi ho sakay');
+    return await res.json();
+};
+
+export const updateTeachersAPI = async (id: number, data: any) => {
+    const token = Cookies.get('authToken');
+
+    const payload = {
+        ...data,
+        isActive: data.isActive === 'true' || data.isActive === true
+    };
+
+    const res = await fetch(`${API_URL}/admin/users/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Teacher update nahi ho saka');
+    }
+    return await res.json();
+};
+
+export const deleteTeachersAPI = async (id: number) => {
+    const token = Cookies.get('authToken');
+    const res = await fetch(`${API_URL}/admin/users/teachers/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Teacher delete nahi ho saka');
+    return true;
+};
+
+// ==============================
+// FEES
+// ==============================
+export const getFeesDataAPI = async (page = 1, limit = 10) => {
+    const token = Cookies.get('authToken');
+    const res = await fetch(`${API_URL}/admin/fees?page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Fees data load nahi ho saka');
+    return await res.json();
+};
+
+// ==============================
+// ASSIGNED COURSES
+// ==============================
+export const getAssignedCoursesAPI = async (page = 1, limit = 10) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/courses/assign-courses?page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Assigned courses load nahi ho sakay');
+    return await response.json();
+};
+
+// ==============================
+// GOOGLE CALENDAR
+// ==============================
+export const connectGoogleCalendarAPI = async () => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/google-calendar/connect`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Google connection failed');
+    return await response.text();
+};
+
+
+// ==============================
+// LECTURE ACTIONS (DELETE & PATCH)
+// ==============================
+export const deleteLectureAPI = async (lectureId: number, courseId: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/lectures/${lectureId}/course/${courseId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Lecture delete nahi ho saka');
+    return true;
+};
+
+// # Update Lecture API: JSON Payload conversion
+export const updateLectureAPI = async (lectureId: number, courseId: number, data: FormData) => {
+    const token = Cookies.get('authToken');
+
+    // # FormData ko plain object mein convert kar rahe hain
+    const payload = Object.fromEntries(data);
+
+    const response = await fetch(`${API_URL}/lectures/${lectureId}/course/${courseId}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json' // # Mandatory for this API
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || 'Lecture update nahi ho saka');
+    }
+    return await response.json();
+};
+
+// ==============================
+// RESOURCE ACTIONS (DELETE & PATCH)
+// ==============================
+export const deleteResourceAPI = async (courseId: number, sectionId: number, resourceId: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/resources/${courseId}/sections/${sectionId}/resources/${resourceId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Resource delete nahi ho saka');
+    return true;
+};
+
+export const updateResourceAPI = async (courseId: number, sectionId: number, resourceId: number, data: FormData) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/resources/${courseId}/sections/${sectionId}/resources/${resourceId}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: data,
+    });
+    if (!response.ok) throw new Error('Resource update nahi ho saka');
+    return await response.json();
+};
+
+// src/lib/api/apiService.ts
+
+export const getSpecificResourceAPI = async (courseId: number, sectionId: number, resourceId: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/resources/${courseId}/sections/${sectionId}/resources/${resourceId}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error('Resource detail load nahi ho saki');
+    return await response.json();
+};
+
+//student delete from course
+export const dismissStudentAPI = async (enrollmentId: number, courseId: number, studentId: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/enrollments/${enrollmentId}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        // # User ki requirement ke mutabiq body parameters set kiye gaye hain
+        body: JSON.stringify({
+            courseId: courseId,
+            studentId: studentId,
+            status: 'dismissed'
+        })
+    });
+
+    if (!response.ok) throw new Error('Student remove nahi ho saka');
+    return await response.json();
+};
+
+export const getLecturesBySectionAPI = async (courseId: number, sectionId: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/lectures/course/${courseId}/section/${sectionId}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error('Lectures load karne mein masla hua');
+    return await response.json();
+};
+
+//--------------------------------------------------------------------------------
+// # QUIZ CRUD APIs
+export const createQuizAPI = async (data: any) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/create`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error('Quiz create nahi ho saka');
+    return await response.json();
+};
+
+export const updateQuizAPI = async (id: number, data: any) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/update/${id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error('Quiz update nahi ho saka');
+    return await response.json();
+};
+
+export const deleteQuizAPI = async (id: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/delete/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Quiz delete nahi ho saka');
+    return true;
+};
+
+export const getSpecificQuizAPI = async (id: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/${id}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` },
+        // cache: 'no-store'
+    });
+    if (!response.ok) throw new Error('Quiz details nahi mil sakin');
+    return await response.json();
+};
+
+// # QUIZ SUBMISSIONS & GRADING APIs
+export const getQuizSubmissionsAPI = async (quizId: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/quiz/${quizId}/attempts`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Submissions load nahi ho sakeen');
+    return await response.json();
+};
+
+export const getQuizAttemptDetailAPI = async (attemptId: number) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/attempt/${attemptId}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error('Attempt details nahi mil sakin');
+    return await response.json();
+};
+
+export const gradeQuizAttemptAPI = async (attemptId: number, data: { marksObtained: number, comments: string }) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/quizzes/grade/${attemptId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error('Grading fail ho gayi');
+    return await response.json();
+};
+
+// # ATTENDANCE APIs
+export const getAllAttendancesAPI = async () => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/attendance/all`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` },
+        cache: 'no-store'
+    });
+    if (!response.ok) throw new Error('Attendance list load nahi ho saki');
+    return await response.json();
+};
+
+export const updateAttendanceAPI = async (attendanceId: number, payload: any) => {
+    const token = Cookies.get('authToken');
+    const response = await fetch(`${API_URL}/attendance/${attendanceId}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error('Update fail ho gaya');
+    return await response.json();
+};
+
+yeh dekho yeh mene tumhe taqreeban pura teacher ka course wala part dedia hai ab isko zara kardo redux pr aur mene saath mein apni sari apis bhi dedi hain ab batao agay ka kaam aur karo sahi tarah se
+
+
+
+
+
+
+[courseId]/section/[sectionId]/assignment/[assignmentId]/page.tsx
+
+'use client';
+
+
+
+import React, { useState, useEffect, use } from 'react';
+
+import {
+
+    Calendar, ClipboardList, Download, FileText,
+
+    CheckCircle2, Loader2, ArrowLeft, AlertCircle
+
+} from 'lucide-react';
+
+import Link from 'next/link';
+
+import {
+
+    getAssignmentDetailAPI,
+
+    getAssignmentSubmissionsAPI,
+
+    gradeSubmissionAPI
+
+} from '@/lib/api/apiService';
+
+
+
+// Aapka component call ho raha hai yahan
+
+import UserManagementTable from '@/components/ui/UserManagementTable';
+
+
+
+const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
+
+    const resolvedParams = use(params);
+
+    const assignmentId = resolvedParams.assignmentId || resolvedParams.id;
+
+    const courseId = resolvedParams.courseId;
+
+
+
+    const [assignment, setAssignment] = useState<any>(null);
+
+    const [submissions, setSubmissions] = useState<any[]>([]);
+
+    const [loading, setLoading] = useState(true);
+
+    const [tableLoading, setTableLoading] = useState(false);
+
+    const [error, setError] = useState<string | null>(null);
+
+    const [showSubmissions, setShowSubmissions] = useState(false);
+
+
+
+    // Grading Modal States
+
+    const [selectedSub, setSelectedSub] = useState<any>(null);
+
+    const [gradeData, setGradeData] = useState({ marksObtained: '', comments: '' });
+
+    const [gradeLoading, setGradeLoading] = useState(false);
+
+
+
+    useEffect(() => {
+
+        const fetchAssignment = async () => {
+
+            if (!assignmentId) return;
+
+            setLoading(true);
+
+            try {
+
+                const data = await getAssignmentDetailAPI(assignmentId);
+
+                setAssignment(data.data || data);
+
+            } catch (err: any) {
+
+                setError(err.message || "Assignment detail load nahi ho saki");
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
+        };
+
+        fetchAssignment();
+
+    }, [assignmentId]);
+
+
+
+    const handleViewSubmissions = async () => {
+
+        setTableLoading(true);
+
+        try {
+
+            const res = await getAssignmentSubmissionsAPI(assignmentId);
+
+            console.log('Submissions', res);
+
+            setSubmissions(res.data || []);
+
+            setShowSubmissions(true);
+
+        } catch (err) {
+
+            alert("Submissions load nahi ho sakeen");
+
+        } finally {
+
+            setTableLoading(false);
+
+        }
+
+    };
+
+
+
+    const handleGradeSubmit = async () => {
+
+        if (!gradeData.marksObtained) return alert("Marks likhna zaroori hain");
+
+        setGradeLoading(true);
+
+        try {
+
+            // 1. API Call
+
+            const response = await gradeSubmissionAPI(assignmentId, selectedSub.studentId, {
+
+                marksObtained: Number(gradeData.marksObtained),
+
+                comments: gradeData.comments
+
+            });
+
+
+
+            // 2. Response extraction (Jo JSON aapne mujhe dikhaya)
+
+            const updatedItem = response.data || response;
+
+
+
+            // 3. LOCAL STATE UPDATE: Bina fetch kiye table ko update karein
+
+            // Hum purani list mein se us student ko dhoond kar uska data naye data se badal denge
+
+            setSubmissions((prevSubmissions) =>
+
+                prevSubmissions.map((sub) =>
+
+                    sub.studentId === updatedItem.studentId
+
+                        ? { ...sub, marksObtained: updatedItem.marksObtained, comments: updatedItem.comments }
+
+                        : sub
+
+                )
+
+            );
+
+
+
+            alert("Grade kamyabi se update ho gaya!");
+
+            setSelectedSub(null);
+
+
+
+        } catch (err) {
+
+            alert("Grading failed");
+
+        } finally {
+
+            setGradeLoading(false);
+
+        }
+
+    };
+
+
+
+    // --- TABLE COLUMN CONFIGURATION ---
+
+    const columnConfig = [
+
+        {
+
+            header: 'Student',
+
+            key: 'firstName',
+
+            render: (item: any) => (
+
+                <div className="flex items-center gap-3">
+
+                    <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-[10px] uppercase">
+
+                        {item.firstName?.[0] || 'S'}
+
+                    </div>
+
+                    <div>
+
+                        <p className="font-bold text-sm text-[#0F172A]">{item.firstName} {item.lastName}</p>
+
+                        <p className="text-[10px] text-slate-400 font-medium">{item.email}</p>
+
+                    </div>
+
+                </div>
+
+            )
+
+        },
+
+        {
+
+            header: 'Submitted Date',
+
+            key: 'submittedAt',
+
+            render: (item: any) => (
+
+                <span className="text-xs font-bold text-slate-500">
+
+                    {new Date(item.submittedAt).toLocaleString('en-GB')}
+
+                </span>
+
+            )
+
+        },
+
+        {
+
+            header: 'Files',
+
+            key: 'submissionFiles',
+
+            align: 'center' as const,
+
+            render: (item: any) => (
+
+                <div className="flex justify-center gap-2">
+
+                    {item.submissionFiles?.map((f: string, i: number) => (
+
+                        <a key={i} href={f} target="_blank" className="p-2 bg-slate-50 rounded-lg text-slate-400 hover:text-blue-600 transition-colors border border-slate-100">
+
+                            <Download size={14} />
+
+                        </a>
+
+                    ))}
+
+                </div>
+
+            )
+
+        },
+
+        {
+
+            header: 'Obtained Marks',
+
+            key: 'marksObtained',
+
+            align: 'center' as const,
+
+            render: (item: any) => {
+
+                // 1. Backend key check (kabhi kabhi grade ya score hota hai)
+
+                const score = item.marksObtained ?? item.grade ?? item.score;
+
+
+
+                // 2. Total marks safe access
+
+                const total = assignment?.totalMarks || 0;
+
+
+
+                // 3. Condition handling (0 ko bhi valid score maanna hai)
+
+                const isActuallyGraded = score !== null && score !== undefined && score !== "";
+
+
+
+                return (
+
+                    <span className={`text-xs font-black ${isActuallyGraded ? 'text-blue-600' : 'text-slate-300'}`}>
+
+                        {isActuallyGraded ? `${score} / ${total}` : '-'}
+
+                    </span>
+
+                );
+
+            }
+
+        },
+
+        {
+
+            header: 'Action',
+
+            key: 'action',
+
+            align: 'right' as const,
+
+            render: (item: any) => {
+
+                const isGraded = item.marksObtained !== null && item.marksObtained !== undefined;
+
+                return (
+
+                    <button
+
+                        onClick={() => {
+
+                            setSelectedSub(item);
+
+                            setGradeData({
+
+                                marksObtained: item.marksObtained?.toString() || '',
+
+                                comments: item.comments || ''
+
+                            });
+
+                        }}
+
+                        className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95 ${isGraded
+
+                            ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-100'
+
+                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100'
+
+                            }`}
+
+                    >
+
+                        {isGraded ? 'Graded' : 'Grade'}
+
+                    </button>
+
+                );
+
+            }
+
+        }
+
+    ];
+
+
+
+    if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+
+
+
+    return (
+
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 text-[#0F172A]">
+
+
+
+            <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-xs uppercase tracking-widest transition-all">
+
+                <ArrowLeft size={16} /> Back to Course
+
+            </Link>
+
+
+
+            <div className="bg-[#0F172A] rounded-[2.5rem] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden">
+
+                <div className="relative z-10">
+
+                    <span className="px-4 py-1.5 bg-blue-500/20 text-blue-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-500/30">Assignment Details</span>
+
+                    <h1 className="text-3xl md:text-5xl font-black mt-4 tracking-tight leading-tight">{assignment?.title}</h1>
+
+                    <div className="flex flex-wrap gap-6 mt-8">
+
+                        <div className="flex items-center gap-3 bg-white/5 px-5 py-3 rounded-2xl border border-white/10">
+
+                            <Calendar size={20} className="text-blue-400" />
+
+                            <div>
+
+                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Due Date</p>
+
+                                <p className="text-sm font-bold">{assignment?.dueDate ? new Date(assignment.dueDate).toLocaleDateString('en-GB') : 'N/A'}</p>
+
+                            </div>
+
+                        </div>
+
+                        <div className="flex items-center gap-3 bg-white/5 px-5 py-3 rounded-2xl border border-white/10">
+
+                            <ClipboardList size={20} className="text-purple-400" />
+
+                            <div>
+
+                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Max Marks</p>
+
+                                <p className="text-sm font-bold">{assignment?.totalMarks || 0}</p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <div className="lg:col-span-2 space-y-6">
+
+                    <section className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+
+                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-blue-600 mb-4">Objective</h3>
+
+                        <p className="text-slate-600 font-medium leading-relaxed">{assignment?.objective || 'No objective provided.'}</p>
+
+                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-purple-600 mt-8 mb-4">Deliverable</h3>
+
+                        <p className="text-slate-600 font-medium leading-relaxed">{assignment?.deliverable || 'No deliverable details.'}</p>
+
+                    </section>
+
+                </div>
+
+
+
+                <div className="space-y-6">
+
+                    <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm text-center">
+
+                        <h4 className="font-black text-lg mb-2">Submissions</h4>
+
+                        <p className="text-slate-400 text-xs font-medium mb-6">Review student work and grade them accordingly.</p>
+
+                        <button
+
+                            onClick={handleViewSubmissions}
+
+                            className="w-full py-4 bg-[#0F172A] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95"
+
+                        >
+
+                            View All Submissions
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            {/* INTEGRATING YOUR USERMANAGEMENTTABLE */}
+
+            {showSubmissions && (
+
+                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden animate-in slide-in-from-bottom-10 duration-700 p-2">
+
+                    <div className="px-10 py-6 flex justify-between items-center border-b border-slate-50">
+
+                        <h3 className="font-black uppercase tracking-widest text-xs">Student Work List</h3>
+
+                        <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-[10px] font-black">{submissions.length} Total</span>
+
+                    </div>
+
+                    {/* Component Call */}
+
+                    <UserManagementTable
+
+                        data={submissions}
+
+                        loading={tableLoading}
+
+                        columnConfig={columnConfig}
+
+                        type="Submission"
+
+                    />
+
+                </div>
+
+            )}
+
+
+
+            {/* Grading Modal */}
+
+            {selectedSub && (
+
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#0F172A]/60 backdrop-blur-md">
+
+                    <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95 duration-200">
+
+                        <div className="mb-8 flex justify-between items-start">
+
+                            <div>
+
+                                <h3 className="text-2xl font-black">Grade Submission</h3>
+
+                                <p className="text-sm font-bold text-blue-600">{selectedSub.firstName} {selectedSub.lastName}</p>
+
+                            </div>
+
+                            <button onClick={() => setSelectedSub(null)} className="text-slate-300 hover:text-slate-600 transition-colors font-bold">Close</button>
+
+                        </div>
+
+                        <div className="space-y-6">
+
+                            <div>
+
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Marks Obtained (Max: {assignment?.totalMarks})</label>
+
+                                <input type="number" value={gradeData.marksObtained} onChange={(e) => setGradeData({ ...gradeData, marksObtained: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-4 focus:ring-blue-50 font-bold text-sm text-slate-700" placeholder="e.g. 85" />
+
+                            </div>
+
+                            <div>
+
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Feedback Comments</label>
+
+                                <textarea rows={4} value={gradeData.comments} onChange={(e) => setGradeData({ ...gradeData, comments: e.target.value })} className="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-4 focus:ring-blue-50 font-bold text-sm text-slate-700" placeholder="Excellent work, keep it up!" />
+
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+
+                                <button onClick={() => setSelectedSub(null)} className="flex-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
+
+                                <button onClick={handleGradeSubmit} disabled={gradeLoading} className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-xl disabled:opacity-50">
+
+                                    {gradeLoading ? <Loader2 className="animate-spin" size={18} /> : <><CheckCircle2 size={18} /> Save Grade</>}
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            )}
+
+        </div>
+
+    );
+
+};
+
+
+
+export default AssignmentDetailPage;
+
+
+
+
+
+[courseId]/section/[sectionId]/lecture/[lectureId]/page.tsx
+
+'use client';
+
+
+
+import React, { useState, useEffect, use } from 'react';
+
+import { Loader2, PlayCircle, ArrowLeft, AlertCircle, Info, Globe, Calendar, Clock, Video } from 'lucide-react';
+
+import Link from 'next/link';
+
+// # API import for section lectures
+
+import { getLecturesBySectionAPI } from '@/lib/api/apiService';
+
+
+
+const LectureDetailPage = ({ params }: { params: Promise<any> }) => {
+
+    const resolvedParams = use(params);
+
+    const { courseId, sectionId, lectureId } = resolvedParams;
+
+
+
+    const [lecture, setLecture] = useState<any>(null);
+
+    const [loading, setLoading] = useState(true);
+
+    const [error, setError] = useState<string | null>(null);
+
+
+
+    useEffect(() => {
+
+        const fetchAndFilterLecture = async () => {
+
+            const cId = Number(courseId);
+
+            const sId = Number(sectionId);
+
+            const lId = Number(lectureId);
+
+
+
+            if (isNaN(cId) || isNaN(sId) || isNaN(lId)) return;
+
+
+
+            setLoading(true);
+
+            try {
+
+                const response = await getLecturesBySectionAPI(cId, sId);
+
+                const lecturesList = response?.lectures || [];
+
+
+
+                if (lecturesList.length === 0) {
+
+                    throw new Error("Is section mein koi lectures nahi mile.");
+
+                }
+
+
+
+                const foundLecture = lecturesList.find((l: any) => l.id === lId);
+
+
+
+                if (foundLecture) {
+
+                    let finalUrl = foundLecture.videoUrl;
+
+                    setLecture({ ...foundLecture, videoUrl: finalUrl });
+
+                } else {
+
+                    throw new Error("Lecture list mein nahi mila.");
+
+                }
+
+            } catch (err: any) {
+
+                console.error("Fetch Error:", err);
+
+                setError(err.message);
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
+        };
+
+
+
+        fetchAndFilterLecture();
+
+    }, [courseId, sectionId, lectureId]);
+
+
+
+    if (loading) return (
+
+        <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
+
+            <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
+
+            <p className="text-slate-500 font-black uppercase tracking-widest text-xs">Loading Video Player...</p>
+
+        </div>
+
+    );
+
+
+
+    if (error || !lecture) return (
+
+        <div className="h-screen flex flex-col items-center justify-center p-6 text-center">
+
+            <AlertCircle className="text-red-500 mb-4" size={48} />
+
+            <h2 className="text-xl font-black text-[#0F172A]">Lecture Nahi Mil Saka</h2>
+
+            <p className="text-slate-500 mt-2 mb-6 max-w-md">{error}</p>
+
+            <Link href={`/teacher/assigned-courses/${courseId}`} className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl">Back to Course</Link>
+
+        </div>
+
+    );
+
+
+
+    return (
+
+        <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+
+            {/* Back Navigation */}
+
+            <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-xs uppercase tracking-widest transition-all">
+
+                <ArrowLeft size={16} /> Back to Course
+
+            </Link>
+
+
+
+            {/* # Video / Meeting UI Logic */}
+
+            <div className="bg-black rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white aspect-video relative group flex items-center justify-center">
+
+                {lecture.lectureType === 'recorded' && lecture.videoUrl ? (
+
+                    <video key={lecture.videoUrl} controls className="w-full h-full object-contain">
+
+                        <source src={lecture.videoUrl} type="video/mp4" />
+
+                        Your browser does not support the video tag.
+
+                    </video>
+
+                ) : lecture.lectureType === 'online' ? (
+
+                    <div className="text-center p-10 w-full max-w-2xl bg-[#0F172A] h-full flex flex-col items-center justify-center">
+
+                        <div className="w-24 h-24 bg-blue-500/10 rounded-[2.5rem] flex items-center justify-center mb-10 border border-blue-500/20 shadow-inner">
+
+                            <Globe size={48} className="text-blue-400 animate-pulse" />
+
+                        </div>
+
+
+
+                        <h3 className="text-white text-3xl font-black tracking-tight mb-4">Google Meet Live Session</h3>
+
+
+
+                        <div className="flex gap-6 mb-12">
+
+                            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
+
+                                <Calendar size={14} className="text-blue-500" />
+
+                                {new Date(lecture.liveStart).toLocaleDateString('en-GB')}
+
+                            </div>
+
+                            <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
+
+                                <Clock size={14} className="text-blue-500" />
+
+                                {new Date(lecture.liveStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+
+                            </div>
+
+                        </div>
+
+
+
+                        {/* # PREMIUM JOIN BUTTON */}
+
+                        <a
+
+                            href={lecture.meetingLink}
+
+                            target="_blank"
+
+                            rel="noopener noreferrer"
+
+                            className="group relative inline-flex items-center gap-4 px-14 py-6 bg-blue-600 text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-blue-700 transition-all shadow-[0_20px_50px_rgba(37,99,235,0.3)] active:scale-95"
+
+                        >
+
+                            <Video size={24} className="group-hover:rotate-12 transition-transform" />
+
+                            <span>Join Meeting Now</span>
+
+                            <div className="absolute inset-0 rounded-3xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                        </a>
+
+                    </div>
+
+                ) : (
+
+                    <div className="text-center">
+
+                        <AlertCircle size={48} className="text-slate-600 mx-auto mb-4" />
+
+                        <p className="text-slate-400 font-bold tracking-widest uppercase text-xs">No Content Available</p>
+
+                    </div>
+
+                )}
+
+            </div>
+
+
+
+            {/* Lecture Content Details */}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <div className="lg:col-span-2 space-y-6">
+
+                    <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-100 shadow-sm">
+
+                        <div className="flex items-center gap-4 mb-6">
+
+                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+
+                                <PlayCircle size={28} className="text-blue-600" />
+
+                            </div>
+
+                            <div>
+
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Currently Playing</span>
+
+                                <h1 className="text-2xl md:text-3xl font-black text-[#0F172A] tracking-tight">{lecture.title}</h1>
+
+                            </div>
+
+                        </div>
+
+
+
+                        <div className="space-y-4">
+
+                            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+
+                                <Info size={14} /> Description
+
+                            </h3>
+
+                            <p className="text-slate-600 leading-relaxed font-medium">
+
+                                {lecture.description || "Is lecture ke liye koi tafseel faraham nahi ki gayi."}
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div className="space-y-6">
+
+                    <div className="bg-[#0F172A] rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden">
+
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-6">Lecture Metadata</h4>
+
+                        <div className="space-y-4">
+
+                            <div className="flex justify-between items-center border-b border-white/5 pb-3">
+
+                                <span className="text-xs text-slate-400 font-bold">Duration</span>
+
+                                <span className="text-xs font-black">{lecture.duration || 'N/A'} mins</span>
+
+                            </div>
+
+                            <div className="flex justify-between items-center border-b border-white/5 pb-3">
+
+                                <span className="text-xs text-slate-400 font-bold">Lecture Order</span>
+
+                                <span className="text-xs font-black"># {lecture.lectureOrder}</span>
+
+                            </div>
+
+                            <div className="flex justify-between items-center">
+
+                                <span className="text-xs text-slate-400 font-bold">Type</span>
+
+                                <span className="text-xs font-black uppercase bg-blue-600 px-2 py-1 rounded-md">{lecture.lectureType}</span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    );
+
+};
+
+
+
+export default LectureDetailPage;
+
+
+
+
+
+[courseId]/section/[sectionId]/quiz/[quizId]/page.tsx
+
+'use client';
+
+import React, { useState, useEffect, use, useMemo } from 'react';
+
+import {
+
+    Loader2, ArrowLeft, ClipboardList, HelpCircle,
+
+    AlertCircle, Clock, Edit3, Settings2, CheckCircle2, X, Eye, Award
+
+} from 'lucide-react';
+
+import Link from 'next/link';
+
+import {
+
+    getSpecificQuizAPI, updateQuizAPI,
+
+    getQuizSubmissionsAPI, getQuizAttemptDetailAPI, gradeQuizAttemptAPI
+
+} from '@/lib/api/apiService';
+
+import GenericFormModal, { FormField } from '@/components/ui/GenericFormModal';
+
+import UserManagementTable from '@/components/ui/UserManagementTable';
+
+
+
+const QuizDetailPage = ({ params }: { params: Promise<any> }) => {
+
+    const resolvedParams = use(params);
+
+    const { courseId, quizId } = resolvedParams;
+
+
+
+    const [quiz, setQuiz] = useState<any>(null);
+
+    const [loading, setLoading] = useState(true);
+
+    const [submissions, setSubmissions] = useState<any[]>([]);
+
+    const [showSubmissions, setShowSubmissions] = useState(false);
+
+    const [tableLoading, setTableLoading] = useState(false);
+
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    const [modalLoading, setModalLoading] = useState(false);
+
+
+
+    // Grading Modal States
+
+    const [selectedAttempt, setSelectedAttempt] = useState<any>(null);
+
+    const [gradeData, setGradeData] = useState({ marks: '', comments: '' });
+
+    const [gradeLoading, setGradeLoading] = useState(false);
+
+
+
+    // # 1. FETCH DATA FUNCTION
+
+    const fetchQuiz = async () => {
+
+        try {
+
+            const data = await getSpecificQuizAPI(Number(quizId));
+
+            setQuiz(data);
+
+        } catch (err) {
+
+            console.error("Quiz Fetch Error:", err);
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    };
+
+
+
+    useEffect(() => {
+
+        fetchQuiz();
+
+    }, [quizId]);
+
+
+
+    // # 2. FETCH SUBMISSIONS (Students List)
+
+    const handleViewSubmissions = async () => {
+
+        setTableLoading(true);
+
+        setShowSubmissions(!showSubmissions); // Toggle behavior
+
+        try {
+
+            const res = await getQuizSubmissionsAPI(Number(quizId));
+
+            setSubmissions(res.data || res || []);
+
+        } catch (err) {
+
+            alert("Submissions load nahi ho sakeen");
+
+        } finally {
+
+            setTableLoading(false);
+
+        }
+
+    };
+
+
+
+    // # 3. FETCH ATTEMPT DETAIL (For Reviewing student answers)
+
+    const handleReviewAttempt = async (attemptId: number) => {
+
+        setLoading(true);
+
+        try {
+
+            const data = await getQuizAttemptDetailAPI(attemptId);
+
+            const attempt = data.data || data;
+
+            setSelectedAttempt(attempt);
+
+            // Pre-fill placeholder from totalMarksObtained
+
+            setGradeData({
+
+                marks: (attempt.totalMarksObtained || attempt.totalMarks || '').toString(),
+
+                comments: attempt.comments || ''
+
+            });
+
+        } catch (err) {
+
+            alert("Attempt details load nahi ho sakin");
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    };
+
+
+
+    const handleGradeSubmit = async () => {
+
+        if (!gradeData.marks) return alert("Marks obtained likhna zaroori hain");
+
+        setGradeLoading(true);
+
+        try {
+
+            await gradeQuizAttemptAPI(selectedAttempt.attemptId || selectedAttempt.id, {
+
+                marksObtained: Number(gradeData.marks),
+
+                comments: gradeData.comments
+
+            });
+
+            alert("Grading completed!");
+
+            setSelectedAttempt(null);
+
+            await handleViewSubmissions(); // Table sync
+
+        } catch (err) {
+
+            alert("Grading failed");
+
+        } finally {
+
+            setGradeLoading(false);
+
+        }
+
+    };
+
+
+
+    // # 4. DATE FORMATTER HELPER
+
+    const formatSafeDate = (dateStr: any) => {
+
+        if (!dateStr) return "Not Scheduled";
+
+        const d = new Date(dateStr);
+
+        if (isNaN(d.getTime())) return "Invalid Date Format";
+
+        return d.toLocaleString('en-GB', {
+
+            day: '2-digit', month: 'short', year: 'numeric',
+
+            hour: '2-digit', minute: '2-digit', hour12: true
+
+        });
+
+    };
+
+
+
+    // # 5. TABLE COLUMN CONFIGURATION
+
+    const columnConfig = [
+
+        {
+
+            header: 'Student Name',
+
+            key: 'studentName',
+
+            render: (item: any) => (
+
+                <div className="flex items-center gap-3">
+
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black text-[10px] uppercase">
+
+                        {item.studentName?.[0] || 'S'}
+
+                    </div>
+
+                    <span className="font-bold text-sm text-[#0F172A]">{item.studentName}</span>
+
+                </div>
+
+            )
+
+        },
+
+        { header: 'Submission Date', key: 'submittedAt', render: (item: any) => formatSafeDate(item.submittedAt) },
+
+        {
+
+            header: 'Score',
+
+            key: 'totalMarks',
+
+            align: 'center' as const,
+
+            render: (item: any) => (
+
+                <span className="font-black text-blue-600">{item.totalMarks} / {quiz?.total_marks || quiz?.totalMarks}</span>
+
+            )
+
+        },
+
+        {
+
+            header: 'Action',
+
+            key: 'action',
+
+            align: 'right' as const,
+
+            render: (item: any) => (
+
+                <button
+
+                    onClick={() => handleReviewAttempt(item.id)}
+
+                    className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95 ${item.isGraded ? 'bg-emerald-500 text-white shadow-emerald-100' : 'bg-blue-600 text-white shadow-blue-100'}`}
+
+                >
+
+                    {item.isGraded ? 'Graded' : 'Review & Grade'}
+
+                </button>
+
+            )
+
+        }
+
+    ];
+
+
+
+    const formFields: FormField[] = useMemo(() => [
+
+        { name: 'title', label: 'Quiz Title', type: 'text', required: true },
+
+        { name: 'description', label: 'Quiz Description', type: 'textarea' },
+
+        { name: 'total_marks', label: 'Total Marks', type: 'number', required: true },
+
+        { name: 'start_time', label: 'Start Time', type: 'datetime-local', required: true },
+
+        { name: 'end_time', label: 'End Time', type: 'datetime-local', required: true },
+
+        { name: 'is_Published', label: 'Publish Status', type: 'select', options: [{ label: 'Published', value: 'true' }, { label: 'Draft', value: 'false' }] },
+
+        { name: 'questions', label: 'Manage Questions', type: 'quiz-builder', required: true }
+
+    ], []);
+
+
+
+    const handleUpdateSubmit = async (formData: FormData) => {
+
+        setModalLoading(true);
+
+        try {
+
+            const rawData = Object.fromEntries(formData);
+
+            const payload = {
+
+                ...rawData,
+
+                total_marks: Number(rawData.total_marks),
+
+                is_Published: rawData.is_Published === 'true',
+
+                questions: JSON.parse(rawData.questions as string)
+
+            };
+
+            await updateQuizAPI(Number(quizId), payload);
+
+            alert("Quiz & Questions updated successfully!");
+
+            setIsEditModalOpen(false);
+
+            await fetchQuiz();
+
+        } catch (err: any) { alert(err.message || "Update failed"); }
+
+        finally { setModalLoading(false); }
+
+    };
+
+
+
+    if (loading && !quiz) return <div className="h-screen flex items-center justify-center bg-gray-50"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+
+    if (!quiz) return <div className="text-center p-20 flex flex-col items-center"><AlertCircle size={48} className="text-red-500 mb-4" /><p className="font-bold text-slate-800">Quiz details not found.</p></div>;
+
+
+
+    return (
+
+        <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+
+            {/* Header Navigation */}
+
+            <div className="flex justify-between items-center">
+
+                <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-xs uppercase tracking-widest transition-all"><ArrowLeft size={16} /> Back to Section</Link>
+
+                <div className="flex gap-4">
+
+                    <button onClick={handleViewSubmissions} className="px-6 py-2.5 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-blue-700">Submissions List</button>
+
+                    <button onClick={() => setIsEditModalOpen(true)} className="px-6 py-2.5 bg-[#0F172A] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl active:scale-95"><Settings2 size={14} /> Edit Quiz & Builder</button>
+
+                </div>
+
+            </div>
+
+
+
+            {/* Quiz Info Card */}
+
+            <div className="bg-[#0F172A] rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden">
+
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
+
+                <div className="flex items-center gap-8 relative z-10">
+
+                    <div className="w-20 h-20 bg-blue-600/20 rounded-3xl flex items-center justify-center border border-blue-500/30 shadow-inner"><ClipboardList size={40} className="text-blue-400" /></div>
+
+                    <div className="space-y-2">
+
+                        <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-[9px] font-black uppercase tracking-widest">Assessment Detail</span>
+
+                        <h1 className="text-4xl font-black tracking-tight">{quiz.title}</h1>
+
+                        <p className="text-slate-400 font-medium max-w-xl">{quiz.description}</p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <div className="p-2">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+
+                    <div className="bg-slate-50 p-7 rounded-[2rem] border border-slate-100 flex items-center gap-5">
+
+                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600"><Clock size={20} /></div>
+
+                        <div>
+
+                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Time Window</p>
+
+                            <p className="font-bold text-xs text-slate-700 leading-relaxed">
+
+                                {formatSafeDate(quiz.start_time || quiz.startTime)} <br />
+
+                                <span className="text-blue-400">to</span> {formatSafeDate(quiz.end_time || quiz.endTime)}
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div className="bg-slate-50 p-7 rounded-[2rem] border border-slate-100 flex items-center gap-5">
+
+                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-blue-600"><HelpCircle size={20} /></div>
+
+                        <div>
+
+                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Total Marks</p>
+
+                            <p className="font-black text-2xl text-[#0F172A]">{quiz.total_marks || quiz.totalMarks} <span className="text-xs text-slate-400 font-bold ml-1 uppercase">Marks</span></p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                {/* # NEW: SUBMISSIONS TABLE */}
+
+                {showSubmissions && (
+
+                    <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden p-6 animate-in slide-in-from-bottom-5 mb-10">
+
+                        <h3 className="text-xs font-black uppercase tracking-widest text-[#0F172A] mb-6 px-4">Class Attempt History</h3>
+
+                        <UserManagementTable data={submissions} loading={tableLoading} columnConfig={columnConfig} type="Submission" />
+
+                    </div>
+
+                )}
+
+
+
+                {/* # PRESERVED: Original Questions List rendering */}
+
+                <div className="space-y-6">
+
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 px-2">Questions List ({quiz.questions?.length || 0})</h3>
+
+                    {quiz.questions?.map((q: any, index: number) => (
+
+                        <div key={index} className="p-8 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm hover:shadow-md transition-all group">
+
+                            <div className="flex justify-between items-start mb-6">
+
+                                <div className="space-y-1">
+
+                                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Question {index + 1} ({q.question_type})</p>
+
+                                    <p className="font-bold text-lg text-slate-800 leading-tight">{q.question_text}</p>
+
+                                </div>
+
+                                <span className="px-4 py-1.5 bg-slate-50 text-slate-500 rounded-xl text-[9px] font-black uppercase tracking-widest border border-slate-100">
+
+                                    {q.question_type} • {q.marks} pts
+
+                                </span>
+
+                            </div>
+
+                            {q.options && q.options.length > 0 && (
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                                    {q.options.map((opt: any, i: number) => (
+
+                                        <div key={i} className={`p-4 rounded-2xl border text-sm font-bold flex items-center gap-3 transition-all ${opt.is_correct ? 'bg-green-50/50 border-green-200 text-green-700 shadow-sm shadow-green-100' : 'bg-slate-50 border-slate-100 text-slate-500'}`}>
+
+                                            <div className={`w-2 h-2 rounded-full ${opt.is_correct ? 'bg-green-500' : 'bg-slate-200'}`}></div>
+
+                                            {opt.option_text}
+
+                                        </div>
+
+                                    ))}
+
+                                </div>
+
+                            )}
+
+                        </div>
+
+                    ))}
+
+                </div>
+
+            </div>
+
+
+
+            {/* ATTEMPT REVIEW MODAL */}
+
+            {selectedAttempt && (
+
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#0F172A]/80 backdrop-blur-md">
+
+                    <div className="bg-white w-full max-w-5xl rounded-[3.5rem] overflow-hidden flex flex-col max-h-[92vh] border border-slate-800 shadow-2xl">
+
+                        {/* Header strictly Dark Blue */}
+
+                        <div className="bg-[#0F172A] p-10 text-white flex justify-between items-center border-b border-slate-700">
+
+                            <div className="space-y-1">
+
+                                <h3 className="text-3xl font-black tracking-tight">{selectedAttempt.studentName}</h3>
+
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Total Scored: {selectedAttempt.totalMarksObtained} pts</p>
+
+                            </div>
+
+                            <button onClick={() => setSelectedAttempt(null)} className="p-3 hover:bg-white/10 rounded-2xl transition-all"><X size={28} /></button>
+
+                        </div>
+
+
+
+                        <div className="p-12 overflow-y-auto space-y-10 bg-white no-scrollbar">
+
+                            {selectedAttempt.answers.map((ans: any, idx: number) => (
+
+                                <div key={idx} className="p-10 bg-slate-50/50 rounded-[3rem] border border-slate-100 space-y-8 relative overflow-hidden group">
+
+                                    <div className="flex justify-between items-start">
+
+                                        <div className="space-y-1">
+
+                                            <p className="text-[10px] font-black uppercase text-blue-500 tracking-[0.2em]">Question {idx + 1} ({ans.questionType})</p>
+
+                                            <p className="font-bold text-[#0F172A] text-xl leading-tight">{ans.questionText}</p>
+
+                                        </div>
+
+                                        <span className={`px-5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border shadow-sm ${ans.isCorrect ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-red-50 border-red-100 text-red-600'}`}>
+
+                                            {ans.isCorrect ? 'Correct' : 'Incorrect'}
+
+                                        </span>
+
+                                    </div>
+
+
+
+                                    {/* MCQ/BCQ Options Display */}
+
+                                    {ans.allOptions.length > 0 && (
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                                            {ans.allOptions.map((opt: any) => {
+
+                                                const isSelected = ans.studentSelectedOptions.includes(opt.id);
+
+                                                return (
+
+                                                    <div key={opt.id} className={`p-5 rounded-[1.5rem] border-2 text-sm font-bold flex items-center gap-4 transition-all ${opt.isCorrect ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm' :
+
+                                                            isSelected ? 'border-red-400 bg-red-50 text-red-700' : 'bg-white border-slate-100'
+
+                                                        }`}>
+
+                                                        <div className={`w-3 h-3 rounded-full ${opt.isCorrect ? 'bg-emerald-500' : isSelected ? 'bg-red-500' : 'bg-slate-200'}`}></div>
+
+                                                        {opt.text}
+
+                                                        {isSelected && <span className="ml-auto text-[8px] font-black uppercase bg-red-100 text-red-600 px-2 py-1 rounded-lg">Choice</span>}
+
+                                                    </div>
+
+                                                );
+
+                                            })}
+
+                                        </div>
+
+                                    )}
+
+
+
+                                    {/* SHORT ANSWER logic */}
+
+                                    {ans.questionType === 'SHORT' && (
+
+                                        <div className="p-6 bg-white rounded-[2rem] border-2 border-dashed border-blue-100">
+
+                                            <p className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest">Student Response:</p>
+
+                                            <p className="text-sm font-bold text-[#0F172A] leading-relaxed italic">"{ans.studentAnswerText || 'No response provided.'}"</p>
+
+                                        </div>
+
+                                    )}
+
+
+
+                                    <div className="flex justify-end gap-3 text-[11px] font-black uppercase text-blue-600 bg-blue-50 py-3 px-6 rounded-2xl w-fit ml-auto shadow-sm">
+
+                                        Weightage: {ans.marksObtained} / {ans.marksAllocated}
+
+                                    </div>
+
+                                </div>
+
+                            ))}
+
+                        </div>
+
+
+
+                        {/* Grading Action Section */}
+
+                        <div className="p-12 border-t bg-slate-50/50">
+
+                            <div className="flex flex-col md:flex-row gap-8 items-end">
+
+                                <div className="flex-1 space-y-3">
+
+                                    <label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Award Final Score</label>
+
+                                    <input
+
+                                        type="number"
+
+                                        className="w-full p-6 bg-white border-2 border-slate-100 rounded-[1.5rem] font-black text-lg outline-none focus:border-blue-600 shadow-sm text-blue-600"
+
+                                        value={gradeData.marks}
+
+                                        placeholder={`${selectedAttempt.totalMarksObtained}`}
+
+                                        onChange={(e) => setGradeData({ ...gradeData, marks: e.target.value })}
+
+                                    />
+
+                                </div>
+
+                                <div className="flex-[2] space-y-3">
+
+                                    <label className="text-[11px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Final Comments</label>
+
+                                    <input
+
+                                        type="text"
+
+                                        className="w-full p-6 bg-white border-2 border-slate-100 rounded-[1.5rem] font-bold outline-none focus:border-blue-600 shadow-sm"
+
+                                        value={gradeData.comments}
+
+                                        placeholder="Add comment..."
+
+                                        onChange={(e) => setGradeData({ ...gradeData, comments: e.target.value })}
+
+                                    />
+
+                                </div>
+
+                                <button
+
+                                    onClick={handleGradeSubmit}
+
+                                    disabled={gradeLoading}
+
+                                    className="h-[72px] px-16 bg-blue-600 text-white rounded-[1.5rem] font-black uppercase text-[11px] tracking-[0.3em] hover:bg-blue-700 transition-all shadow-2xl active:scale-95 disabled:opacity-50"
+
+                                >
+
+                                    {gradeLoading ? <Loader2 className="animate-spin mx-auto" /> : 'Complete Grading'}
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            )}
+
+
+
+            {/* PRE-FILLED EDIT MODAL */}
+
+            <GenericFormModal
+
+                isOpen={isEditModalOpen}
+
+                onClose={() => setIsEditModalOpen(false)}
+
+                title="Edit Assessment Structure"
+
+                submitText="Update Quiz"
+
+                fields={formFields}
+
+                onSubmit={handleUpdateSubmit}
+
+                loading={modalLoading}
+
+                initialData={{
+
+                    ...quiz,
+
+                    start_time: (quiz?.start_time || quiz?.startTime) ? new Date(quiz?.start_time || quiz?.startTime).toISOString().slice(0, 16) : '',
+
+                    end_time: (quiz?.end_time || quiz?.endTime) ? new Date(quiz?.end_time || quiz?.endTime).toISOString().slice(0, 16) : '',
+
+                    total_marks: quiz?.total_marks || quiz?.totalMarks,
+
+                    is_Published: String(quiz?.is_Published)
+
+                }}
+
+            />
+
+        </div>
+
+    );
+
+};
+
+export default QuizDetailPage;
+
+
+
+
+
+[courseId]/section/[sectionId]/resource/[resourceId]/page.tsx
+
+'use client';
+
+
+
+import React, { useState, useEffect, use } from 'react';
+
+import { Loader2, ArrowLeft, AlertCircle, FileText, Download, FileJson, Globe } from 'lucide-react';
+
+import Link from 'next/link';
+
+// # Ab specific API use kar rahe hain
+
+import { getSpecificResourceAPI } from '@/lib/api/apiService';
+
+
+
+const ResourceDetailPage = ({ params }: { params: Promise<any> }) => {
+
+    const resolvedParams = use(params);
+
+    // # Folder structure ke mutabiq params extraction
+
+    const { courseId, sectionId, resourceId } = resolvedParams;
+
+
+
+    const [resource, setResource] = useState<any>(null);
+
+    const [loading, setLoading] = useState(true);
+
+    const [error, setError] = useState<string | null>(null);
+
+
+
+    useEffect(() => {
+
+        const fetchResourceData = async () => {
+
+            if (!courseId || !sectionId || !resourceId) return;
+
+
+
+            setLoading(true);
+
+            try {
+
+                // # 1. Specific Resource API Call
+
+                const response = await getSpecificResourceAPI(
+
+                    Number(courseId),
+
+                    Number(sectionId),
+
+                    Number(resourceId)
+
+                );
+
+
+
+                // # Data handling as per your API response structure
+
+                const resourceData = response.data || response;
+
+                setResource(resourceData);
+
+
+
+                // # Note: Redirect logic ko user ki request par hata diya gaya hai
+
+            } catch (err: any) {
+
+                console.error("Resource Fetch Error:", err);
+
+                setError(err.message || "Resource load karne mein masla hua.");
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
+        };
+
+
+
+        fetchResourceData();
+
+    }, [courseId, sectionId, resourceId]);
+
+
+
+    if (loading) return (
+
+        <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
+
+            <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
+
+            <p className="text-slate-500 font-black uppercase tracking-widest text-xs">Loading Resource Details...</p>
+
+        </div>
+
+    );
+
+
+
+    if (error || !resource) return (
+
+        <div className="h-screen flex flex-col items-center justify-center p-6 text-center">
+
+            <AlertCircle className="text-red-500 mb-4" size={48} />
+
+            <h2 className="text-xl font-black text-[#0F172A]">Masla Aa Gaya</h2>
+
+            <p className="text-slate-500 mt-2 mb-6 max-w-md">{error || "Data load nahi ho saka."}</p>
+
+            <Link href={`/teacher/assigned-courses/${courseId}`} className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl">Back to Course</Link>
+
+        </div>
+
+    );
+
+
+
+    return (
+
+        <div className="p-6 md:p-12 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+
+            {/* Navigation Header */}
+
+            <div className="flex items-center justify-between">
+
+                <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 font-black text-xs uppercase tracking-widest transition-all">
+
+                    <ArrowLeft size={16} /> Back to Course
+
+                </Link>
+
+            </div>
+
+
+
+            {/* Resource Preview Card */}
+
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl overflow-hidden">
+
+                <div className="bg-[#0F172A] p-10 text-white relative overflow-hidden">
+
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+
+
+
+                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+
+                        <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center border border-white/20 shadow-inner">
+
+                            <FileText size={48} className="text-blue-400" />
+
+                        </div>
+
+                        <div className="text-center md:text-left">
+
+                            <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border border-blue-500/30">Resource Material</span>
+
+                            <h1 className="text-3xl md:text-4xl font-black mt-3 tracking-tight">{resource.title}</h1>
+
+                            <p className="text-slate-400 text-sm mt-2 font-medium">Course ID: {courseId} • Section ID: {sectionId}</p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <div className="p-8 md:p-12 space-y-10">
+
+                    {/* File Info Section */}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                        <div className="space-y-6">
+
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-50 pb-2">Description</h3>
+
+                            <p className="text-slate-600 font-medium leading-relaxed">
+
+                                {resource.description || "Is resource ke liye koi description faraham nahi ki gayi."}
+
+                            </p>
+
+                        </div>
+
+
+
+                        <div className="bg-slate-50/50 rounded-3xl p-8 border border-slate-100 space-y-6">
+
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">File Details</h3>
+
+                            <div className="space-y-4">
+
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+
+                                    <span className="text-xs text-slate-400 font-bold">File Name</span>
+
+                                    {/* # Filename dikhane ka requirement */}
+
+                                    <span className="text-xs text-[#0F172A] font-black truncate max-w-[200px]">{resource.fileName || 'N/A'}</span>
+
+                                </div>
+
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+
+                                    <span className="text-xs text-slate-400 font-bold">Format</span>
+
+                                    <span className="text-xs text-blue-600 font-black uppercase">{resource.resourceType || 'PDF'}</span>
+
+                                </div>
+
+                                <div className="flex items-center justify-between">
+
+                                    <span className="text-xs text-slate-400 font-bold">Size</span>
+
+                                    <span className="text-xs text-[#0F172A] font-black">
+
+                                        {resource.fileSize ? `${(resource.fileSize / 1048576).toFixed(2)} MB` : 'N/A'}
+
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    {/* Download Action Section */}
+
+                    <div className="pt-6 border-t border-slate-50 flex flex-col items-center">
+
+                        {/* # Link jo click karne par naye tab mein file download ya open karega */}
+
+                        <a
+
+                            href={resource.fileUrl}
+
+                            target="_blank"
+
+                            rel="noopener noreferrer"
+
+                            className="group relative inline-flex items-center gap-4 px-12 py-5 bg-[#0F172A] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-black transition-all shadow-2xl active:scale-95"
+
+                        >
+
+                            <Download size={20} className="group-hover:translate-y-0.5 transition-transform" />
+
+                            <span>Download Resource</span>
+
+                            <div className="absolute inset-0 rounded-2xl bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                        </a>
+
+                        <p className="text-[10px] text-slate-400 mt-4 font-bold italic text-center">
+
+                            Note: Yeh file Cloudinary secure storage se open hogi.
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    );
+
+};
+
+
+
+export default ResourceDetailPage;
+

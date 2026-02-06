@@ -24,7 +24,7 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
     setOpenMenus(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
   };
 
-  if (!mounted) return <aside className="w-[280px] h-full bg-white border-r border-gray-100" />;
+  if (!mounted) return <aside className="w-[280px] h-full bg-card-bg border-r border-border-subtle" />;
 
   const getIcon = (name: string) => {
     const lowerName = name.toLowerCase();
@@ -32,8 +32,10 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
     return key ? ICON_MAPPING[key] : FileText;
   };
 
-  const baseNavItemClasses = 'flex items-center gap-[12px] py-3 px-[12px] text-[#0F172A] rounded-md transition-colors duration-200 hover:bg-[#0F172A] hover:text-white cursor-pointer text-sm font-medium whitespace-nowrap';
-  const baseSubNavItemClasses = 'block py-2 px-[12px] mb-1 rounded-md text-[#0F172A] text-[13px] transition-colors duration-200 hover:bg-[#0F172A] hover:text-white cursor-pointer whitespace-nowrap';
+  // --- CLEANED CLASSES: Specificity fix for active state ---
+  const baseNavItemClasses = 'flex items-center gap-[12px] py-3 px-[12px] rounded-md transition-all duration-200 cursor-pointer text-sm font-medium whitespace-nowrap ';
+
+  const baseSubNavItemClasses = 'block py-2 px-[12px] mb-1 rounded-md text-[13px] transition-all duration-200 cursor-pointer whitespace-nowrap ';
 
   const subMenuVariants: Variants = {
     hidden: { opacity: 0, height: 0 },
@@ -42,11 +44,11 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
   };
 
   return (
-    <aside className="w-[280px] h-full bg-gradient-to-b from-white to-blue-100 text-[#0F172A] flex flex-col font-sans overflow-hidden pt-20 lg:pt-5 border-r border-slate-100">
+    <aside className="w-[280px] h-full bg-gradient-to-b from-sidebar-from to-sidebar-to flex flex-col font-sans overflow-hidden pt-20 lg:pt-5 transition-all">
       <div className="flex-1 overflow-y-auto px-[15px] pb-5 no-scrollbar">
 
-        <div className="flex items-center gap-3 p-[10px] pb-[30px] text-base font-bold text-[#0F172A]">
-          <Box size={26} />
+        <div className="flex items-center gap-3 p-[10px] pb-[30px] text-base font-bold text-text-main">
+          <Box size={26} className="text-accent-blue" />
           <span className="whitespace-nowrap uppercase tracking-tighter">Podium Professional</span>
         </div>
 
@@ -62,7 +64,11 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
                 const isOpen = openMenus.includes(item.name);
                 return (
                   <li key={item.id} className="mb-1">
-                    <button onClick={() => toggleMenu(item.name)} className={`${baseNavItemClasses} w-full justify-between focus:outline-none`}>
+                    <button 
+                      onClick={() => toggleMenu(item.name)} 
+                      className={`${baseNavItemClasses} w-full justify-between focus:outline-none 
+                        ${isOpen ? 'bg-sidebar-to/50 text-text-main' : 'text-text-main hover:bg-text-main hover:text-card-bg'}`}
+                    >
                       <div className="flex items-center gap-[12px]">
                         <Icon size={18} />
                         <span className="capitalize">{item.name}</span>
@@ -74,9 +80,17 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
                         <motion.ul className="list-none p-0 mt-1 pl-10 overflow-hidden" variants={subMenuVariants} initial="hidden" animate="show" exit="exit">
                           {enabledChildren.map((child) => {
                             const dynamicChildPath = getRolePath(userRole, child.name);
+                            const isActive = pathname === dynamicChildPath;
                             return (
                               <li key={child.id}>
-                                <Link href={dynamicChildPath} onClick={onLinkClick} className={`${baseSubNavItemClasses} ${pathname === dynamicChildPath ? 'bg-[#0F172A] text-white' : ''} capitalize`}>
+                                <Link 
+                                  href={dynamicChildPath} 
+                                  onClick={onLinkClick} 
+                                  className={`${baseSubNavItemClasses} 
+                                    ${isActive 
+                                      ? 'bg-text-main text-card-bg dark:bg-hover-blue dark:text-white' 
+                                      : 'text-text-muted hover:bg-text-main hover:text-card-bg dark:hover:bg-hover-blue'}`}
+                                >
                                   {child.name}
                                 </Link>
                               </li>
@@ -89,9 +103,17 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
                 );
               }
 
+              const isItemActive = pathname === currentPath;
               return (
                 <li key={item.id} className="mb-1">
-                  <Link href={currentPath} onClick={onLinkClick} className={`${baseNavItemClasses} ${pathname === currentPath ? 'bg-[#0F172A] text-white' : ''}`}>
+                  <Link 
+                    href={currentPath} 
+                    onClick={onLinkClick} 
+                    className={`${baseNavItemClasses} 
+                      ${isItemActive 
+                        ? 'bg-text-main text-card-bg dark:bg-hover-blue dark:text-white' 
+                        : 'text-text-main hover:bg-text-main hover:text-card-bg dark:hover:bg-hover-blue'}`}
+                  >
                     <Icon size={18} />
                     <span className="capitalize">{item.name}</span>
                   </Link>

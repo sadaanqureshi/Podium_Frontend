@@ -25,7 +25,6 @@ export const ICON_MAPPING: Record<string, any> = {
 export const getRolePath = (roleInput: any, itemName: string): string => {
   const name = itemName.toLowerCase().trim();
 
-  // 1. ROLE EXTRACTION: Object ya string dono ko handle karega
   let role = "";
   if (roleInput && typeof roleInput === 'object') {
     role = (roleInput.roleName || roleInput.name || roleInput.slug || "").toLowerCase();
@@ -33,55 +32,32 @@ export const getRolePath = (roleInput: any, itemName: string): string => {
     role = String(roleInput || "").toLowerCase();
   }
 
-  // Prefix generation
-  const rolePrefix = role === 'admin' ? '/admin' : role === 'teacher' ? '/teacher' : '';
+  // # UPDATE: Student prefix added for the new folder structure
+  const rolePrefix = role === 'admin' ? '/admin' : role === 'teacher' ? '/teacher' : role === 'student' ? '/student' : '';
 
-  // console.log(`Final Calculated Role: "${role}", Item: "${name}", Prefix: "${rolePrefix}"`);
-
-  // --- A. DASHBOARD SPECIFIC LOGIC ---
-  // Is logic se teeno dashboards alag alag raste par jayenge aur ek saath select nahi honge
+  // --- A. DASHBOARD SPECIFIC LOGIC (Updated paths) ---
   if (name === "admin dashboard") return "/admin/dashboard";
   if (name === "teacher dashboard") return "/teacher/dashboard";
-  if (name === "student dashboard" || name === "dashboard") return "/dashboard";
+  if (name === "student dashboard" || name === "dashboard") return rolePrefix ? `${rolePrefix}/dashboard` : "/dashboard";
 
-  // --- B. DYNAMIC FOLDERS (Quizzes, Assignments, etc.) ---
+  // --- B. DYNAMIC FOLDERS (Ensuring /student prefix) ---
   const dynamicFolders = ["quiz", "assignment", "resource", "profile", "fees", "attendance"];
   const matched = dynamicFolders.find(folder => name.includes(folder));
 
   if (matched) {
     let folderName = matched;
-    // Map names to actual folder names
     if (matched === 'quiz') folderName = 'quizzes';
-    if (matched === 'assignment') folderName = 'assignment';
-    if (matched === 'resource') folderName = 'resource';
-    if (matched === 'fees') folderName = 'fees';
-    if (matched === 'profile') folderName = 'profile';
-    if (matched === 'attendance') folderName = 'attendance';
-
-    // Role ke mutabiq path: e.g., /teacher/quizzes ya /quizzes
     return rolePrefix ? `${rolePrefix}/${folderName}` : `/${folderName}`;
   }
 
   // --- C. SPECIFIC OVERRIDES ---
   const overrides: Record<string, string> = {
-    // Admin specific
     "courses management": "/admin/courses",
     "student management": "/admin/student",
     "teacher management": "/admin/teacher",
-    "audit logs": "/admin/logs",
-    "configuration": "/admin/config",
-
-    // Teacher specific
     "assigned courses": "/teacher/assigned-courses",
-    // "attendance": "/teacher/attendance",
-
-    // Student specific
-    "enrolled courses": "/enroll-courses",
-    "available courses": "/available-courses",
-
-    // Global
-    "notifications": "/notifications",
-    "fees management": "/fees",
+    "enrolled courses": "/student/enrolled-courses", // # Updated
+    "available courses": "/student/available-courses", // # Updated
     "annoucement management": role === 'admin' ? "/admin/announcements" : "/announcements",
   };
 
