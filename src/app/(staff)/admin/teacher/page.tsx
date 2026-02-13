@@ -33,7 +33,7 @@ const TeacherManagement = () => {
             { name: 'lastName', label: 'Last Name', type: 'text', required: true },
             { name: 'email', label: 'Email', type: 'text', required: true },
             { name: 'contactNumber', label: 'Contact Number', type: 'text' },
-            { name: 'isActive', label: 'Status', type: 'select', options: [{ label: 'Active', value: 'true' }, { label: 'Inactive', value: 'false' }] }
+            // { name: 'isActive', label: 'Status', type: 'select', options: [{ label: 'Active', value: 'true' }, { label: 'Inactive', value: 'false' }] }
         ];
 
         // Edit mode mein password field dalo
@@ -82,7 +82,7 @@ const TeacherManagement = () => {
     };
 
     return (
-        <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main transition-colors duration-300">
+        <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
                 <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight italic text-text-main">Faculty Terminal</h1>
                 <button onClick={() => { setSelectedUser(null); setModalOpen(true); }} className="px-8 py-4 bg-accent-blue text-white rounded-2xl font-black text-xs uppercase flex items-center gap-2 shadow-xl shadow-accent-blue/20 hover:opacity-90 active:scale-95 transition-all">

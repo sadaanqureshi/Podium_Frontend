@@ -66,7 +66,7 @@ export const GenericContentTab = ({
     };
 
     return (
-        <div className="animate-in fade-in duration-500">
+        <div className="animate-in fade-in duration-300">
             {/* Header: text-text-main auto-switches color */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
                 <div>
@@ -100,21 +100,19 @@ export const GenericContentTab = ({
                                     <div className="flex gap-4">
                                         <button
                                             onClick={() => handleTabChange('recorded')}
-                                            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all ${
-                                                activeLectureSubTab === 'recorded'
-                                                ? 'bg-accent-blue text-white shadow-lg shadow-accent-blue/20'
-                                                : 'text-text-muted hover:bg-sidebar-to/20'
-                                            }`}
+                                            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all ${activeLectureSubTab === 'recorded'
+                                                    ? 'bg-accent-blue text-white shadow-lg shadow-accent-blue/20'
+                                                    : 'text-text-muted hover:bg-sidebar-to/20'
+                                                }`}
                                         >
                                             <MonitorPlay size={14} /> Recorded
                                         </button>
                                         <button
                                             onClick={() => handleTabChange('online')}
-                                            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all ${
-                                                activeLectureSubTab === 'online'
-                                                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
-                                                : 'text-text-muted hover:bg-sidebar-to/20'
-                                            }`}
+                                            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all ${activeLectureSubTab === 'online'
+                                                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+                                                    : 'text-text-muted hover:bg-sidebar-to/20'
+                                                }`}
                                         >
                                             <Video size={14} /> Online
                                         </button>

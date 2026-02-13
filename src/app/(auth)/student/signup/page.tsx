@@ -59,7 +59,7 @@ const SignUpPage = () => {
 
   return (
     <AuthLayout>
-      <div className="w-full space-y-8 animate-in fade-in duration-500 pb-10">
+      <div className="w-full space-y-8 animate-in fade-in duration-300 pb-10">
         {/* Header Section */}
         <div>
           <h1 className="text-3xl font-black mb-2 text-text-main uppercase tracking-tighter italic">Create Account</h1>

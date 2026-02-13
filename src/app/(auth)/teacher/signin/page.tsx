@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch } from '@/lib/store/hooks';
 import { logout, setAuth } from '@/lib/store/features/authSlice';
-import { loginUser, logoutLocal } from '@/lib/api/apiService'; 
+import { loginUser, logoutLocal } from '@/lib/api/apiService';
 import AuthLayout from '@/components/auth/AuthLayout';
 import { Loader2 } from 'lucide-react';
 
@@ -41,7 +41,7 @@ const SignInPage = () => {
 
         router.replace('/teacher/dashboard');
       } else {
-        logoutLocal(); 
+        logoutLocal();
         dispatch(logout());
         setError('Unauthorized: Only Teachers can access this portal.');
       }
@@ -54,7 +54,7 @@ const SignInPage = () => {
 
   return (
     <AuthLayout>
-      <div className="w-full space-y-8 animate-in fade-in duration-500">
+      <div className="w-full space-y-8 animate-in fade-in duration-300">
         {/* Header Section Updated with Theme Tokens */}
         <div>
           <h1 className="text-3xl font-black mb-2 text-text-main uppercase tracking-tighter italic leading-none">
@@ -70,13 +70,13 @@ const SignInPage = () => {
               Work Email Node
             </label>
             <input
-              type="email" 
-              id="email" 
-              value={email} 
+              type="email"
+              id="email"
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="teacher@podium.edu"
               className="w-full px-6 py-4 bg-app-bg border border-border-subtle rounded-2xl focus:border-accent-blue outline-none transition-all font-bold text-sm text-text-main shadow-inner"
-              required 
+              required
               disabled={isLoading}
             />
           </div>
@@ -92,13 +92,13 @@ const SignInPage = () => {
               </Link>
             </div>
             <input
-              type="password" 
-              id="password" 
-              value={password} 
+              type="password"
+              id="password"
+              value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               className="w-full px-6 py-4 bg-app-bg border border-border-subtle rounded-2xl focus:border-accent-blue outline-none transition-all font-bold text-sm text-text-main shadow-inner"
-              required 
+              required
               disabled={isLoading}
             />
           </div>
@@ -112,13 +112,13 @@ const SignInPage = () => {
 
           {/* Submit Action Button */}
           <button
-            type="submit" 
+            type="submit"
             disabled={isLoading}
             className="w-full py-4 bg-accent-blue text-white font-black uppercase text-xs tracking-[0.2em] rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-3 shadow-xl shadow-accent-blue/20 active:scale-95 disabled:bg-accent-blue/50"
           >
             {isLoading ? (
               <>
-                <Loader2 className="animate-spin" size={18} strokeWidth={3} /> 
+                <Loader2 className="animate-spin" size={18} strokeWidth={3} />
                 Verifying Terminal...
               </>
             ) : (

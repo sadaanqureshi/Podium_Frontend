@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, use, useMemo } from 'react';
-import { 
-    Calendar, ClipboardList, Download, CheckCircle2, 
+import {
+    Calendar, ClipboardList, Download, CheckCircle2,
     Loader2, ArrowLeft, AlertCircle, FileText, UploadCloud, Clock
 } from 'lucide-react';
 import Link from 'next/link';
@@ -18,10 +18,10 @@ import GenericFormModal, { FormField } from '@/components/ui/GenericFormModal';
 
 const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
     const resolvedParams = use(params);
-    
+
     // # 1. CASE-SENSITIVE FIX
     // Folder name [courseid] hai toh yahan lowercase use hoga
-    const courseId = Number(resolvedParams.courseId); 
+    const courseId = Number(resolvedParams.courseId);
     const assignmentId = Number(resolvedParams.assignmentId || resolvedParams.id);
 
 
@@ -89,10 +89,10 @@ const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
     }
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 bg-app-bg min-h-screen text-text-main transition-colors duration-300">
-            
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in pb-20 bg-app-bg min-h-screen text-text-main">
+
             <Link href={`/student/enrolled-courses/${courseId}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-[10px] uppercase tracking-widest transition-all">
-                <ArrowLeft size={16} /> Back to Module
+                <ArrowLeft size={16} /> Back to Course Details
             </Link>
 
             {/* Content Display */}
@@ -144,7 +144,7 @@ const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
                             </div>
                         </div>
 
-                        <button 
+                        <button
                             onClick={() => setIsSubmitModalOpen(true)}
                             className="w-full py-5 bg-accent-blue text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-accent-blue/20 flex items-center justify-center gap-3"
                         >
@@ -154,7 +154,7 @@ const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
                 </div>
             </div>
 
-            <GenericFormModal 
+            <GenericFormModal
                 isOpen={isSubmitModalOpen}
                 onClose={() => setIsSubmitModalOpen(false)}
                 title="Initialize Upload"

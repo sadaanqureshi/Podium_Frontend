@@ -19,7 +19,7 @@ export const StudentsTab = ({ data, onAdd, role, onDelete, loading = false }: St
         {
             header: 'Student Identity',
             // Key changed to avoid internal Table conflict and ensure custom render is used
-            key: 'display_identity', 
+            key: 'display_identity',
             render: (item: any) => (
                 <div className="flex items-center gap-4">
                     {/* Avatar: bg-app-bg handles Light/Dark switch automatically */}
@@ -67,7 +67,7 @@ export const StudentsTab = ({ data, onAdd, role, onDelete, loading = false }: St
     ], []);
 
     return (
-        <div className="animate-in fade-in duration-500">
+        <div className="animate-in fade-in duration-300">
             {/* Header stays for titles but uses tokens */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 px-2">
                 <div>
@@ -94,7 +94,7 @@ export const StudentsTab = ({ data, onAdd, role, onDelete, loading = false }: St
                 type="enrollment"
                 visibleActions={role === 'admin' ? ['delete', 'view'] : []}
                 // Callback passes both ID and Name to parent for confirmation modal
-                onDelete={(id, name) => onDelete(id, name)} 
+                onDelete={(id, name) => onDelete(id, name)}
             />
         </div>
     );

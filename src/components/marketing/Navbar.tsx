@@ -8,7 +8,8 @@ import Image from 'next/image';
 
 export const MarketingNavbar = () => {
   const pathname = usePathname();
-  const { setTheme, resolvedTheme } = useTheme();
+  // const { setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false); // Mobile menu state
 
@@ -22,7 +23,7 @@ export const MarketingNavbar = () => {
     { label: 'Contact', path: '/contact' },
   ];
 
-  const logoSrc = resolvedTheme === 'dark' ? '/podiumlogo2.png' : '/podiumlogo1.png';
+  const logoSrc = theme === 'dark' ? '/podiumlogo2.png' : '/podiumlogo1.png';
 
   return (
     <nav className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-[100] w-[92%] lg:w-[95%] max-w-6xl">
@@ -72,10 +73,10 @@ export const MarketingNavbar = () => {
         <div className="flex items-center gap-2 md:gap-4">
           {/* Theme Toggle Button */}
           <button 
-            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="p-2 md:p-2.5 bg-app-bg border border-border-subtle rounded-xl text-text-main hover:text-accent-blue shadow-sm transition-colors"
           >
-            {resolvedTheme === 'dark' ? <Sun size={16} className="md:w-[18px]" /> : <Moon size={16} className="md:w-[18px]" />}
+            {theme === 'dark' ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-accent-blue" />}
           </button>
 
           {/* Desktop Sign In */}

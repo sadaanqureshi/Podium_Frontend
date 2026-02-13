@@ -5,7 +5,7 @@ import { Star } from 'lucide-react';
 
 export const CourseInfoCard = ({ data }: { data: any }) => (
     // Container: bg-card-bg aur border-border-subtle automatic theme sync handle karenge
-    <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle shadow-sm md:p-8 p-6 mb-8 flex flex-col md:flex-row justify-between items-start gap-8 animate-in fade-in slide-in-from-top-4 duration-700 transition-colors">
+    <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle shadow-sm md:p-8 p-6 mb-8 flex flex-col md:flex-row justify-between items-start gap-8 animate-in fade-in slide-in-from-top-4">
         
         <div className="flex-1 space-y-5">
             {/* Rating Section: Using text-text-main aur text-text-muted */}
@@ -37,7 +37,7 @@ export const CourseInfoCard = ({ data }: { data: any }) => (
         </div>
 
         {/* Cover Image Container: border-card-bg taaki dark mode mein border background se match kare */}
-        <div className="relative w-full md:w-72 h-48 rounded-[2rem] overflow-hidden shadow-2xl flex-shrink-0 border-[6px] border-app-bg bg-app-bg group transition-all">
+        <div className="relative w-full md:w-72 h-48 rounded-[2rem] overflow-hidden shadow-2xl flex-shrink-0 border-[6px] border-app-bg bg-app-bg group ">
             <Image 
                 src={data?.coverImg || "/blankcover.jpg"} 
                 alt="Course Visual" 

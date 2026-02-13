@@ -59,17 +59,17 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   return (
     // bg-app-bg khud ko light/dark ke hisab se adjust karega
-    <div className="flex min-h-screen w-full bg-app-bg transition-colors duration-300">
+    <div className="flex min-h-screen w-full bg-app-bg">
 
       {/* Desktop Sidebar Wrapper */}
       <div className="hidden lg:block flex-shrink-0 w-[260px] h-screen sticky top-0 border-r border-border-subtle z-50">
         <WebSidebar />
-      </div>
+      </div> 
 
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* HEADER: Gradient using sidebar tokens for seamless look */}
-        <header className="h-14 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-[40] bg-gradient-to-r from-sidebar-from to-sidebar-to transition-all">
+        <header className="h-14 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-[40] bg-gradient-to-r from-sidebar-from to-sidebar-to">
 
           <div className="lg:hidden w-10"></div>
 
@@ -133,8 +133,8 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
         </header>
 
-        <main className="lg:px-10 lg:pt-4 lg:pb-10 w-full flex-1">
-          <div className="animate-in fade-in slide-in-from-top-1 duration-500">
+        <main className="w-full flex-1 pl-5">
+          <div className="animate-in fade-in slide-in-from-top-1 duration-300">
             {children}
           </div>
         </main>

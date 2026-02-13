@@ -60,7 +60,7 @@ const FeesManagement = () => {
     ], []);
 
     return (
-        <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main transition-colors duration-300">
+        <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main">
             <div className="mb-10">
                 <h1 className="text-3xl md:text-4xl font-black tracking-tight uppercase">Finance Terminal</h1>
                 <p className="text-text-muted font-medium mt-1 italic underline decoration-accent-blue/20">Real-time revenue tracking and transaction auditing.</p>
@@ -75,7 +75,7 @@ const FeesManagement = () => {
             </div>
 
             {/* Table Section: Uses Table's own dark mode logic through card-bg token */}
-            <div className="bg-card-bg rounded-[2.5rem] shadow-2xl overflow-hidden border border-border-subtle transition-all">
+            <div className="bg-card-bg rounded-[2.5rem] shadow-2xl overflow-hidden border border-border-subtle">
                 <UserManagementTable
                     data={transactions}
                     loading={loading}
@@ -90,7 +90,7 @@ const FeesManagement = () => {
 
 // StatCard Sub-component (Refactored with Design Tokens)
 const StatCard = ({ title, value, icon, color, bgColor }: any) => (
-    <div className="bg-card-bg p-7 rounded-[2.5rem] border border-border-subtle shadow-sm flex items-center gap-6 transition-all hover:scale-[1.02] group">
+    <div className="bg-card-bg p-7 rounded-[2.5rem] border border-border-subtle shadow-sm flex items-center gap-6 hover:scale-[1.02] group">
         <div className={`w-16 h-16 rounded-[1.5rem] ${bgColor} ${color} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform`}>
             {React.cloneElement(icon, { size: 28, strokeWidth: 2.5 })}
         </div>

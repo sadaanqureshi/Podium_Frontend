@@ -41,7 +41,7 @@ const ForgotPasswordPage = () => {
 
         {isSuccess ? (
           // --- SUCCESS STATE ---
-          <div className="text-center animate-in fade-in zoom-in duration-500">
+          <div className="text-center animate-in fade-in zoom-in duration-300">
             {/* Icon Container with Accent Opacity */}
             <div className="w-20 h-20 bg-accent-blue/10 text-accent-blue rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-accent-blue/20">
               <MailCheck size={40} />

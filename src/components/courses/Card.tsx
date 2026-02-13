@@ -26,7 +26,7 @@ const Card: React.FC<CourseCardProps> = ({
   return (
     <Link href={`${basePath}/${id}`} className="block h-full">
       {/* Card Container: bg-card-bg for premium layered look */}
-      <div className="w-full h-full rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl border border-border-subtle bg-card-bg transition-all duration-500 group">
+      <div className="w-full h-full rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl border border-border-subtle bg-card-bg group">
 
         <div className="relative w-full h-48">
           {/* FIX: alt property mein fallback lagaya hai taaki error khatam ho jaye */}
@@ -45,7 +45,7 @@ const Card: React.FC<CourseCardProps> = ({
 
         <div className="p-6 flex flex-col h-[calc(100%-12rem)]">
           <p className="text-accent-blue text-[9px] font-black uppercase tracking-[0.2em] mb-2">{author}</p>
-          <h3 className="text-lg font-black text-text-main line-clamp-2 mb-2 group-hover:text-accent-blue transition-colors h-14 uppercase tracking-tight leading-tight">
+          <h3 className="text-lg font-black text-text-main line-clamp-2 mb-2 group-hover:text-accent-blue h-14 uppercase tracking-tight leading-tight">
             {title || "Untitled Course"}
           </h3>
           <p className="text-text-muted text-[11px] line-clamp-2 mb-6 flex-grow font-medium leading-relaxed">

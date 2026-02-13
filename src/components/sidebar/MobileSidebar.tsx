@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 // Framer Motion imports
-import { motion, AnimatePresence, Variants } from 'framer-motion'; 
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { FaBox } from 'react-icons/fa';
 import {
   LayoutDashboard,
@@ -23,13 +23,13 @@ interface WebSidebarProps {
 }
 
 const WebSidebar: React.FC<WebSidebarProps> = ({ onLinkClick }) => {
-  
+
   const pathname = usePathname();
-  
+
   const isEnrolledActive = pathname.startsWith('/enroll-courses') || pathname.startsWith('/courses/');
   const isAvailableActive = pathname.startsWith('/available-courses');
   const isCoursesActive = isEnrolledActive || isAvailableActive;
-  
+
   const [isCoursesOpen, setIsCoursesOpen] = useState(isCoursesActive);
 
   useEffect(() => {
@@ -43,10 +43,10 @@ const WebSidebar: React.FC<WebSidebarProps> = ({ onLinkClick }) => {
   };
 
   const baseNavItemClasses =
-    'flex items-center gap-[15px] py-3 px-[10px] text-[#0F172A] rounded-md transition-colors duration-200 hover:bg-[#0F172A] hover:text-white';
+    'flex items-center gap-[15px] py-3 px-[10px] text-[#0F172A] rounded-md transition-colors duration-300 hover:bg-[#0F172A] hover:text-white';
   const baseSubNavItemClasses =
-    'block py-2 px-[10px] mb-1 rounded-md text-[#0F172A] text-sm transition-colors duration-200 hover:bg-[#0F172A] hover:text-white';
-  
+    'block py-2 px-[10px] mb-1 rounded-md text-[#0F172A] text-sm transition-colors duration-300 hover:bg-[#0F172A] hover:text-white';
+
   // 'Variants' type ka istemaal karein
   const subMenuVariants: Variants = {
     hidden: { opacity: 0, height: 0 },
@@ -56,7 +56,7 @@ const WebSidebar: React.FC<WebSidebarProps> = ({ onLinkClick }) => {
 
   return (
     <aside className="w-[260px] h-screen bg-gradient-to-b from-white to-blue-100 text-gray-200 py-5 px-[15px] font-sans block shadow-lg overflow-y-auto">
-      
+
       {/* Header */}
       {/* 2. Header ko 'justify-between' karein taaki button right par chala jaaye */}
       <div className="flex items-center justify-between gap-3 p-[10px] pb-[30px] text-base font-bold text-[#0F172A]">
@@ -65,7 +65,7 @@ const WebSidebar: React.FC<WebSidebarProps> = ({ onLinkClick }) => {
           <FaBox size={28} />
           <span>Podium Professional</span>
         </div>
-        
+
         {/* 3. Naya Close Button (sirf tab dikhega jab 'onLinkClick' maujood ho) */}
         {onLinkClick && (
           <button
@@ -79,15 +79,14 @@ const WebSidebar: React.FC<WebSidebarProps> = ({ onLinkClick }) => {
 
       <nav>
         <ul className="list-none p-0 m-0">
-          
+
           {/* Dashboard Link */}
           <li className="mb-2">
             <Link
               href="/dashboard"
               onClick={onLinkClick} // <-- 'onClick' prop add karein
-              className={`${baseNavItemClasses} ${
-                pathname.startsWith('/dashboard') ? 'bg-[#0F172A] text-white' : ''
-              }`}
+              className={`${baseNavItemClasses} ${pathname.startsWith('/dashboard') ? 'bg-[#0F172A] text-white' : ''
+                }`}
             >
               <LayoutDashboard size={20} />
               <span>Dashboard</span>
@@ -98,9 +97,8 @@ const WebSidebar: React.FC<WebSidebarProps> = ({ onLinkClick }) => {
           <li className="mb-2">
             <button
               onClick={toggleCourses}
-              className={`${baseNavItemClasses} w-full justify-between ${
-                isCoursesActive ? 'bg-[#0F172A] text-white' : ''
-              }`}
+              className={`${baseNavItemClasses} w-full justify-between ${isCoursesActive ? 'bg-[#0F172A] text-white' : ''
+                }`}
             >
               <div className="flex items-center gap-[15px] ">
                 <BookOpen size={20} />
@@ -127,9 +125,8 @@ const WebSidebar: React.FC<WebSidebarProps> = ({ onLinkClick }) => {
                     <Link
                       href="/enroll-courses"
                       onClick={onLinkClick} // <-- 'onClick' prop add karein
-                      className={`${baseSubNavItemClasses} ${
-                        isEnrolledActive ? 'bg-[#0F172A] text-white' : ''
-                      }`}
+                      className={`${baseSubNavItemClasses} ${isEnrolledActive ? 'bg-[#0F172A] text-white' : ''
+                        }`}
                     >
                       Enrolled Courses
                     </Link>
@@ -138,9 +135,8 @@ const WebSidebar: React.FC<WebSidebarProps> = ({ onLinkClick }) => {
                     <Link
                       href="/available-courses"
                       onClick={onLinkClick} // <-- 'onClick' prop add karein
-                      className={`${baseSubNavItemClasses} ${
-                        isAvailableActive ? 'bg-[#0F172A] text-white' : ''
-                      }`}
+                      className={`${baseSubNavItemClasses} ${isAvailableActive ? 'bg-[#0F172A] text-white' : ''
+                        }`}
                     >
                       Available Courses
                     </Link>
@@ -155,9 +151,8 @@ const WebSidebar: React.FC<WebSidebarProps> = ({ onLinkClick }) => {
             <Link
               href="/quizzes"
               onClick={onLinkClick} // <-- 'onClick' prop add karein
-              className={`${baseNavItemClasses} ${
-                pathname.startsWith('/quizzes') ? 'bg-[#0F172A] text-white' : ''
-              }`}
+              className={`${baseNavItemClasses} ${pathname.startsWith('/quizzes') ? 'bg-[#0F172A] text-white' : ''
+                }`}
             >
               <NotepadText size={20} />
               <span>Quizzes/Assessments</span>
@@ -168,9 +163,8 @@ const WebSidebar: React.FC<WebSidebarProps> = ({ onLinkClick }) => {
             <Link
               href="/assignments"
               onClick={onLinkClick} // <-- 'onClick' prop add karein
-              className={`${baseNavItemClasses} ${
-                pathname.startsWith('/assignments') ? 'bg-[#0F172A] text-white' : ''
-              }`}
+              className={`${baseNavItemClasses} ${pathname.startsWith('/assignments') ? 'bg-[#0F172A] text-white' : ''
+                }`}
             >
               <NotebookPen size={20} />
               <span>Assignments</span>
@@ -181,9 +175,8 @@ const WebSidebar: React.FC<WebSidebarProps> = ({ onLinkClick }) => {
             <Link
               href="/notes"
               onClick={onLinkClick} // <-- 'onClick' prop add karein
-              className={`${baseNavItemClasses} ${
-                pathname.startsWith('/notes') ? 'bg-[#0F172A] text-white' : ''
-              }`}
+              className={`${baseNavItemClasses} ${pathname.startsWith('/notes') ? 'bg-[#0F172A] text-white' : ''
+                }`}
             >
               <BookCopy size={20} />
               <span>Notes & Resources</span>

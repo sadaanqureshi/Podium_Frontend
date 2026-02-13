@@ -33,7 +33,7 @@ const StudentManagement = () => {
             { name: 'lastName', label: 'Last Name', type: 'text', required: true },
             { name: 'email', label: 'Email Address', type: 'text', required: true },
             { name: 'contactNumber', label: 'Phone Number', type: 'text' },
-            { name: 'isActive', label: 'Status', type: 'select', options: [{ label: 'Active', value: 'true' }, { label: 'Inactive', value: 'false' }] }
+            // { name: 'isActive', label: 'Status', type: 'select', options: [{ label: 'Active', value: 'true' }, { label: 'Inactive', value: 'false' }] }
         ];
 
         // Agar Edit mode hai (selectedUser), toh password field add kardo

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch } from '@/lib/store/hooks';
 import { logout, setAuth } from '@/lib/store/features/authSlice';
-import { loginUser, logoutLocal } from '@/lib/api/apiService'; 
+import { loginUser, logoutLocal } from '@/lib/api/apiService';
 import AuthLayout from '@/components/auth/AuthLayout';
 import Cookies from 'js-cookie';
 import { Loader2 } from 'lucide-react';
@@ -22,7 +22,7 @@ const SignInPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(logout()); 
+    dispatch(logout());
     setError('');
     setIsLoading(true);
 
@@ -33,7 +33,7 @@ const SignInPage = () => {
       if (userRole === 'student') {
         Cookies.set('authToken', response.access_token);
         Cookies.set('userRole', response.user.role.roleName);
-        
+
         dispatch(setAuth({
           user: response.user,
           token: response.access_token,
@@ -55,7 +55,7 @@ const SignInPage = () => {
 
   return (
     <AuthLayout>
-      <div className="w-full space-y-8 animate-in fade-in duration-500">
+      <div className="w-full space-y-8 animate-in fade-in duration-300">
         {/* Header Section */}
         <div>
           <h1 className="text-3xl font-black mb-2 text-text-main uppercase tracking-tighter italic">Student Sign in</h1>

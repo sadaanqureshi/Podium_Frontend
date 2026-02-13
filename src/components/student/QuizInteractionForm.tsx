@@ -38,7 +38,7 @@ const QuizInteractionForm = ({ questions, onSubmit, isSubmitting }: any) => {
         <div className="space-y-10">
             <div className="space-y-6">
                 {questions.map((q: any, index: number) => (
-                    <div key={q.id} className="bg-card-bg border border-border-subtle rounded-[2.5rem] overflow-hidden shadow-sm p-8 transition-all hover:border-accent-blue/30">
+                    <div key={q.id} className="bg-card-bg border border-border-subtle rounded-[2.5rem] overflow-hidden shadow-sm p-8 hover:border-accent-blue/30">
                         <div className="flex justify-between items-start mb-8 gap-4">
                             <div className="flex gap-4">
                                 <div className="w-10 h-10 rounded-2xl bg-app-bg border border-border-subtle flex items-center justify-center text-accent-blue font-black shadow-inner">
@@ -57,7 +57,7 @@ const QuizInteractionForm = ({ questions, onSubmit, isSubmitting }: any) => {
                             <textarea 
                                 onChange={(e) => handleTextChange(q.id, e.target.value)}
                                 placeholder="Enter your response protocol..."
-                                className="w-full bg-app-bg border-2 border-border-subtle rounded-[1.5rem] p-6 text-sm font-medium outline-none focus:border-accent-blue transition-all min-h-[120px]"
+                                className="w-full bg-app-bg border-2 border-border-subtle rounded-[1.5rem] p-6 text-sm font-medium outline-none focus:border-accent-blue min-h-[120px]"
                             />
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -67,7 +67,7 @@ const QuizInteractionForm = ({ questions, onSubmit, isSubmitting }: any) => {
                                         <button
                                             key={opt.id}
                                             onClick={() => handleOptionSelect(q.id, q.question_type, opt.id)}
-                                            className={`p-5 rounded-3xl border-2 text-left flex items-center gap-4 transition-all ${
+                                            className={`p-5 rounded-3xl border-2 text-left flex items-center gap-4 ${
                                                 isSelected 
                                                 ? 'bg-accent-blue/5 border-accent-blue text-text-main shadow-lg shadow-accent-blue/5' 
                                                 : 'bg-app-bg border-border-subtle text-text-muted hover:border-text-muted/30'

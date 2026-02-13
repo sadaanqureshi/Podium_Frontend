@@ -92,7 +92,7 @@ const StudentQuizDetailPage = ({ params }: { params: Promise<any> }) => {
     );
 
     return (
-        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 pb-20 bg-app-bg min-h-screen text-text-main transition-colors duration-300">
+        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 pb-20 bg-app-bg min-h-screen text-text-main">
             
             <Link href={`/student/enrolled-courses/${courseId}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-bold text-[10px] uppercase tracking-widest transition-all">
                 <ArrowLeft size={16} /> Exit Quiz
@@ -122,7 +122,7 @@ const StudentQuizDetailPage = ({ params }: { params: Promise<any> }) => {
                                 <button 
                                     onClick={() => loadQuizStatus(true)}
                                     disabled={checkingStatus}
-                                    className="px-10 py-5 bg-app-bg text-text-main border-2 border-border-subtle rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-card-bg transition-all flex items-center gap-3 disabled:opacity-50"
+                                    className="px-10 py-5 bg-app-bg text-text-main border-2 border-border-subtle rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-card-bg flex items-center gap-3 disabled:opacity-50"
                                 >
                                     {checkingStatus ? <Loader2 className="animate-spin" size={18} /> : <RefreshCcw size={18} />}
                                     Refresh Status

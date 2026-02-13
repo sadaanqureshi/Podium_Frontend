@@ -18,7 +18,7 @@ const AdminProfilePage = () => {
 
     const dispatch = useAppDispatch();
     const user = useAppSelector((state) => state.auth.user);
-    
+
     const [activeTab, setActiveTab] = useState<'info' | 'password'>('info');
     const [loading, setLoading] = useState(false);
 
@@ -79,7 +79,7 @@ const AdminProfilePage = () => {
                 <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
 
                 <div className="relative group flex-shrink-0">
-                    <div className="w-24 h-24 md:w-36 md:h-36 rounded-[2.5rem] bg-accent-blue text-white flex items-center justify-center text-5xl font-black border-4 border-card-bg shadow-2xl transition-transform duration-500 group-hover:scale-105">
+                    <div className="w-24 h-24 md:w-36 md:h-36 rounded-[2.5rem] bg-accent-blue text-white flex items-center justify-center text-5xl font-black border-4 border-card-bg shadow-2xl transition-transform duration-300 group-hover:scale-105">
                         {displayInitial}
                     </div>
                     <button className="absolute -bottom-2 -right-2 p-3 bg-text-main text-card-bg rounded-2xl shadow-2xl hover:scale-110 transition-all active:scale-90 border-2 border-border-subtle">
@@ -131,7 +131,7 @@ const AdminProfilePage = () => {
                 {/* 3. Main Action Area */}
                 <div className="lg:col-span-8 bg-card-bg rounded-[2.5rem] p-8 md:p-12 border border-border-subtle shadow-sm min-h-[500px]">
                     {activeTab === 'info' ? (
-                        <form onSubmit={handleSaveInfo} className="space-y-10 animate-in fade-in duration-500">
+                        <form onSubmit={handleSaveInfo} className="space-y-10 animate-in fade-in duration-300">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-subtle pb-8">
                                 <h2 className="text-2xl font-black text-text-main uppercase tracking-tighter">Admin Settings</h2>
                                 <p className="text-[10px] text-text-muted font-black uppercase tracking-widest bg-app-bg px-4 py-1.5 rounded-lg border border-border-subtle">Core Identity</p>
@@ -149,17 +149,17 @@ const AdminProfilePage = () => {
                             </button>
                         </form>
                     ) : (
-                        <form onSubmit={handleUpdatePassword} className="space-y-10 animate-in fade-in duration-500">
+                        <form onSubmit={handleUpdatePassword} className="space-y-10 animate-in fade-in duration-300">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-subtle pb-8">
                                 <h2 className="text-2xl font-black text-text-main uppercase tracking-tighter">System Access</h2>
                                 <p className="text-[10px] bg-accent-blue/10 text-accent-blue px-4 py-1.5 rounded-lg font-black uppercase border border-accent-blue/20">Secure Vault</p>
                             </div>
 
                             <div className="space-y-8 max-w-md">
-                                <AdminInput label="Current Key" type="password" icon={<Lock />} value={passwords.oldPassword} onChange={(v: string) => setPasswords({...passwords, oldPassword: v})} required />
+                                <AdminInput label="Current Key" type="password" icon={<Lock />} value={passwords.oldPassword} onChange={(v: string) => setPasswords({ ...passwords, oldPassword: v })} required />
                                 <div className="h-px bg-border-subtle my-2"></div>
-                                <AdminInput label="New Master Key" type="password" icon={<Lock />} value={passwords.newPassword} onChange={(v: string) => setPasswords({...passwords, newPassword: v})} required />
-                                <AdminInput label="Verify Master Key" type="password" icon={<Lock />} value={passwords.confirmPassword} onChange={(v: string) => setPasswords({...passwords, confirmPassword: v})} required />
+                                <AdminInput label="New Master Key" type="password" icon={<Lock />} value={passwords.newPassword} onChange={(v: string) => setPasswords({ ...passwords, newPassword: v })} required />
+                                <AdminInput label="Verify Master Key" type="password" icon={<Lock />} value={passwords.confirmPassword} onChange={(v: string) => setPasswords({ ...passwords, confirmPassword: v })} required />
                             </div>
 
                             <button type="submit" className="w-full sm:w-auto flex items-center justify-center gap-3 px-12 py-5 bg-text-main text-card-bg rounded-2xl font-black text-[11px] uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-2xl">
@@ -186,11 +186,10 @@ const AdminInput = ({ label, value, onChange, icon, type = "text", disabled = fa
             <input
                 type={type} value={value} disabled={disabled}
                 onChange={(e) => onChange?.(e.target.value)}
-                className={`w-full pl-14 pr-6 py-5 rounded-[1.5rem] border-2 border-border-subtle outline-none text-sm font-bold transition-all ${
-                    disabled 
-                    ? 'bg-app-bg text-text-muted opacity-50 cursor-not-allowed border-dashed' 
-                    : 'bg-app-bg text-text-main focus:bg-card-bg focus:ring-4 focus:ring-accent-blue/10 focus:border-accent-blue shadow-inner'
-                }`}
+                className={`w-full pl-14 pr-6 py-5 rounded-[1.5rem] border-2 border-border-subtle outline-none text-sm font-bold transition-all ${disabled
+                        ? 'bg-app-bg text-text-muted opacity-50 cursor-not-allowed border-dashed'
+                        : 'bg-app-bg text-text-main focus:bg-card-bg focus:ring-4 focus:ring-accent-blue/10 focus:border-accent-blue shadow-inner'
+                    }`}
             />
         </div>
     </div>

@@ -56,7 +56,7 @@ const SignInPage = () => {
 
   return (
     <AuthLayout>
-      <div className="w-full space-y-8 animate-in fade-in duration-500">
+      <div className="w-full space-y-8 animate-in fade-in duration-300">
         {/* Header Section Updated with Theme Tokens */}
         <div>
           <h1 className="text-3xl font-black mb-2 text-text-main uppercase tracking-tighter italic leading-none">

@@ -7,7 +7,8 @@ import {
     ChevronDown,
     Plus,
     Trash2,
-    CheckCircle2
+    CheckCircle2,
+    AlertCircle
 } from 'lucide-react';
 
 export interface FormField {
@@ -35,10 +36,12 @@ interface GenericFormModalProps {
 // ==========================================
 const QuestionBuilder = ({
     onChange,
-    initialData
+    initialData,
+    error // Parent se error receive kar raha hai
 }: {
     onChange: (data: any) => void;
     initialData?: any[];
+    error?: string;
 }) => {
     const [questions, setQuestions] = useState<any[]>([]);
 
@@ -48,19 +51,22 @@ const QuestionBuilder = ({
         }
     }, [initialData]);
 
+    const updateAndNotify = (updated: any[]) => {
+        setQuestions(updated);
+        onChange(updated);
+    };
+
     const addQuestion = () => {
         const newQuestions = [
             ...questions,
             { question_text: '', question_type: 'MCQ', marks: 5, options: [] }
         ];
-        setQuestions(newQuestions);
-        onChange(newQuestions);
+        updateAndNotify(newQuestions);
     };
 
     const removeQuestion = (index: number) => {
         const updated = questions.filter((_, i) => i !== index);
-        setQuestions(updated);
-        onChange(updated);
+        updateAndNotify(updated);
     };
 
     const toggleCorrectOption = (qIndex: number, oIndex: number) => {
@@ -74,60 +80,53 @@ const QuestionBuilder = ({
         } else {
             currentQ.options[oIndex].is_correct = !currentQ.options[oIndex].is_correct;
         }
-
-        setQuestions(updated);
-        onChange(updated);
+        updateAndNotify(updated);
     };
 
     const addOption = (qIndex: number) => {
         const updated = [...questions];
         if (!updated[qIndex].options) updated[qIndex].options = [];
         updated[qIndex].options.push({ option_text: '', is_correct: false });
-        setQuestions(updated);
-        onChange(updated);
+        updateAndNotify(updated);
     };
 
     const removeOption = (qIndex: number, oIndex: number) => {
         const updated = [...questions];
         updated[qIndex].options = updated[qIndex].options.filter((_: any, i: number) => i !== oIndex);
-        setQuestions(updated);
-        onChange(updated);
+        updateAndNotify(updated);
     };
 
     const updateQuestionText = (index: number, text: string) => {
         const updated = [...questions];
         updated[index].question_text = text;
-        setQuestions(updated);
-        onChange(updated);
+        updateAndNotify(updated);
     };
 
     const updateQuestionType = (index: number, type: string) => {
         const updated = [...questions];
         updated[index].question_type = type;
-        setQuestions(updated);
-        onChange(updated);
+        updateAndNotify(updated);
     };
 
     const updateMarks = (index: number, val: number) => {
         const updated = [...questions];
         updated[index].marks = val;
-        setQuestions(updated);
-        onChange(updated);
+        updateAndNotify(updated);
     };
 
     const updateOptionText = (qIndex: number, oIndex: number, text: string) => {
         const updated = [...questions];
         updated[qIndex].options[oIndex].option_text = text;
-        setQuestions(updated);
-        onChange(updated);
+        updateAndNotify(updated);
     };
 
     return (
-        <div className="md:col-span-2 space-y-6 bg-app-bg p-8 rounded-[2.5rem] border-2 border-border-subtle transition-colors">
+        <div className={`md:col-span-2 space-y-6 bg-app-bg p-8 rounded-[2.5rem] border-2 transition-all ${error ? 'border-red-500/50 shadow-lg shadow-red-500/5' : 'border-border-subtle'}`}>
             <div className="flex justify-between items-center px-2">
-                <h3 className="text-sm font-black uppercase text-text-muted tracking-widest">
-                    Quiz Designer
-                </h3>
+                <div>
+                    <h3 className="text-sm font-black uppercase text-text-muted tracking-widest">Quiz Designer</h3>
+                    {error && <p className="text-[10px] font-bold text-red-500 uppercase mt-1 tracking-wider italic">{error}</p>}
+                </div>
                 <button
                     type="button"
                     onClick={addQuestion}
@@ -138,10 +137,7 @@ const QuestionBuilder = ({
             </div>
 
             {questions.map((q, qIndex) => (
-                <div
-                    key={qIndex}
-                    className="bg-card-bg p-8 rounded-[2rem] border border-border-subtle shadow-sm space-y-6 animate-in slide-in-from-top-4 duration-300"
-                >
+                <div key={qIndex} className="bg-card-bg p-8 rounded-[2rem] border border-border-subtle shadow-sm space-y-6 animate-in slide-in-from-top-4 duration-300">
                     <div className="flex justify-between gap-4">
                         <input
                             placeholder="Enter Question Text..."
@@ -149,11 +145,7 @@ const QuestionBuilder = ({
                             value={q.question_text || ''}
                             onChange={(e) => updateQuestionText(qIndex, e.target.value)}
                         />
-                        <button
-                            type="button"
-                            onClick={() => removeQuestion(qIndex)}
-                            className="text-text-muted hover:text-red-500 p-2 transition-colors"
-                        >
+                        <button type="button" onClick={() => removeQuestion(qIndex)} className="text-text-muted hover:text-red-500 p-2 transition-colors">
                             <Trash2 size={18} />
                         </button>
                     </div>
@@ -191,28 +183,17 @@ const QuestionBuilder = ({
                                         <button
                                             type="button"
                                             onClick={() => toggleCorrectOption(qIndex, oIndex)}
-                                            className={`p-1.5 rounded-lg transition-all ${opt.is_correct ? 'bg-emerald-500 text-white shadow-lg' : 'bg-card-bg text-text-muted border border-border-subtle'
-                                                }`}
+                                            className={`p-1.5 rounded-lg transition-all ${opt.is_correct ? 'bg-emerald-500 text-white shadow-lg' : 'bg-card-bg text-text-muted border border-border-subtle'}`}
                                         >
                                             <CheckCircle2 size={14} />
                                         </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => removeOption(qIndex, oIndex)}
-                                            className="p-1.5 text-text-muted hover:text-red-500 transition-colors"
-                                        >
+                                        <button type="button" onClick={() => removeOption(qIndex, oIndex)} className="p-1.5 text-text-muted hover:text-red-500 transition-colors">
                                             <Trash2 size={14} />
                                         </button>
                                     </div>
                                 </div>
                             ))}
-                            <button
-                                type="button"
-                                onClick={() => addOption(qIndex)}
-                                className="text-[10px] font-black text-accent-blue uppercase hover:opacity-80 transition-all ml-1"
-                            >
-                                + Add Option
-                            </button>
+                            <button type="button" onClick={() => addOption(qIndex)} className="text-[10px] font-black text-accent-blue uppercase hover:opacity-80 transition-all ml-1">+ Add Option</button>
                         </div>
                     )}
                 </div>
@@ -235,6 +216,7 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
     submitText
 }) => {
     const [formValues, setFormValues] = useState<Record<string, any>>({});
+    const [errors, setErrors] = useState<Record<string, string>>({}); // Validation Errors state
 
     const getMinDateTime = () => {
         const now = new Date();
@@ -256,21 +238,85 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
             setFormValues(formattedData);
         } else {
             setFormValues({});
+            setErrors({});
         }
     }, [isOpen, initialData]);
 
-    if (!isOpen) return null;
+    // --- PROFESSIONAL VALIDATION LOGIC ---
+    const validate = () => {
+        const newErrors: Record<string, string> = {};
+        const nameRegex = /^[A-Za-z\s'-]+$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const phoneRegex = /^\+?[0-9]{11,13}$/;
+
+        fields.forEach((field) => {
+            const val = formValues[field.name];
+
+            // 1. Required Check
+            if (field.required && (!val || (Array.isArray(val) && val.length === 0))) {
+                newErrors[field.name] = `${field.label} is strictly required.`;
+            }
+
+            // 2. CreateStudentDto Logic Implementation
+            if (val) {
+                if (field.name === 'firstName' || field.name === 'lastName') {
+                    if (val.length < 3 || val.length > 50) newErrors[field.name] = "Node must be 3-50 characters.";
+                    else if (!nameRegex.test(val)) newErrors[field.name] = "Only letters, spaces, hyphens allowed.";
+                }
+
+                if (field.name === 'email') {
+                    if (!emailRegex.test(val)) newErrors[field.name] = "Enter a valid registry email.";
+                    else if (val.length < 5 || val.length > 100) newErrors[field.name] = "Email volume out of range.";
+                }
+
+                if (field.name === 'contactNumber' && !phoneRegex.test(val)) {
+                    newErrors[field.name] = "Invalid contact format (e.g. +923001234567).";
+                }
+
+                if (field.name === 'password' && val.length < 6) {
+                    newErrors[field.name] = "Security Key must be min 6 characters.";
+                }
+            }
+
+            // 3. Quiz Builder Deep Audit
+            if (field.type === 'quiz-builder' && val) {
+                const quiz = val as any[];
+                quiz.forEach((q, idx) => {
+                    if (!q.question_text) newErrors[field.name] = `Question ${idx + 1} has no text.`;
+                    if (q.question_type !== 'SHORT') {
+                        if (!q.options || q.options.length < 2) newErrors[field.name] = `Question ${idx + 1} requires 2+ options.`;
+                        if (!q.options.some((o: any) => o.is_correct)) newErrors[field.name] = `Question ${idx + 1} missing correct key.`;
+                    }
+                });
+            }
+        });
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleInputChange = (name: string, value: any) => {
+        setFormValues({ ...formValues, [name]: value });
+        if (errors[name]) {
+            setErrors((prev) => {
+                const updated = { ...prev };
+                delete updated[name];
+                return updated;
+            });
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const formData = new FormData();
+        
+        // Validation Guard
+        if (!validate()) return;
 
+        const formData = new FormData();
         fields.forEach((field) => {
             const value = formValues[field.name];
             if (field.type === 'files') {
-                if (value && typeof value === 'object' && value instanceof File) {
-                    formData.append(field.name, value);
-                }
+                if (value instanceof File) formData.append(field.name, value);
             } else if (field.type === 'quiz-builder') {
                 formData.append(field.name, JSON.stringify(value || []));
             } else if (value !== null && value !== undefined && value !== "") {
@@ -285,22 +331,19 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
         }
     };
 
+    if (!isOpen) return null;
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <div className="bg-card-bg w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-border-subtle transition-colors duration-300">
-
-                {/* HEADER: Applied .form-modal-header for Light Blue / Pitch Black switch */}
+            <div className="bg-card-bg w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-border-subtle transition-all duration-300">
+                
+                {/* HEADER */}
                 <div className="flex justify-between items-center px-10 py-8 form-modal-header transition-colors">
                     <div className="space-y-1">
-                        <h2 className="text-3xl font-black tracking-tight uppercase">{title}</h2>
-                        <div className="h-1.5 w-16 bg-accent-blue rounded-full shadow-sm"></div>
+                        <h2 className="text-3xl font-black tracking-tight uppercase italic">{title}</h2>
+                        <div className="h-1.5 w-16 bg-accent-blue rounded-full"></div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-3 hover:bg-white/10 dark:hover:bg-card-bg/20 rounded-2xl transition-all"
-                    >
-                        <X size={24} />
-                    </button>
+                    <button onClick={onClose} className="p-3 hover:bg-white/10 rounded-2xl transition-all"><X size={24} /></button>
                 </div>
 
                 {/* FORM BODY */}
@@ -308,70 +351,51 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                     <div className="px-10 py-10 space-y-10">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
                             {fields.map((field) => (
-                                <div
-                                    key={field.name}
-                                    className={(field.type === 'textarea' || field.type === 'quiz-builder') ? 'md:col-span-2' : ''}
-                                >
+                                <div key={field.name} className={(field.type === 'textarea' || field.type === 'quiz-builder') ? 'md:col-span-2' : ''}>
                                     <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-text-muted mb-4 ml-1">
                                         {field.label} {field.required && <span className="text-accent-blue">*</span>}
                                     </label>
 
-                                    {field.type === 'select' ? (
-                                        <div className="relative group">
-                                            <select
-                                                required={field.required}
-                                                value={formValues[field.name] || ''}
-                                                onChange={(e) => setFormValues({ ...formValues, [field.name]: e.target.value })}
-                                                className="w-full px-8 py-5 rounded-[1.5rem] border-2 border-border-subtle bg-app-bg hover:border-accent-blue/50 focus:bg-card-bg focus:ring-4 focus:ring-accent-blue/10 focus:border-accent-blue outline-none text-sm font-bold text-text-main appearance-none cursor-pointer transition-all"
-                                            >
-                                                <option value="" disabled className="bg-card-bg">Choose {field.label}...</option>
-                                                {field.options?.map((opt) => (
-                                                    <option key={opt.value} value={opt.value} className="bg-card-bg text-text-main">{opt.label}</option>
-                                                ))}
-                                            </select>
-                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-accent-blue group-focus-within:rotate-180 transition-transform duration-300">
-                                                <ChevronDown size={22} strokeWidth={3} />
-                                            </div>
-                                        </div>
-                                    ) : field.type === 'datetime-local' ? (
-                                        <div className="relative group">
-                                            <input
-                                                type="datetime-local"
-                                                required={field.required}
-                                                min={getMinDateTime()}
-                                                value={formValues[field.name] || ''}
-                                                className="w-full px-8 py-5 rounded-[1.5rem] border-2 border-border-subtle bg-app-bg text-text-main focus:bg-card-bg focus:border-accent-blue outline-none text-sm font-bold transition-all custom-blue-calendar"
-                                                onChange={(e) => setFormValues({ ...formValues, [field.name]: e.target.value })}
-                                            />
-                                        </div>
-                                    ) : field.type === 'quiz-builder' ? (
+                                    {field.type === 'quiz-builder' ? (
                                         <QuestionBuilder
                                             initialData={formValues[field.name]}
-                                            onChange={(data) => setFormValues({ ...formValues, [field.name]: data })}
-                                        />
-                                    ) : field.type === 'textarea' ? (
-                                        <textarea
-                                            required={field.required}
-                                            value={formValues[field.name] || ''}
-                                            placeholder={field.placeholder}
-                                            className="w-full px-8 py-6 rounded-[2rem] border-2 border-border-subtle bg-app-bg text-text-main focus:bg-card-bg focus:ring-4 focus:ring-accent-blue/10 focus:border-accent-blue outline-none min-h-[160px] text-sm font-bold transition-all shadow-sm"
-                                            onChange={(e) => setFormValues({ ...formValues, [field.name]: e.target.value })}
-                                        />
-                                    ) : field.type === 'files' ? (
-                                        <input
-                                            type="file"
-                                            onChange={(e) => setFormValues({ ...formValues, [field.name]: e.target.files?.[0] })}
-                                            className="w-full px-8 py-5 rounded-[1.5rem] border-2 border-border-subtle bg-app-bg text-text-muted text-xs font-bold transition-all cursor-pointer"
+                                            onChange={(data) => handleInputChange(field.name, data)}
+                                            error={errors[field.name]}
                                         />
                                     ) : (
-                                        <input
-                                            type={field.type}
-                                            required={field.required}
-                                            placeholder={field.placeholder}
-                                            value={formValues[field.name] || ''}
-                                            className="w-full px-8 py-5 rounded-[1.5rem] border-2 border-border-subtle bg-app-bg text-text-main focus:bg-card-bg focus:ring-4 focus:ring-accent-blue/10 focus:border-accent-blue outline-none text-sm font-bold transition-all shadow-sm"
-                                            onChange={(e) => setFormValues({ ...formValues, [field.name]: e.target.value })}
-                                        />
+                                        <div className="space-y-2">
+                                            {field.type === 'select' ? (
+                                                <div className="relative">
+                                                    <select
+                                                        value={formValues[field.name] || ''}
+                                                        onChange={(e) => handleInputChange(field.name, e.target.value)}
+                                                        className={`w-full px-8 py-5 rounded-[1.5rem] border-2 bg-app-bg text-sm font-bold text-text-main appearance-none cursor-pointer transition-all outline-none ${errors[field.name] ? 'border-red-500 bg-red-500/5 shadow-inner' : 'border-border-subtle focus:border-accent-blue'}`}
+                                                    >
+                                                        <option value="" disabled>Choose {field.label}...</option>
+                                                        {field.options?.map((opt) => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                    <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-accent-blue pointer-events-none" size={22} strokeWidth={3} />
+                                                </div>
+                                            ) : (
+                                                <input
+                                                    type={field.type === 'textarea' ? 'text' : field.type}
+                                                    placeholder={field.placeholder}
+                                                    value={formValues[field.name] || ''}
+                                                    onChange={(e) => handleInputChange(field.name, e.target.value)}
+                                                    className={`w-full px-8 py-5 rounded-[1.5rem] border-2 bg-app-bg text-text-main text-sm font-bold transition-all outline-none ${errors[field.name] ? 'border-red-500 bg-red-500/5 shadow-inner' : 'border-border-subtle focus:border-accent-blue'}`}
+                                                />
+                                            )}
+                                            
+                                            {/* ERROR FEEDBACK UI */}
+                                            {errors[field.name] && (
+                                                <div className="flex items-center gap-2 mt-2 ml-4 text-red-500 animate-in fade-in slide-in-from-top-1">
+                                                    <AlertCircle size={12} />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">{errors[field.name]}</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             ))}
@@ -379,31 +403,21 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                     </div>
 
                     {/* FOOTER */}
-                    <div className="px-10 py-12 bg-app-bg flex flex-col sm:flex-row justify-end gap-6 border-t border-border-subtle mt-auto transition-colors">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-10 py-5 text-[11px] font-black uppercase tracking-[0.25em] text-text-muted hover:text-text-main transition-all"
-                        >
-                            Discard
-                        </button>
+                    <div className="px-10 py-12 bg-app-bg flex flex-col sm:flex-row justify-end gap-6 border-t border-border-subtle mt-auto">
+                        <button type="button" onClick={onClose} className="px-10 py-5 text-[11px] font-black uppercase tracking-[0.25em] text-text-muted hover:text-text-main transition-all">Discard</button>
                         <button
                             disabled={loading}
                             className="px-14 py-5 bg-accent-blue text-white rounded-[1.75rem] font-black text-[11px] uppercase tracking-[0.3em] hover:bg-hover-blue disabled:opacity-50 flex items-center justify-center gap-4 transition-all active:scale-95 shadow-xl shadow-accent-blue/20"
                         >
-                            {loading ? (
-                                <Loader2 size={20} className="animate-spin" />
-                            ) : (
-                                submitText || 'Apply Changes'
-                            )}
+                            {loading ? <Loader2 size={20} className="animate-spin" /> : (submitText || 'Apply Changes')}
                         </button>
                     </div>
                 </form>
             </div>
             <style jsx>{`
                 .custom-blue-calendar::-webkit-calendar-picker-indicator {
-                  filter: invert(0.5) sepia(1) saturate(5) hue-rotate(200deg);
-                  cursor: pointer;
+                    filter: invert(0.5) sepia(1) saturate(5) hue-rotate(200deg);
+                    cursor: pointer;
                 }
             `}</style>
         </div>
