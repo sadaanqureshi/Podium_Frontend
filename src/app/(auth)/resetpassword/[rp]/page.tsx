@@ -56,10 +56,10 @@ const ResetPasswordPage = () => {
 
   return (
     <AuthLayout>
-      <div className="w-full space-y-8 animate-in fade-in duration-500">
+      <div className="w-full space-y-8 animate-in fade-in duration-300">
         {isSuccess ? (
           /* --- SUCCESS STATE (Theme Aware) --- */
-          <div className="text-center animate-in fade-in zoom-in duration-500">
+          <div className="text-center animate-in fade-in zoom-in duration-300">
             <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-emerald-500/20">
               <CheckCircle size={40} />
             </div>

@@ -34,14 +34,14 @@ const ResourceDetailPage = ({ params }: { params: Promise<any> }) => {
     const isPageLoading = reduxLoading.courseContent[Number(courseId)];
 
     if (!resource && isPageLoading) return (
-        <div className="h-screen flex flex-col items-center justify-center bg-app-bg transition-colors duration-300">
+        <div className="h-screen flex flex-col items-center justify-center bg-app-bg">
             <Loader2 className="animate-spin text-accent-blue mb-4" size={48} />
             <p className="text-text-muted font-black uppercase tracking-widest text-[10px]">Loading Resource...</p>
         </div>
     );
 
     if (!resource && !isPageLoading) return (
-        <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-app-bg transition-colors duration-300">
+        <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-app-bg">
             <AlertCircle className="text-red-500 mb-4" size={48} />
             <h2 className="text-xl font-black text-text-main uppercase tracking-tight">Material Not Found</h2>
             <p className="text-text-muted mt-2 mb-6 max-w-md font-medium text-sm">Yeh content abhi available nahi hai ya link expire ho chuka hai.</p>
@@ -50,8 +50,8 @@ const ResourceDetailPage = ({ params }: { params: Promise<any> }) => {
     );
 
     return (
-        <div className="p-6 md:p-12 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 bg-app-bg min-h-screen text-text-main transition-colors duration-300">
-            
+        <div className="p-6 md:p-12 max-w-5xl mx-auto space-y-8 animate-in fade-in pb-20 bg-app-bg min-h-screen text-text-main">
+
             {/* Navigation Header */}
             <div className="flex items-center justify-between">
                 <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-xs uppercase tracking-widest transition-all group">
@@ -60,10 +60,10 @@ const ResourceDetailPage = ({ params }: { params: Promise<any> }) => {
             </div>
 
             {/* Main Resource Card: bg-card-bg logic */}
-            <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle shadow-2xl overflow-hidden animate-in zoom-in-95 duration-700">
-                
+            <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle shadow-2xl overflow-hidden animate-in zoom-in-95">
+
                 {/* Header: Now using the hero-registry-card for Light Blue / Navy switch */}
-                <div className="hero-registry-card p-10 relative overflow-hidden transition-all duration-300">
+                <div className="hero-registry-card p-10 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
 
                     <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
@@ -89,7 +89,7 @@ const ResourceDetailPage = ({ params }: { params: Promise<any> }) => {
                         </div>
 
                         {/* Metadata Box: Using bg-app-bg for layered depth */}
-                        <div className="bg-app-bg rounded-3xl p-8 border border-border-subtle space-y-6 transition-colors">
+                        <div className="bg-app-bg rounded-3xl p-8 border border-border-subtle space-y-6">
                             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">File Info</h3>
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between border-b border-border-subtle pb-3">

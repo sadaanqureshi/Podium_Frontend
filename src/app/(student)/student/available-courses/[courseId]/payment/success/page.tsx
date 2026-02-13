@@ -5,11 +5,11 @@ import Link from 'next/link';
 
 const EnrollmentSuccessPage = () => {
     return (
-        <div className="h-screen flex flex-col items-center justify-center bg-app-bg p-6 text-center transition-all duration-500">
-            
+        <div className="h-screen flex flex-col items-center justify-center bg-app-bg p-6 text-center">
+
             {/* Main Success Container */}
-            <div className="bg-card-bg border border-emerald-500/20 rounded-[3rem] p-10 md:p-16 max-w-2xl space-y-8 shadow-2xl animate-in zoom-in-95 duration-500">
-                
+            <div className="bg-card-bg border border-emerald-500/20 rounded-[3rem] p-10 md:p-16 max-w-2xl space-y-8 shadow-2xl animate-in zoom-in-95">
+
                 {/* Animated Icon */}
                 <div className="relative mx-auto w-24 h-24">
                     <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping opacity-20"></div>
@@ -26,7 +26,7 @@ const EnrollmentSuccessPage = () => {
                     <div className="h-1 w-20 bg-emerald-500/30 mx-auto rounded-full"></div>
                     <p className="text-text-muted text-sm md:text-base font-medium leading-relaxed max-w-md mx-auto">
                         We have received your payment screenshot. <br />
-                        Now, please wait for our **Admin Team** to check it. 
+                        Now, please wait for our **Admin Team** to check it.
                     </p>
                 </div>
 
@@ -50,9 +50,9 @@ const EnrollmentSuccessPage = () => {
 
                 {/* Primary Action Button */}
                 <div className="pt-6">
-                    <Link 
-                        href="/student/dashboard" 
-                        className="group flex items-center justify-center gap-3 w-full py-5 bg-text-main text-card-bg rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] transition-all active:scale-95"
+                    <Link
+                        href="/student/dashboard"
+                        className="group flex items-center justify-center gap-3 w-full py-5 bg-text-main text-card-bg rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95"
                     >
                         <LayoutDashboard size={18} className="group-hover:rotate-12 transition-transform" />
                         Go to My Dashboard

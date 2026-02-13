@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, use, useMemo } from 'react';
 import {
-    Calendar, ClipboardList, Download, CheckCircle2, 
+    Calendar, ClipboardList, Download, CheckCircle2,
     Loader2, ArrowLeft, AlertCircle, X
 } from 'lucide-react';
 import Link from 'next/link';
@@ -25,7 +25,7 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
     // # 1. REDUX STATE ACCESS
     const { courseContent, loading: reduxCourseLoading } = useAppSelector((state) => state.course);
     const { submissionsCache, loading: reduxSubLoading } = useAppSelector((state) => state.assignment);
-    
+
     const fullData = courseContent[courseId];
     const assignment = useMemo(() => {
         if (!fullData?.sections) return null;
@@ -38,7 +38,7 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
     const isTableLoading = reduxSubLoading[assignmentId];
 
     const [showSubmissions, setShowSubmissions] = useState(false);
-    
+
     const [selectedSub, setSelectedSub] = useState<any>(null);
     const [gradeData, setGradeData] = useState({ marksObtained: '', comments: '' });
     const [gradeLoading, setGradeLoading] = useState(false);
@@ -63,9 +63,9 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
             await dispatch(submitGrade({
                 assignmentId,
                 studentId: selectedSub.studentId,
-                gradeData: { 
-                    marksObtained: Number(gradeData.marksObtained), 
-                    comments: gradeData.comments 
+                gradeData: {
+                    marksObtained: Number(gradeData.marksObtained),
+                    comments: gradeData.comments
                 }
             })).unwrap();
             setSelectedSub(null);
@@ -135,11 +135,10 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
                             setSelectedSub(item);
                             setGradeData({ marksObtained: item.marksObtained?.toString() || '', comments: item.comments || '' });
                         }}
-                        className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 ${
-                            isGraded 
-                            ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
-                            : 'bg-accent-blue text-white'
-                        }`}
+                        className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 ${isGraded
+                                ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                                : 'bg-accent-blue text-white'
+                            }`}
                     >
                         {isGraded ? 'Graded' : 'Mark Grade'}
                     </button>
@@ -153,7 +152,7 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
             <Loader2 className="animate-spin text-accent-blue" size={48} />
         </div>
     );
-    
+
     if (!assignment) return (
         <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-app-bg">
             <AlertCircle className="text-red-500 mb-4" size={48} />
@@ -163,14 +162,14 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
     );
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 bg-app-bg min-h-screen text-text-main transition-colors duration-300">
-            
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in pb-20 bg-app-bg min-h-screen text-text-main">
+
             <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-xs uppercase tracking-widest transition-all">
                 <ArrowLeft size={16} /> Back to Dashboard
             </Link>
 
             {/* Header Card: Now using hero-registry-card for Light Blue (Light) / Navy (Dark) */}
-            <div className="hero-registry-card rounded-[2.5rem] p-8 md:p-12 shadow-xl relative overflow-hidden transition-all duration-300">
+            <div className="hero-registry-card rounded-[2.5rem] p-8 md:p-12 shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
                 <div className="relative z-10">
                     <span className="px-4 py-1.5 bg-accent-blue/10 text-accent-blue rounded-full text-[10px] font-black uppercase tracking-widest border border-accent-blue/20">Evaluation Registry</span>
@@ -190,7 +189,7 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
-                    <section className="bg-card-bg rounded-[2rem] p-8 border border-border-subtle shadow-sm transition-all">
+                    <section className="bg-card-bg rounded-[2rem] p-8 border border-border-subtle shadow-sm">
                         <h3 className="text-xs font-black uppercase tracking-[0.2em] text-accent-blue mb-4">Objective</h3>
                         <p className="text-text-muted font-medium leading-relaxed">{assignment.objective || 'No objective data provided.'}</p>
                         <h3 className="text-xs font-black uppercase tracking-[0.2em] text-purple-500 mt-8 mb-4">Requirements</h3>
@@ -202,7 +201,7 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
                     <div className="bg-card-bg rounded-[2rem] p-8 border border-border-subtle shadow-sm text-center">
                         <h4 className="font-black text-lg mb-2 uppercase tracking-tighter text-text-main">Audit Control</h4>
                         <p className="text-text-muted text-xs font-medium mb-6">Manage student work and grading history.</p>
-                        <button onClick={handleViewSubmissions} className="w-full py-4 bg-text-main text-card-bg rounded-2xl font-black text-xs uppercase shadow-xl hover:opacity-90 transition-all active:scale-95">
+                        <button onClick={handleViewSubmissions} className="w-full py-4 bg-text-main text-card-bg rounded-2xl font-black text-xs uppercase shadow-xl hover:opacity-90 active:scale-95">
                             {showSubmissions ? 'Re-Sync Intel' : 'Fetch Submissions'}
                         </button>
                     </div>
@@ -222,7 +221,7 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
             {selectedSub && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
                     <div className="bg-card-bg w-full max-w-lg rounded-[3rem] shadow-2xl animate-in zoom-in-95 border border-border-subtle overflow-hidden">
-                        
+
                         {/* Modal Header: Uses .form-modal-header for Light Blue/Pitch Black switch */}
                         <div className="flex justify-between items-center px-10 py-8 form-modal-header transition-colors">
                             <div className="space-y-1">
@@ -235,26 +234,26 @@ const AssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
                         <div className="p-10 space-y-8">
                             <div>
                                 <label className="block text-[10px] font-black uppercase text-text-muted mb-3 ml-2 tracking-[0.2em]">Award Score (Max: {assignment.totalMarks})</label>
-                                <input 
-                                    type="number" 
-                                    value={gradeData.marksObtained} 
-                                    onChange={(e) => setGradeData({ ...gradeData, marksObtained: e.target.value })} 
-                                    className="w-full p-5 bg-app-bg text-text-main rounded-2xl border border-border-subtle outline-none focus:border-accent-blue font-black transition-all shadow-inner" 
+                                <input
+                                    type="number"
+                                    value={gradeData.marksObtained}
+                                    onChange={(e) => setGradeData({ ...gradeData, marksObtained: e.target.value })}
+                                    className="w-full p-5 bg-app-bg text-text-main rounded-2xl border border-border-subtle outline-none focus:border-accent-blue font-black transition-all shadow-inner"
                                 />
                             </div>
                             <div>
                                 <label className="block text-[10px] font-black uppercase text-text-muted mb-3 ml-2 tracking-[0.2em]">Feedback Intel</label>
-                                <textarea 
-                                    rows={4} 
-                                    value={gradeData.comments} 
-                                    onChange={(e) => setGradeData({ ...gradeData, comments: e.target.value })} 
-                                    className="w-full p-5 bg-app-bg text-text-main rounded-2xl border border-border-subtle outline-none focus:border-accent-blue font-medium transition-all shadow-inner" 
-                                    placeholder="Type assessment notes..." 
+                                <textarea
+                                    rows={4}
+                                    value={gradeData.comments}
+                                    onChange={(e) => setGradeData({ ...gradeData, comments: e.target.value })}
+                                    className="w-full p-5 bg-app-bg text-text-main rounded-2xl border border-border-subtle outline-none focus:border-accent-blue font-medium transition-all shadow-inner"
+                                    placeholder="Type assessment notes..."
                                 />
                             </div>
-                            <button 
-                                onClick={handleGradeSubmit} 
-                                disabled={gradeLoading} 
+                            <button
+                                onClick={handleGradeSubmit}
+                                disabled={gradeLoading}
                                 className="w-full py-5 bg-accent-blue text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-accent-blue/20 flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50"
                             >
                                 {gradeLoading ? <Loader2 className="animate-spin" size={20} /> : <><CheckCircle2 size={20} /> Deploy Grade</>}

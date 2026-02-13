@@ -13,10 +13,10 @@ interface SectionProps {
 export const SectionWrapper = ({ sectionName, children, role, type, onAddItem }: SectionProps) => {
     return (
         // bg-app-bg/50 aur border-border-subtle automatic theme sync handle karenge
-        <div className="mb-8 bg-app-bg/50 rounded-[2rem] border border-border-subtle overflow-hidden shadow-sm transition-all hover:shadow-md">
+        <div className="mb-8 bg-app-bg/50 rounded-[2rem] border border-border-subtle overflow-hidden shadow-sm hover:shadow-md">
             
             {/* Section Header: bg-card-bg use kar raha hai */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-6 py-5 bg-card-bg border-b border-border-subtle gap-4 transition-colors">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-6 py-5 bg-card-bg border-b border-border-subtle gap-4">
                 <div className="flex items-center gap-3">
                     {/* Folder Icon: accent-blue/10 for premium glow effect */}
                     <div className="p-2.5 bg-accent-blue/10 rounded-xl text-accent-blue shadow-sm">

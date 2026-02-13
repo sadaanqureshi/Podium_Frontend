@@ -60,7 +60,7 @@ const AttendancePage = () => {
     if (loading && attendance.length === 0) return <div className="h-screen flex items-center justify-center bg-app-bg"><Loader2 className="animate-spin text-accent-blue" size={48} /></div>;
 
     return (
-        <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main transition-colors duration-300">
+        <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main">
             <div className="mb-10">
                 <h1 className="text-4xl font-black tracking-tight uppercase text-accent-blue">Presence Log</h1>
                 <p className="text-text-muted font-medium mt-1 italic underline decoration-accent-blue/20">Real-time classroom attendance tracking.</p>

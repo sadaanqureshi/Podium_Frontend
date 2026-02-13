@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, use, useMemo } from 'react';
 import {
-    Calendar, ClipboardList, Download, CheckCircle2, 
+    Calendar, ClipboardList, Download, CheckCircle2,
     Loader2, ArrowLeft, AlertCircle, X
 } from 'lucide-react';
 import Link from 'next/link';
@@ -17,16 +17,16 @@ import UserManagementTable from '@/components/ui/UserManagementTable';
 
 const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
     const resolvedParams = use(params);
-    const courseId = Number(resolvedParams.id); 
+    const courseId = Number(resolvedParams.id);
     const assignmentId = Number(resolvedParams.assignmentId);
 
     const dispatch = useAppDispatch();
 
     const { courseContent, loading: reduxCourseLoading } = useAppSelector((state) => state.course);
     const { submissionsCache = {}, loading: reduxSubLoading = {} } = useAppSelector(
-        (state) => state.assignment || {} 
+        (state) => state.assignment || {}
     );
-    
+
     const fullData = courseContent[courseId];
     const assignment = useMemo(() => {
         if (!fullData?.sections) return null;
@@ -63,9 +63,9 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
             await dispatch(submitGrade({
                 assignmentId,
                 studentId: selectedSub.studentId,
-                gradeData: { 
-                    marksObtained: Number(gradeData.marksObtained), 
-                    comments: gradeData.comments 
+                gradeData: {
+                    marksObtained: Number(gradeData.marksObtained),
+                    comments: gradeData.comments
                 }
             })).unwrap();
             setSelectedSub(null);
@@ -135,11 +135,10 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
                             setSelectedSub(item);
                             setGradeData({ marksObtained: item.marksObtained?.toString() || '', comments: item.comments || '' });
                         }}
-                        className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 ${
-                            isGraded 
-                            ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' 
-                            : 'bg-accent-blue text-white'
-                        }`}
+                        className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 ${isGraded
+                                ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                                : 'bg-accent-blue text-white'
+                            }`}
                     >
                         {isGraded ? 'Evaluated' : 'Mark Grade'}
                     </button>
@@ -149,7 +148,7 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
     ];
 
     if (!assignment && reduxCourseLoading.courseContent[courseId]) return <div className="h-screen flex items-center justify-center bg-app-bg"><Loader2 className="animate-spin text-accent-blue" size={48} /></div>;
-    
+
     if (!assignment) return (
         <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-app-bg">
             <AlertCircle className="text-red-500 mb-4" size={48} />
@@ -159,14 +158,14 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
     );
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 bg-app-bg min-h-screen text-text-main transition-colors duration-300">
-            
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in pb-20 bg-app-bg min-h-screen text-text-main">
+
             <Link href={`/admin/courses/${courseId}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-xs uppercase tracking-widest transition-all">
                 <ArrowLeft size={16} /> Course Terminal
             </Link>
 
             {/* Hero Header Card (Fixed Dark Gradient for Premium Feel) */}
-            <div className="hero-registry-card rounded-[2.5rem] p-8 md:p-12 shadow-xl relative overflow-hidden transition-all duration-300">
+            <div className="hero-registry-card rounded-[2.5rem] p-8 md:p-12 shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
                 <div className="relative z-10">
                     <span className="px-4 py-1.5 bg-card-bg/10 text-accent-blue rounded-full text-[10px] font-black uppercase tracking-widest border border-accent-blue/20">Assessment Intel</span>
@@ -195,12 +194,12 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
                 </div>
 
                 <div className="space-y-6">
-                    <div className="bg-card-bg rounded-[2rem] p-8 border border-border-subtle shadow-sm text-center transition-all">
+                    <div className="bg-card-bg rounded-[2rem] p-8 border border-border-subtle shadow-sm text-center">
                         <h4 className="font-black text-lg mb-2 uppercase tracking-tighter text-text-main">Audit Control</h4>
                         <p className="text-text-muted text-xs font-medium mb-6 underline decoration-accent-blue/10">Monitor and evaluate student submissions.</p>
-                        <button 
-                            onClick={handleViewSubmissions} 
-                            className="w-full py-4 bg-text-main text-card-bg rounded-2xl font-black text-xs uppercase shadow-xl hover:opacity-90 transition-all active:scale-95"
+                        <button
+                            onClick={handleViewSubmissions}
+                            className="w-full py-4 bg-text-main text-card-bg rounded-2xl font-black text-xs uppercase shadow-xl hover:opacity-90 active:scale-95"
                         >
                             {showSubmissions ? 'Re-Sync Intel' : 'Fetch Submissions'}
                         </button>
@@ -231,26 +230,26 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
                         <div className="space-y-6">
                             <div>
                                 <label className="block text-[10px] font-black uppercase text-text-muted mb-2 ml-1 tracking-widest">Award Points (Max: {assignment.totalMarks})</label>
-                                <input 
-                                    type="number" 
-                                    value={gradeData.marksObtained} 
-                                    onChange={(e) => setGradeData({ ...gradeData, marksObtained: e.target.value })} 
-                                    className="w-full p-4 bg-app-bg text-text-main rounded-2xl border border-border-subtle outline-none focus:ring-4 focus:ring-accent-blue/10 font-black transition-all" 
+                                <input
+                                    type="number"
+                                    value={gradeData.marksObtained}
+                                    onChange={(e) => setGradeData({ ...gradeData, marksObtained: e.target.value })}
+                                    className="w-full p-4 bg-app-bg text-text-main rounded-2xl border border-border-subtle outline-none focus:ring-4 focus:ring-accent-blue/10 font-black transition-all"
                                 />
                             </div>
                             <div>
                                 <label className="block text-[10px] font-black uppercase text-text-muted mb-2 ml-1 tracking-widest">Feedback Intel</label>
-                                <textarea 
-                                    rows={4} 
-                                    value={gradeData.comments} 
-                                    onChange={(e) => setGradeData({ ...gradeData, comments: e.target.value })} 
-                                    className="w-full p-4 bg-app-bg text-text-main rounded-2xl border border-border-subtle outline-none focus:ring-4 focus:ring-accent-blue/10 font-medium transition-all" 
-                                    placeholder="Reviewer notes..." 
+                                <textarea
+                                    rows={4}
+                                    value={gradeData.comments}
+                                    onChange={(e) => setGradeData({ ...gradeData, comments: e.target.value })}
+                                    className="w-full p-4 bg-app-bg text-text-main rounded-2xl border border-border-subtle outline-none focus:ring-4 focus:ring-accent-blue/10 font-medium transition-all"
+                                    placeholder="Reviewer notes..."
                                 />
                             </div>
-                            <button 
-                                onClick={handleGradeSubmit} 
-                                disabled={gradeLoading} 
+                            <button
+                                onClick={handleGradeSubmit}
+                                disabled={gradeLoading}
                                 className="w-full py-5 bg-accent-blue text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-accent-blue/20 flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50"
                             >
                                 {gradeLoading ? <Loader2 className="animate-spin" size={20} /> : <><CheckCircle2 size={20} /> Deploy Grade</>}

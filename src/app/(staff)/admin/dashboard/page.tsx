@@ -27,8 +27,8 @@ export default function AdminDashboard() {
                             <p className="text-text-muted text-sm font-medium uppercase tracking-widest">Monitor system-wide metrics, users, and financial logs.</p>
                         </div>
                         <div className="flex gap-4">
-                            <button className="p-4 bg-card-bg border border-border-subtle rounded-2xl text-text-muted hover:text-red-500 transition-all shadow-xl"><ShieldAlert size={24} /></button>
-                            <button className="p-4 bg-card-bg border border-border-subtle rounded-2xl text-text-muted hover:text-accent-blue transition-all shadow-xl"><Settings2 size={24} /></button>
+                            <button className="p-4 bg-card-bg border border-border-subtle rounded-2xl text-text-muted hover:text-red-500 shadow-xl"><ShieldAlert size={24} /></button>
+                            <button className="p-4 bg-card-bg border border-border-subtle rounded-2xl text-text-muted hover:text-accent-blue shadow-xl"><Settings2 size={24} /></button>
                         </div>
                     </div>
                 </div>
@@ -73,7 +73,7 @@ export default function AdminDashboard() {
                                 </thead>
                                 <tbody className="text-xs font-black uppercase tracking-tight">
                                     {adminCourses.data.slice(0, 5).map((item: any) => (
-                                        <tr key={item.id} className="border-b border-border-subtle/30 last:border-0 hover:bg-app-bg/30 transition-all">
+                                        <tr key={item.id} className="border-b border-border-subtle/30 last:border-0 hover:bg-app-bg/30">
                                             <td className="py-4">{item.courseName}</td>
                                             <td className="py-4">{item.teacher?.firstName}</td>
                                             <td className="py-4"><span className="text-emerald-500">Live</span></td>

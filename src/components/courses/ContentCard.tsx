@@ -38,15 +38,15 @@ const ContentCard = ({ id, title, subtitle, type, role, onEdit, onDelete, sectio
     const detailUrl = `${basePath}/${courseId}/section/${sectionId}/${type}/${id}`;
 
     return (
-        <div className="flex items-center justify-between p-4 bg-card-bg rounded-2xl border border-border-subtle hover:border-accent-blue/30 hover:bg-sidebar-to/10 transition-all group shadow-sm">
+        <div className="flex items-center justify-between p-4 bg-card-bg rounded-2xl border border-border-subtle hover:border-accent-blue/30 hover:bg-sidebar-to/10 group shadow-sm">
             
             {/* Main Content Area: Link covers Icon and Title */}
             <Link href={detailUrl} className="flex items-center gap-4 flex-1">
-                <div className="w-12 h-12 rounded-xl bg-app-bg border border-border-subtle flex items-center justify-center group-hover:scale-105 transition-all shadow-inner">
+                <div className="w-12 h-12 rounded-xl bg-app-bg border border-border-subtle flex items-center justify-center group-hover:scale-105 shadow-inner">
                     {iconMap[type]}
                 </div>
                 <div>
-                    <h4 className="font-black text-sm text-text-main group-hover:text-accent-blue transition-colors uppercase tracking-tight">
+                    <h4 className="font-black text-sm text-text-main group-hover:text-accent-blue uppercase tracking-tight">
                         {title}
                     </h4>
                     {subtitle && (

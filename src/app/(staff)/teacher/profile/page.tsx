@@ -19,11 +19,11 @@ const ProfilePage = () => {
 
     const dispatch = useAppDispatch();
     const user = useAppSelector((state) => state.auth.user);
-    
+
     const [activeTab, setActiveTab] = useState<'info' | 'password'>('info');
     const [loading, setLoading] = useState(false);
     const [calendarLoading, setCalendarLoading] = useState(false);
-    
+
     // Toast State
     const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | null }>({ msg: '', type: null });
 
@@ -74,7 +74,7 @@ const ProfilePage = () => {
     // --- 2. PASSWORD UPDATE LOGIC (Bcrypt Local Check) ---
     const handleUpdatePassword = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (passwords.newPassword !== passwords.confirmPassword) {
             return showToast("New passwords do not match!", "error");
         }
@@ -82,7 +82,7 @@ const ProfilePage = () => {
         // Backend se milne wala hash aur current input ka comparison
         // Note: Agar user.password undefined hai, toh backend se hash mangwana hoga
         const isMatch = bcrypt.compareSync(passwords.oldPassword, user?.password || '');
-        
+
         if (!isMatch) {
             return showToast("Current password is wrong!", "error");
         }
@@ -90,9 +90,9 @@ const ProfilePage = () => {
         setLoading(true);
         try {
             // Updating via same API
-            const response = await updateUserProfileAPI(user.id, { 
-                ...userInfo, 
-                password: passwords.newPassword 
+            const response = await updateUserProfileAPI(user.id, {
+                ...userInfo,
+                password: passwords.newPassword
             });
             dispatch(setUser(response.data || response));
             showToast("Password changed successfully!", "success");
@@ -125,19 +125,19 @@ const ProfilePage = () => {
 
     return (
         <div className="w-full max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10 bg-app-bg min-h-screen text-text-main transition-colors relative">
-            
+
             {/* TOAST NOTIFICATION */}
-            <Toast 
-                message={toast.msg} 
-                type={toast.type} 
-                onClose={() => setToast({ msg: '', type: null })} 
+            <Toast
+                message={toast.msg}
+                type={toast.type}
+                onClose={() => setToast({ msg: '', type: null })}
             />
 
             {/* Header Card */}
             <div className="hero-registry-card rounded-[2.5rem] p-8 md:p-12 mb-8 shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-center sm:items-start gap-8 transition-all duration-300">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
                 <div className="relative group flex-shrink-0">
-                    <div className="w-24 h-24 md:w-36 md:h-36 rounded-[2.5rem] bg-accent-blue text-white flex items-center justify-center text-5xl font-black border-4 border-card-bg shadow-2xl transition-transform duration-500 group-hover:scale-105">
+                    <div className="w-24 h-24 md:w-36 md:h-36 rounded-[2.5rem] bg-accent-blue text-white flex items-center justify-center text-5xl font-black border-4 border-card-bg shadow-2xl transition-transform duration-300 group-hover:scale-105">
                         {user?.firstName?.[0] || 'U'}
                     </div>
                 </div>
@@ -179,7 +179,7 @@ const ProfilePage = () => {
                 {/* Content Sections */}
                 <div className="lg:col-span-8 bg-card-bg rounded-[2.5rem] p-8 md:p-12 border border-border-subtle shadow-sm min-h-[500px]">
                     {activeTab === 'info' ? (
-                        <form onSubmit={handleSaveInfo} className="space-y-10 animate-in fade-in duration-500">
+                        <form onSubmit={handleSaveInfo} className="space-y-10 animate-in fade-in duration-300">
                             <h2 className="text-2xl font-black text-text-main uppercase tracking-tighter border-b border-border-subtle pb-8">Basic Profile</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <ProfileInput label="First Name" icon={<User />} value={userInfo.firstName} onChange={(v: string) => setUserInfo({ ...userInfo, firstName: v })} required />
@@ -192,12 +192,12 @@ const ProfilePage = () => {
                             </button>
                         </form>
                     ) : (
-                        <form onSubmit={handleUpdatePassword} className="space-y-10 animate-in fade-in duration-500">
+                        <form onSubmit={handleUpdatePassword} className="space-y-10 animate-in fade-in duration-300">
                             <h2 className="text-2xl font-black text-text-main uppercase tracking-tighter border-b border-border-subtle pb-8">Security Check</h2>
                             <div className="space-y-8 max-w-md">
-                                <ProfileInput label="Current Password" type="password" icon={<Lock />} value={passwords.oldPassword} onChange={(v: string) => setPasswords({...passwords, oldPassword: v})} required />
-                                <ProfileInput label="New Password" type="password" icon={<Lock />} value={passwords.newPassword} onChange={(v: string) => setPasswords({...passwords, newPassword: v})} required />
-                                <ProfileInput label="Confirm New Password" type="password" icon={<Lock />} value={passwords.confirmPassword} onChange={(v: string) => setPasswords({...passwords, confirmPassword: v})} required />
+                                <ProfileInput label="Current Password" type="password" icon={<Lock />} value={passwords.oldPassword} onChange={(v: string) => setPasswords({ ...passwords, oldPassword: v })} required />
+                                <ProfileInput label="New Password" type="password" icon={<Lock />} value={passwords.newPassword} onChange={(v: string) => setPasswords({ ...passwords, newPassword: v })} required />
+                                <ProfileInput label="Confirm New Password" type="password" icon={<Lock />} value={passwords.confirmPassword} onChange={(v: string) => setPasswords({ ...passwords, confirmPassword: v })} required />
                             </div>
                             <button disabled={loading} type="submit" className="w-full sm:w-auto flex items-center justify-center gap-3 px-12 py-5 bg-text-main text-card-bg rounded-2xl font-black text-[11px] uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-2xl disabled:opacity-50">
                                 {loading ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />} Update Password

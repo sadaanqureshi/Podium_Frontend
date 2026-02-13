@@ -5,6 +5,7 @@ import StoreProvider from '../components/providers/StoreProvider';
 import GlobalProgressBar from '@/components/ui/GlobalProgressBar';
 import { ThemeProvider } from '@/components/ui/ThemeProvider';
 import { ToastProvider } from '@/context/ToastContext';
+import { SessionManager } from '@/components/auth/SessionManager';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -33,6 +34,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <StoreProvider>
+          <SessionManager />
           <GlobalProgressBar />
           <ThemeProvider>
             <ToastProvider>

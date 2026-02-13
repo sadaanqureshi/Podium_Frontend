@@ -36,7 +36,7 @@ const AvailableCourseDetailPage = ({ params }: { params: Promise<any> }) => {
     );
 
     return (
-        <div className="min-h-screen bg-app-bg text-text-main pb-20 transition-colors duration-300">
+        <div className="min-h-screen bg-app-bg text-text-main pb-20">
             {/* Header Navigation */}
             <div className="max-w-7xl mx-auto px-6 pt-8">
                 <Link href="/student/available-courses" className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-[10px] uppercase tracking-widest transition-all">
@@ -136,7 +136,7 @@ const AvailableCourseDetailPage = ({ params }: { params: Promise<any> }) => {
                         
                         <div className="space-y-4">
                             {sections.map((section: any, sIdx: number) => (
-                                <div key={section.id} className="bg-card-bg border border-border-subtle rounded-[2rem] overflow-hidden group hover:border-accent-blue/30 transition-all shadow-sm">
+                                <div key={section.id} className="bg-card-bg border border-border-subtle rounded-[2rem] overflow-hidden group hover:border-accent-blue/30 shadow-sm">
                                     <div className="p-6 md:p-8 flex items-center justify-between bg-app-bg/30">
                                         <div className="flex items-center gap-5">
                                             <div className="w-10 h-10 rounded-2xl bg-accent-blue/10 text-accent-blue flex items-center justify-center font-black text-xs shadow-inner">
@@ -187,7 +187,7 @@ const AvailableCourseDetailPage = ({ params }: { params: Promise<any> }) => {
                             <div className="pt-4">
                                 <Link 
                                     href={`/student/available-courses/${courseId}/enroll`}
-                                    className="block w-full py-4 bg-text-main text-card-bg text-center rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:opacity-90 active:scale-95 transition-all"
+                                    className="block w-full py-4 bg-text-main text-card-bg text-center rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:opacity-90"
                                 >
                                     Initialize Enrollment
                                 </Link>

@@ -176,7 +176,7 @@ const AdminQuizDetailPage = ({ params }: { params: Promise<any> }) => {
     );
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-20 bg-app-bg min-h-screen text-text-main transition-colors duration-300">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-20 bg-app-bg min-h-screen text-text-main">
             
             {/* Header Navigation */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
@@ -187,14 +187,14 @@ const AdminQuizDetailPage = ({ params }: { params: Promise<any> }) => {
                     <button onClick={handleViewSubmissions} className="flex-1 sm:flex-none px-8 py-3.5 bg-accent-blue text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-accent-blue/20 active:scale-95 transition-all">
                         Attempt List
                     </button>
-                    <button onClick={() => setIsEditModalOpen(true)} className="flex-1 sm:flex-none px-8 py-3.5 bg-text-main text-card-bg rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <button onClick={() => setIsEditModalOpen(true)} className="flex-1 sm:flex-none px-8 py-3.5 bg-text-main text-card-bg rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 hover:bg-accent-blue hover:text-white flex items-center justify-center gap-2">
                         <Settings2 size={14} strokeWidth={3} /> Modify Structure
                     </button>
                 </div>
             </div>
 
             {/* Hero Info Card */}
-           <div className="hero-registry-card rounded-[2.5rem] p-8 md:p-12 shadow-xl relative overflow-hidden transition-all duration-300">
+           <div className="hero-registry-card rounded-[2.5rem] p-8 md:p-12 shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
                 <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
                     <div className="w-24 h-24 bg-card-bg/5 rounded-[2.5rem] flex items-center justify-center border border-card-bg/10 shadow-inner">
@@ -216,7 +216,7 @@ const AdminQuizDetailPage = ({ params }: { params: Promise<any> }) => {
 
                 <div className="grid grid-cols-1 gap-6">
                     {displayQuiz.questions?.map((q: any, index: number) => (
-                        <div key={index} className="p-8 bg-card-bg border border-border-subtle rounded-[2.5rem] shadow-sm transition-all hover:shadow-md">
+                        <div key={index} className="p-8 bg-card-bg border border-border-subtle rounded-[2.5rem] shadow-sm hover:shadow-md">
                             <div className="flex flex-col sm:flex-row justify-between items-start mb-8 gap-4">
                                 <div className="space-y-2">
                                     <p className="text-[10px] font-black text-accent-blue uppercase tracking-widest flex items-center gap-2">
@@ -230,7 +230,7 @@ const AdminQuizDetailPage = ({ params }: { params: Promise<any> }) => {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {q.options?.map((opt: any, i: number) => (
-                                    <div key={i} className={`p-5 rounded-3xl border-2 text-[11px] font-black uppercase tracking-widest flex items-center gap-4 transition-all ${
+                                    <div key={i} className={`p-5 rounded-3xl border-2 text-[11px] font-black uppercase tracking-widest flex items-center gap-4 ${
                                         opt.is_correct 
                                         ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500 shadow-sm shadow-emerald-500/5' 
                                         : 'bg-app-bg border-border-subtle text-text-muted'

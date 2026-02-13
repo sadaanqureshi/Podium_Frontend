@@ -8,9 +8,9 @@ export default function StudentDashboard() {
     const { user } = useAppSelector((state) => state.auth); //
 
     return (
-        <div className="min-h-screen bg-app-bg text-text-main pb-20 transition-all duration-300">
+        <div className="min-h-screen bg-app-bg text-text-main pb-20">
             <div className="max-w-6xl mx-auto px-6 pt-12 space-y-10">
-                
+
                 {/* Professional Welcome Hero */}
                 <div className="hero-registry-card rounded-[3rem] p-10 md:p-16 border border-border-subtle relative overflow-hidden shadow-2xl">
                     <div className="absolute top-0 right-0 w-80 h-80 bg-accent-blue/5 rounded-full blur-[100px] -mr-40 -mt-40"></div>

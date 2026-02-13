@@ -42,7 +42,7 @@ const CoursePageTemplate: React.FC<TemplateProps> = ({
   };
 
   return (
-    <div className="w-full p-4 md:p-8 transition-colors duration-300">
+    <div className="w-full md:p-8 transition-colors duration-300">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
         <div>
@@ -55,9 +55,9 @@ const CoursePageTemplate: React.FC<TemplateProps> = ({
       {/* Toolbar */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <SearchBar placeholder={placeholder || "Search Protocol..."} />
-        <button className="flex items-center gap-2 px-6 py-2.5 bg-card-bg border border-border-subtle rounded-xl text-[11px] font-black uppercase tracking-widest text-text-main hover:bg-sidebar-to/10 transition-all shadow-sm">
+        <button className="flex items-center gap-2 px-6 py-2.5 bg-card-bg border border-border-subtle rounded-xl text-[11px] font-black uppercase tracking-widest text-text-main hover:bg-sidebar-to/10 shadow-sm">
           <Filter size={16} className="text-accent-blue" />
-          <span>Filter Registry</span>
+          <span>Filter</span>
         </button>
       </div>
 

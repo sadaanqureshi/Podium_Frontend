@@ -17,7 +17,7 @@ const StudentProfilePage = () => {
     if (!mounted) return <div className="h-screen bg-app-bg" />;
 
     return (
-        <div className="min-h-screen bg-app-bg text-text-main transition-all duration-300">
+        <div className="min-h-screen bg-app-bg text-text-main">
             <div className="max-w-4xl mx-auto px-6 pt-12 space-y-8">
                 
                 {/* Navigation Links */}

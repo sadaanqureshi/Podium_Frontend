@@ -33,18 +33,18 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
   };
 
   // --- CLEANED CLASSES: Specificity fix for active state ---
-  const baseNavItemClasses = 'flex items-center gap-[12px] py-3 px-[12px] rounded-md transition-all duration-200 cursor-pointer text-sm font-medium whitespace-nowrap ';
+  const baseNavItemClasses = 'flex items-center gap-[12px] py-3 px-[12px] rounded-md cursor-pointer text-sm font-medium whitespace-nowrap ';
 
-  const baseSubNavItemClasses = 'block py-2 px-[12px] mb-1 rounded-md text-[13px] transition-all duration-200 cursor-pointer whitespace-nowrap ';
+  const baseSubNavItemClasses = 'block py-2 px-[12px] mb-1 rounded-md text-[13px] cursor-pointer whitespace-nowrap ';
 
   const subMenuVariants: Variants = {
     hidden: { opacity: 0, height: 0 },
-    show: { opacity: 1, height: 'auto', transition: { duration: 0.2 } },
-    exit: { opacity: 0, height: 0, transition: { duration: 0.2 } },
+    show: { opacity: 1, height: 'auto', transition: { duration: 0.02 } },
+    exit: { opacity: 0, height: 0, transition: { duration: 0.02 } },
   };
 
   return (
-    <aside className="w-[280px] h-full bg-gradient-to-b from-sidebar-from to-sidebar-to flex flex-col font-sans overflow-hidden pt-20 lg:pt-5 transition-all">
+    <aside className="w-[280px] h-full bg-gradient-to-b from-sidebar-from to-sidebar-to flex flex-col font-sans overflow-hidden pt-20 lg:pt-5">
       <div className="flex-1 overflow-y-auto px-[15px] pb-5 no-scrollbar">
 
         <div className="flex items-center gap-3 p-[10px] pb-[30px] text-base font-bold text-text-main">
@@ -64,8 +64,8 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
                 const isOpen = openMenus.includes(item.name);
                 return (
                   <li key={item.id} className="mb-1">
-                    <button 
-                      onClick={() => toggleMenu(item.name)} 
+                    <button
+                      onClick={() => toggleMenu(item.name)}
                       className={`${baseNavItemClasses} w-full justify-between focus:outline-none 
                         ${isOpen ? 'bg-sidebar-to/50 text-text-main' : 'text-text-main hover:bg-text-main hover:text-card-bg'}`}
                     >
@@ -83,12 +83,12 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
                             const isActive = pathname === dynamicChildPath;
                             return (
                               <li key={child.id}>
-                                <Link 
-                                  href={dynamicChildPath} 
-                                  onClick={onLinkClick} 
+                                <Link
+                                  href={dynamicChildPath}
+                                  onClick={onLinkClick}
                                   className={`${baseSubNavItemClasses} 
-                                    ${isActive 
-                                      ? 'bg-text-main text-card-bg dark:bg-hover-blue dark:text-white' 
+                                    ${isActive
+                                      ? 'bg-text-main text-card-bg dark:bg-hover-blue dark:text-white'
                                       : 'text-text-muted hover:bg-text-main hover:text-card-bg dark:hover:bg-hover-blue'}`}
                                 >
                                   {child.name}
@@ -106,12 +106,12 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
               const isItemActive = pathname === currentPath;
               return (
                 <li key={item.id} className="mb-1">
-                  <Link 
-                    href={currentPath} 
-                    onClick={onLinkClick} 
+                  <Link
+                    href={currentPath}
+                    onClick={onLinkClick}
                     className={`${baseNavItemClasses} 
-                      ${isItemActive 
-                        ? 'bg-text-main text-card-bg dark:bg-hover-blue dark:text-white' 
+                      ${isItemActive
+                        ? 'bg-text-main text-card-bg dark:bg-hover-blue dark:text-white'
                         : 'text-text-main hover:bg-text-main hover:text-card-bg dark:hover:bg-hover-blue'}`}
                   >
                     <Icon size={18} />

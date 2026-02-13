@@ -79,7 +79,7 @@ const EnrollmentPaymentPage = ({ params }: { params: Promise<any> }) => {
   );
 
   return (
-    <div className="min-h-screen bg-app-bg text-text-main pb-20 transition-all">
+    <div className="min-h-screen bg-app-bg text-text-main pb-20">
       <div className="max-w-4xl mx-auto px-6 pt-12 space-y-12">
 
         {/* Navigation */}
@@ -135,7 +135,7 @@ const EnrollmentPaymentPage = ({ params }: { params: Promise<any> }) => {
                 <h3 className="font-black uppercase tracking-widest text-xs">Secure Evidence Upload</h3>
               </div>
 
-              <label className="group relative cursor-pointer border-2 border-dashed border-border-subtle hover:border-accent-blue/50 rounded-[2rem] p-10 flex flex-col items-center justify-center transition-all bg-app-bg/30">
+              <label className="group relative cursor-pointer border-2 border-dashed border-border-subtle hover:border-accent-blue/50 rounded-[2rem] p-10 flex flex-col items-center justify-center bg-app-bg/30">
                 <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                 {file ? (
                   <div className="text-center">

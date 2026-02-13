@@ -16,7 +16,7 @@ const DeleteConfirmationModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#0F172A]/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-[#0F172A]/60 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 text-center relative overflow-hidden">
                 <button onClick={onClose} className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
 

@@ -8,7 +8,7 @@ export default function TeacherDashboard() {
     const { user } = useAppSelector((state) => state.auth); //
 
     return (
-        <div className="min-h-screen bg-app-bg text-text-main pb-20 transition-all duration-300">
+        <div className="min-h-screen bg-app-bg text-text-main pb-20">
             <div className="max-w-6xl mx-auto px-6 pt-12 space-y-10">
                 
                 {/* Teacher Welcome Hero */}

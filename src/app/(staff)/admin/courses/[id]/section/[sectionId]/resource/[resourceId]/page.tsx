@@ -10,8 +10,8 @@ import { fetchCourseContent } from '@/lib/store/features/courseSlice';
 
 const AdminResourceDetailPage = ({ params }: { params: Promise<any> }) => {
     const resolvedParams = use(params);
-    
-    const { id, sectionId, resourceId } = resolvedParams; 
+
+    const { id, sectionId, resourceId } = resolvedParams;
     const courseIdNum = Number(id);
     const dispatch = useAppDispatch();
 
@@ -52,20 +52,20 @@ const AdminResourceDetailPage = ({ params }: { params: Promise<any> }) => {
     );
 
     return (
-        <div className="p-6 md:p-12 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20 bg-app-bg min-h-screen text-text-main transition-colors duration-300">
-            
+        <div className="p-6 md:p-12 max-w-5xl mx-auto space-y-8 animate-in fade-in pb-20 bg-app-bg min-h-screen text-text-main">
+
             {/* Navigation Header */}
             <div className="flex items-center justify-between">
-                <Link href={`/admin/courses/${id}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-xs uppercase tracking-widest transition-all group">
+                <Link href={`/admin/courses/${id}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-xs uppercase tracking-widest group">
                     <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Course
                 </Link>
             </div>
 
             {/* Main Resource Card: bg-card-bg logic */}
-            <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle shadow-2xl overflow-hidden animate-in zoom-in-95 duration-700">
-                
+            <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle shadow-2xl overflow-hidden animate-in zoom-in-95">
+
                 {/* Header: Now using the premium hero-registry-card look */}
-                <div className="hero-registry-card p-10 relative overflow-hidden transition-all duration-300">
+                <div className="hero-registry-card p-10 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
 
                     <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">

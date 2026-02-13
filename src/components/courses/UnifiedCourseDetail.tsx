@@ -409,9 +409,9 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
     const tabs = role === 'student' ? allTabs.filter(t => t.id !== 'students') : allTabs;
 
     return (
-        <div className="w-full bg-app-bg min-h-screen font-sans text-text-main transition-colors duration-300">
+        <div className="w-full bg-app-bg min-h-screen font-sans text-text-main">
             <div className="p-8 pb-0">
-                <Link href={backUrl} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-bold transition-all text-sm uppercase tracking-widest">
+                <Link href={backUrl} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-bold text-sm uppercase tracking-widest">
                     <ArrowLeft size={16} /> Back to Courses
                 </Link>
             </div>
@@ -424,7 +424,7 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab.id
+                            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest ${activeTab === tab.id
                                     ? 'bg-text-main text-card-bg dark:bg-accent-blue dark:text-white shadow-lg'
                                     : 'text-text-muted hover:bg-app-bg'
                                 }`}
