@@ -47,7 +47,7 @@ const nextConfig: NextConfig = {
     return [
       {
         // Jab bhi request /api/ se shuru ho
-        source: '/api/:path*',
+        source: '/backend-proxy/:path*',
         // Usay is AWS IP par forward kar do (Yahan apna IP confirm kar lein)
         destination: 'http://13.232.235.218:3006/:path*', 
       },
