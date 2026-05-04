@@ -42,6 +42,17 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+
+  async rewrites() {
+    return [
+      {
+        // Jab bhi request /api/ se shuru ho
+        source: '/api/:path*',
+        // Usay is AWS IP par forward kar do (Yahan apna IP confirm kar lein)
+        destination: 'http://13.232.235.218:3006/:path*', 
+      },
+    ]
+  },
 };
 
 module.exports = nextConfig;
