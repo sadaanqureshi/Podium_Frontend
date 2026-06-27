@@ -83,10 +83,10 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               {theme === 'dark' ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-accent-blue" />}
             </button>
 
-            <button className="p-2 text-text-muted hover:text-accent-blue transition-all relative">
+            {/* <button className="p-2 text-text-muted hover:text-accent-blue transition-all relative">
               <Bell size={18} />
               <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-accent-blue rounded-full"></span>
-            </button>
+            </button> */}
 
             {/* PROFILE DROPDOWN */}
             <div className="relative" ref={dropdownRef}>

@@ -18,9 +18,10 @@ export default function EnrolledCoursesPage() {
         dispatch(fetchEnrolledCourses());
     }, [dispatch]);
 
+    
     // # FIX: Mapping keys to match exactly what 'Course[]' type expects
     // # FIX: Dual Mapping - Dono keys bhejo takay UI aur TS dono chalein
-const mappedCourses = useMemo(() => {
+    const mappedCourses = useMemo(() => {
     return enrolledCourses.map((item: any) => ({
         // 1. Common ID
         id: item.course.id,
@@ -59,8 +60,9 @@ const mappedCourses = useMemo(() => {
         </div>
     );
 
+    
     return (
-        <div className="bg-app-bg min-h-screen">
+        <div className="bg-app-bg h-full">
             <CoursePageTemplate
                 title="Enrolled Courses"
                 description="Manage and track your active training modules."

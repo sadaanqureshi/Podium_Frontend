@@ -2,10 +2,11 @@
 import React, { useState } from 'react';
 import {
     Layers, FolderPlus, Video,
-    MonitorPlay, CalendarPlus, LayoutGrid
+    MonitorPlay, CalendarPlus, LayoutGrid,
+    ChevronDown, FolderOpen
 } from 'lucide-react';
 import ContentCard from './ContentCard';
-import { SectionWrapper } from './SectionWrapper';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
     title: string;
@@ -26,6 +27,15 @@ export const GenericContentTab = ({
     onSubTabChange
 }: Props) => {
     const [activeLectureSubTab, setActiveLectureSubTab] = useState<'recorded' | 'online'>('recorded');
+    
+    // Collapsible Logic: Initialize with all sections open by default or just the first one
+    const [openSections, setOpenSections] = useState<number[]>(data.map((_, index) => index));
+
+    const toggleSection = (index: number) => {
+        setOpenSections(prev => 
+            prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
+        );
+    };
 
     const handleTabChange = (tab: 'recorded' | 'online') => {
         setActiveLectureSubTab(tab);
@@ -38,112 +48,187 @@ export const GenericContentTab = ({
             : items;
 
         if (filtered.length === 0) return (
-            <div className="flex flex-col items-center justify-center py-12 text-text-muted opacity-30">
-                <LayoutGrid size={32} className="mb-2" />
-                <p className="text-xs font-bold uppercase tracking-widest">Terminal: No {filterType || ''} items found</p>
+            <div className="flex flex-col items-center justify-center py-10 bg-app-bg/50 rounded-xl border border-dashed border-border-subtle">
+                <LayoutGrid size={24} className="mb-2 text-text-muted/40" />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted/60">No {filterType || ''} content added yet</p>
             </div>
         );
 
-        return filtered.map((item: any) => (
-            <ContentCard
-                key={item.id}
-                id={item.id}
-                title={item.title || item.name}
-                sectionId={sectionId}
-                subtitle={
-                    type === 'quiz'
-                        ? `Marks: ${item.totalMarks}`
-                        : (item.lectureType === 'online'
-                            ? `Starts: ${item.liveStart ? new Date(item.liveStart).toLocaleString('en-GB') : 'TBD'}`
-                            : 'Recorded Session')
-                }
-                type={type}
-                role={role}
-                onEdit={() => onEditItem(item, sectionId)}
-                onDelete={() => onDeleteItem(item, sectionId)}
-            />
-        ));
+        return (
+            <div className="grid grid-cols-1 gap-3">
+                {filtered.map((item: any) => (
+                    <ContentCard
+                        key={item.id}
+                        id={item.id}
+                        title={item.title || item.name}
+                        sectionId={sectionId}
+                        subtitle={
+                            type === 'quiz'
+                                ? `Marks: ${item.totalMarks}`
+                                : (item.lectureType === 'online'
+                                    ? `Starts: ${item.liveStart ? new Date(item.liveStart).toLocaleString('en-GB') : 'TBD'}`
+                                    : 'Recorded Session')
+                        }
+                        type={type}
+                        role={role}
+                        onEdit={() => onEditItem(item, sectionId)}
+                        onDelete={() => onDeleteItem(item, sectionId)}
+                    />
+                ))}
+            </div>
+        );
     };
 
     return (
-        <div className="animate-in fade-in duration-300">
-            {/* Header: text-text-main auto-switches color */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
+        <div className="animate-in fade-in duration-300 pb-8">
+            {/* Header: Clean & Professional */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-border-subtle pb-6">
                 <div>
-                    <h2 className="text-2xl font-black capitalize text-text-main tracking-tight">{title} Terminal</h2>
-                    <p className="text-text-muted text-sm font-medium underline decoration-accent-blue/20">Manage your course assets and registry efficiently.</p>
+                    <h2 className="text-xl md:text-2xl font-black capitalize text-text-main tracking-tight mb-1">{title} Content</h2>
+                    <p className="text-text-muted text-xs font-medium">Manage and organize your course materials efficiently.</p>
                 </div>
                 {role !== 'student' && (
                     <button
                         onClick={onAddSection}
-                        className="flex items-center gap-2 px-6 py-3 bg-text-main text-card-bg rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-xl"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-text-main text-card-bg rounded-xl font-bold text-xs uppercase tracking-wider hover:opacity-90 transition-all active:scale-95 shadow-md shrink-0"
                     >
-                        <FolderPlus size={18} strokeWidth={2.5} />
-                        <span>Initialize Section</span>
+                        <FolderPlus size={16} strokeWidth={2.5} />
+                        <span>Add New Section</span>
                     </button>
                 )}
             </div>
 
             {data.length > 0 ? (
-                data.map((section: any) => (
-                    <SectionWrapper
-                        key={section.id}
-                        sectionName={section.sectionName}
-                        role={role}
-                        type={type}
-                        onAddItem={() => onAddItem(section.id)}
-                    >
-                        {type === 'lecture' ? (
-                            <div className="space-y-6">
-                                {/* Sub-Tabs: Uses Design Tokens for consistent Blue/Purple logic */}
-                                <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-                                    <div className="flex gap-4">
-                                        <button
-                                            onClick={() => handleTabChange('recorded')}
-                                            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all ${activeLectureSubTab === 'recorded'
-                                                    ? 'bg-accent-blue text-white shadow-lg shadow-accent-blue/20'
-                                                    : 'text-text-muted hover:bg-sidebar-to/20'
-                                                }`}
-                                        >
-                                            <MonitorPlay size={14} /> Recorded
-                                        </button>
-                                        <button
-                                            onClick={() => handleTabChange('online')}
-                                            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all ${activeLectureSubTab === 'online'
-                                                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
-                                                    : 'text-text-muted hover:bg-sidebar-to/20'
-                                                }`}
-                                        >
-                                            <Video size={14} /> Online
-                                        </button>
+                <div className="space-y-4">
+                    {data.map((section: any, index: number) => {
+                        const isOpen = openSections.includes(index);
+                        
+                        return (
+                            <div key={section.id} className="bg-card-bg border border-border-subtle rounded-2xl overflow-hidden shadow-sm hover:border-accent-blue/30 transition-colors">
+                                
+                                {/* Section Header (Collapsible Trigger) */}
+                                <div 
+                                    className="p-4 md:p-5 flex items-center justify-between bg-app-bg/30 cursor-pointer select-none"
+                                    onClick={() => toggleSection(index)}
+                                >
+                                    <div className="flex items-center gap-3 md:gap-4">
+                                        <div className="w-8 h-8 rounded-lg bg-accent-blue/10 text-accent-blue flex items-center justify-center shrink-0">
+                                            <FolderOpen size={16} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-sm text-text-main tracking-tight">{section.sectionName}</h4>
+                                            <p className="text-[10px] text-text-muted font-medium mt-0.5">
+                                                {section.items ? section.items.length : 0} Items Inside
+                                            </p>
+                                        </div>
                                     </div>
+                                    
+                                    <div className="flex items-center gap-3 shrink-0">
+                                        {role !== 'student' && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Stop collapsible from triggering
+                                                    onAddItem(section.id);
+                                                }}
+                                                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-card-bg border border-border-subtle hover:border-accent-blue hover:text-accent-blue text-text-muted rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                                            >
+                                                <span>+ Add Item</span>
+                                            </button>
+                                        )}
+                                        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-text-muted p-1">
+                                            <ChevronDown size={18} />
+                                        </motion.div>
+                                    </div>
+                                </div>
 
-                                    {activeLectureSubTab === 'online' && (role === 'admin' || role === 'teacher') && (
-                                        <button
-                                            onClick={() => onAddItem(section.id)}
-                                            className="flex items-center gap-1.5 px-4 py-2 bg-purple-600/10 text-purple-600 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-purple-600/20 transition-all border border-purple-600/20"
+                                {/* Section Body (Collapsible Content) */}
+                                <AnimatePresence>
+                                    {isOpen && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: "auto", opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.2, ease: "easeInOut" }}
+                                            className="overflow-hidden"
                                         >
-                                            <CalendarPlus size={14} /> Schedule Session
-                                        </button>
-                                    )}
-                                </div>
+                                            <div className="p-4 md:p-5 border-t border-border-subtle/50">
+                                                
+                                                {/* Add Item Button for Mobile (Visible only when open) */}
+                                                {role !== 'student' && (
+                                                    <div className="sm:hidden mb-4">
+                                                        <button
+                                                            onClick={() => onAddItem(section.id)}
+                                                            className="w-full flex items-center justify-center gap-2 py-2.5 bg-app-bg border border-dashed border-border-subtle hover:border-accent-blue text-text-muted hover:text-accent-blue rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                                        >
+                                                            <span>+ Add New Content Here</span>
+                                                        </button>
+                                                    </div>
+                                                )}
 
-                                <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-300">
-                                    {renderItems(section.items, section.id, activeLectureSubTab)}
-                                </div>
+                                                {type === 'lecture' ? (
+                                                    <div className="space-y-5">
+                                                        {/* Sleek Pill-Shaped Sub-Tabs for Lectures */}
+                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                            <div className="flex bg-app-bg p-1 rounded-xl border border-border-subtle w-max">
+                                                                <button
+                                                                    onClick={() => handleTabChange('recorded')}
+                                                                    className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                                                                        activeLectureSubTab === 'recorded'
+                                                                            ? 'bg-card-bg text-accent-blue shadow-sm border border-border-subtle/50'
+                                                                            : 'text-text-muted hover:text-text-main'
+                                                                    }`}
+                                                                >
+                                                                    <MonitorPlay size={14} /> Recorded
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleTabChange('online')}
+                                                                    className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                                                                        activeLectureSubTab === 'online'
+                                                                            ? 'bg-card-bg text-purple-500 shadow-sm border border-border-subtle/50'
+                                                                            : 'text-text-muted hover:text-text-main'
+                                                                    }`}
+                                                                >
+                                                                    <Video size={14} /> Online
+                                                                </button>
+                                                            </div>
+
+                                                            {activeLectureSubTab === 'online' && (role === 'admin' || role === 'teacher') && (
+                                                                <button
+                                                                    onClick={() => onAddItem(section.id)}
+                                                                    className="flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-500/10 text-purple-600 rounded-lg font-black text-[9px] uppercase tracking-widest hover:bg-purple-500/20 transition-all border border-purple-500/20 w-full sm:w-auto"
+                                                                >
+                                                                    <CalendarPlus size={14} /> Schedule Session
+                                                                </button>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Items List inside Lecture */}
+                                                        <div className="animate-in slide-in-from-bottom-2 duration-300">
+                                                            {renderItems(section.items, section.id, activeLectureSubTab)}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    // Items List for Non-Lectures (Quizzes, Resources, etc)
+                                                    <div>
+                                                        {renderItems(section.items, section.id)}
+                                                    </div>
+                                                )}
+
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
                             </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {renderItems(section.items, section.id)}
-                            </div>
-                        )}
-                    </SectionWrapper>
-                ))
+                        );
+                    })}
+                </div>
             ) : (
-                /* Empty State: Themed with border-border-subtle */
-                <div className="text-center py-24 bg-card-bg rounded-[3rem] border-2 border-dashed border-border-subtle">
-                    <Layers size={50} className="mx-auto text-text-muted/20 mb-4" />
-                    <p className="text-text-muted font-black uppercase tracking-widest text-sm">Terminal: No Content Found</p>
+                /* Empty State: Professional look */
+                <div className="text-center py-20 bg-card-bg rounded-2xl border border-dashed border-border-subtle mt-4">
+                    <Layers size={40} className="mx-auto text-text-muted/30 mb-3" />
+                    <p className="text-text-muted font-bold text-sm mb-1">No Sections Available</p>
+                    <p className="text-text-muted/60 text-[11px]">Click "Add New Section" to start building your course.</p>
                 </div>
             )}
         </div>

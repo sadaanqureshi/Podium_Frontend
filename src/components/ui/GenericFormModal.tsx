@@ -308,7 +308,7 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         // Validation Guard
         if (!validate()) return;
 
@@ -336,7 +336,7 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
             <div className="bg-card-bg w-full max-w-4xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-border-subtle transition-all duration-300">
-                
+
                 {/* HEADER */}
                 <div className="flex justify-between items-center px-10 py-8 form-modal-header transition-colors">
                     <div className="space-y-1">
@@ -379,15 +379,29 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                                                     <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-accent-blue pointer-events-none" size={22} strokeWidth={3} />
                                                 </div>
                                             ) : (
+                                                // <input
+                                                //     type={field.type === 'textarea' ? 'text' : field.type}
+                                                //     placeholder={field.placeholder}
+                                                //     value={formValues[field.name] || ''}
+                                                //     onChange={(e) => handleInputChange(field.name, e.target.value)}
+                                                //     className={`w-full px-8 py-5 rounded-[1.5rem] border-2 bg-app-bg text-text-main text-sm font-bold transition-all outline-none ${errors[field.name] ? 'border-red-500 bg-red-500/5 shadow-inner' : 'border-border-subtle focus:border-accent-blue'}`}
+                                                // />
                                                 <input
-                                                    type={field.type === 'textarea' ? 'text' : field.type}
+                                                    type={field.type === 'files' ? 'file' : (field.type === 'textarea' ? 'text' : field.type)}
                                                     placeholder={field.placeholder}
-                                                    value={formValues[field.name] || ''}
-                                                    onChange={(e) => handleInputChange(field.name, e.target.value)}
-                                                    className={`w-full px-8 py-5 rounded-[1.5rem] border-2 bg-app-bg text-text-main text-sm font-bold transition-all outline-none ${errors[field.name] ? 'border-red-500 bg-red-500/5 shadow-inner' : 'border-border-subtle focus:border-accent-blue'}`}
+                                                    value={field.type === 'files' ? undefined : (formValues[field.name] || '')}
+                                                    onChange={(e) => {
+                                                        if (field.type === 'files') {
+                                                            const file = e.target.files?.[0];
+                                                            handleInputChange(field.name, file || null);
+                                                        } else {
+                                                            handleInputChange(field.name, e.target.value);
+                                                        }
+                                                    }}
+                                                    className={`w-full px-8 py-5 rounded-[1.5rem] border-2 bg-app-bg text-text-main text-sm font-bold transition-all outline-none ${errors[field.name] ? 'border-red-500 bg-red-500/5 shadow-inner' : 'border-border-subtle focus:border-accent-blue'} ${field.type === 'files' ? 'file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-accent-blue file:text-white hover:file:bg-hover-blue cursor-pointer' : ''}`}
                                                 />
                                             )}
-                                            
+
                                             {/* ERROR FEEDBACK UI */}
                                             {errors[field.name] && (
                                                 <div className="flex items-center gap-2 mt-2 ml-4 text-red-500 animate-in fade-in slide-in-from-top-1">

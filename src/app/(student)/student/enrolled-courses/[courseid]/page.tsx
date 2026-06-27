@@ -1,5 +1,5 @@
 'use client';
-import React, { use, useEffect } from 'react'; // React import for use
+import React, { use, useEffect } from 'react'; 
 import UnifiedCourseDetail from '@/components/courses/UnifiedCourseDetail';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { fetchCourseContent } from '@/lib/store/features/courseSlice';
@@ -16,19 +16,19 @@ export default function StudentCoursePage({ params }: { params: Promise<{ course
     const { courseContent, loading } = useAppSelector((state) => state.course);
 
     useEffect(() => {
-        // Only dispatch if courseId is a valid number
         if (!isNaN(courseId)) {
             dispatch(fetchCourseContent(courseId));
         }
     }, [courseId, dispatch]);
 
-    // Debugging logs (Inhe production se pehle hata saktay hain)
-    console.log('Target Course ID:', courseId);
-    console.log('Available Data:', courseContent[courseId]);
-
-    // Agar ID galat hai to error UI
+    // Humanized & Centered Error UI
     if (isNaN(courseId)) {
-        return <div className="p-20 text-text-main">Error: Invalid Course Protocol ID.</div>;
+        return (
+            <div className="h-[80vh] flex flex-col items-center justify-center text-center px-6">
+                <p className="text-text-muted font-black tracking-widest uppercase text-sm mb-2">Oops! Course Not Found</p>
+                <p className="text-text-muted/60 text-xs font-medium">The link might be broken or the course is no longer available.</p>
+            </div>
+        );
     }
 
     return (

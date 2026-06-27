@@ -34,13 +34,14 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <StoreProvider>
-          <SessionManager />
+          <SessionManager>
           <GlobalProgressBar />
           <ThemeProvider>
             <ToastProvider>
             {children}
             </ToastProvider>
           </ThemeProvider>
+          </SessionManager>
         </StoreProvider>
       </body>
     </html>
