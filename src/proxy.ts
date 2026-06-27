@@ -1,46 +1,79 @@
 // src/middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { jwtDecode } from 'jwt-decode';
 
-export function proxy(request: NextRequest) {
+// JWT payload ka interface jo hum expect kar rahe hain
+interface JWTPayload {
+  sub: string;
+  role_name: string; // Backend se yahi key aa rahi hai aapke JSON mein
+  exp: number;
+}
+
+export function proxy (request: NextRequest) {
+  // 1. Sirf ek chiz par bharosa karna hai: Auth Token (JWT)
   const token = request.cookies.get('authToken')?.value;
-  const role = request.cookies.get('userRole')?.value?.toLowerCase(); 
   const { pathname } = request.nextUrl;
 
-  // # Updated to include role-based signin paths
   const isAuthPage = pathname.includes('/signin') || pathname.includes('/signup');
-
   const isProtectedRoute = (
     pathname.startsWith('/student') || 
     pathname.startsWith('/admin') || 
     pathname.startsWith('/teacher')
   ) && !isAuthPage;
 
-  // Logic 1: Authenticated user trying to access Auth Pages
-  if (token && isAuthPage) {
-    if (role === 'admin') return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-    if (role === 'teacher') return NextResponse.redirect(new URL('/teacher/dashboard', request.url));
-    if (role === 'student') return NextResponse.redirect(new URL('/student/dashboard', request.url));
-    return NextResponse.next();
+  let actualRole: string | null = null;
+  let isTokenExpired = false;
+
+  // 2. Token ko Decode kar ke Asli Role nikalna
+  if (token) {
+    try {
+      const decoded = jwtDecode<JWTPayload>(token);
+      actualRole = decoded.role_name.toLowerCase(); // Role hamesha JWT se aayega
+      
+      // Token expiry check karna (optional but recommended)
+      if (decoded.exp && Date.now() >= decoded.exp * 1000) {
+        isTokenExpired = true;
+      }
+    } catch (error) {
+      console.error("Invalid JWT Token in Middleware:", error);
+      // Agar token fake ya kharab hai, toh pretend karo ke user logged out hai
+      actualRole = null; 
+    }
   }
 
-  // Logic 2: Role-Based Protection (Strict Redirects)
-  if (token && isProtectedRoute) {
-    if (pathname.startsWith('/admin') && role !== 'admin') return NextResponse.redirect(new URL('/student/dashboard', request.url));
-    if (pathname.startsWith('/teacher') && role !== 'teacher') return NextResponse.redirect(new URL('/student/dashboard', request.url));
-    if (pathname.startsWith('/student') && role !== 'student') {
-        const target = role === 'admin' ? '/admin/dashboard' : '/teacher/dashboard';
+  // Agar token expire ho gaya hai, toh user ko signin par wapas bhej do
+  if (isTokenExpired && isProtectedRoute) {
+    const response = NextResponse.redirect(new URL(`/${pathname.split('/')[1]}/signin`, request.url));
+    response.cookies.delete('authToken'); // Expired cookie delete kar do
+    return response;
+  }
+
+  // --- LOGIC 1: User Logged In Hai aur Signin page par jana chahta hai ---
+  if (actualRole && isAuthPage) {
+    if (actualRole === 'admin') return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    if (actualRole === 'teacher') return NextResponse.redirect(new URL('/teacher/dashboard', request.url));
+    if (actualRole === 'student') return NextResponse.redirect(new URL('/student/dashboard', request.url));
+  }
+
+  // --- LOGIC 2: Strict Role Verification (The Real Bouncer) ---
+  if (actualRole && isProtectedRoute) {
+    if (pathname.startsWith('/admin') && actualRole !== 'admin') return NextResponse.redirect(new URL('/student/dashboard', request.url));
+    if (pathname.startsWith('/teacher') && actualRole !== 'teacher') return NextResponse.redirect(new URL('/student/dashboard', request.url));
+    if (pathname.startsWith('/student') && actualRole !== 'student') {
+        const target = actualRole === 'admin' ? '/admin/dashboard' : '/teacher/dashboard';
         return NextResponse.redirect(new URL(target, request.url));
     }
   }
 
-  // Logic 3: Not Logged In? Redirect to role-specific signin
-  if (!token && isProtectedRoute) {
+  // --- LOGIC 3: User Logged In nahi hai (Ya token invalid tha) ---
+  if (!actualRole && isProtectedRoute) {
     if (pathname.startsWith('/admin')) return NextResponse.redirect(new URL('/admin/signin', request.url));
     if (pathname.startsWith('/teacher')) return NextResponse.redirect(new URL('/teacher/signin', request.url));
     if (pathname.startsWith('/student')) return NextResponse.redirect(new URL('/student/signin', request.url));
   }
 
+  // Sab sahi hai, aage jane do
   return NextResponse.next();
 }
 

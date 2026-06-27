@@ -1,0 +1,129 @@
+{
+    "user": {
+        "id": 62,
+        "firstName": "final",
+        "lastName": "test",
+        "email": "finaltest@gmail.com",
+        "isActive": true,
+        "isDelete": false,
+        "createdAt": "2026-06-17T19:59:41.866Z",
+        "updatedAt": null,
+        "deletedAt": null,
+        "contactNumber": "+923123131221",
+        "role": {
+            "id": 3,
+            "roleName": "student",
+            "isActive": true,
+            "isDelete": false,
+            "createdAt": "2026-01-21T13:03:01.166Z",
+            "deletedAt": null,
+            "updatedAt": null,
+            "createdBy": 1,
+            "deletedBy": null,
+            "updatedBy": null
+        }
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmaW5hbHRlc3RAZ21haWwuY29tIiwiZmlyc3RfbmFtZSI6ImZpbmFsIiwibGFzdF9uYW1lIjoidGVzdCIsImlkIjo2Miwicm9sZV9pZCI6Mywicm9sZV9uYW1lIjoic3R1ZGVudCIsImlhdCI6MTc4MTcyOTc0N30.r0WJF_qish6fZ--pklkJW40fS4Qa-88xSAPuTH-vhgA",
+    "role": "student",
+    "sidebar": [
+        {
+            "id": 1,
+            "name": "student dashboard",
+            "is_enable": true
+        },
+        {
+            "id": 2,
+            "name": "admin dashboard",
+            "is_enable": true
+        },
+        {
+            "id": 3,
+            "name": "teacher dashboard",
+            "is_enable": true
+        },
+        {
+            "id": 4,
+            "name": "student management",
+            "is_enable": false
+        },
+        {
+            "id": 5,
+            "name": "teacher management",
+            "is_enable": false
+        },
+        {
+            "id": 6,
+            "name": "courses management",
+            "is_enable": true,
+            "children": [
+                {
+                    "id": 7,
+                    "name": "enrolled courses",
+                    "is_enable": true
+                },
+                {
+                    "id": 8,
+                    "name": "assigned courses",
+                    "is_enable": false
+                },
+                {
+                    "id": 9,
+                    "name": "available courses",
+                    "is_enable": true
+                }
+            ]
+        },
+        {
+            "id": 10,
+            "name": "quizzes",
+            "is_enable": false
+        },
+        {
+            "id": 11,
+            "name": "assignments",
+            "is_enable": false
+        },
+        {
+            "id": 12,
+            "name": "resources",
+            "is_enable": false
+        },
+        {
+            "id": 13,
+            "name": "audit logs",
+            "is_enable": false
+        },
+        {
+            "id": 14,
+            "name": "profile management",
+            "is_enable": true,
+            "children": [
+                {
+                    "id": 15,
+                    "name": "notifications",
+                    "is_enable": false
+                },
+                {
+                    "id": 16,
+                    "name": "dark mode",
+                    "is_enable": false
+                }
+            ]
+        },
+        {
+            "id": 17,
+            "name": "fees management",
+            "is_enable": false
+        },
+        {
+            "id": 18,
+            "name": "annoucement management",
+            "is_enable": false
+        },
+        {
+            "id": 19,
+            "name": "configuration",
+            "is_enable": false
+        }
+    ]
+}

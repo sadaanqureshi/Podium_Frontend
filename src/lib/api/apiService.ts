@@ -25,6 +25,29 @@ export const loginUser = async (credentials: { email: string; password: string }
     return await response.json();
 };
 
+
+
+// src/lib/api/apiService.ts ke andar add karein
+
+export const fetchProfileAPI = async (token: string) => {
+    const response = await fetch(`${API_URL}/auth/profile`, {
+        method: 'GET',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error('Session expired or invalid');
+    }
+
+    return await response.json();
+};
+
+
+
+
 // ==============================
 // STUDENT REGISTER API (NEW)
 // ==============================

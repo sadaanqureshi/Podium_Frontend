@@ -65,7 +65,7 @@ export default function AvailableCoursesPage() {
     );
 
     return (
-        <div className="bg-app-bg min-h-screen">
+        <div className="bg-app-bg h-full">
             <CoursePageTemplate
                 title="Available Courses"
                 description="Browse and enroll in our available training modules."
