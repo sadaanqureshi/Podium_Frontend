@@ -4,11 +4,12 @@ import UnifiedCourseDetail from '@/components/courses/UnifiedCourseDetail';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { fetchCourseContent } from '@/lib/store/features/courseSlice';
 
-export default function StudentCoursePage({ params }: { params: Promise<{ courseId: any }> }) {
+export default function StudentCoursePage({ params }: { params: Promise<{ courseId: any, courseid: any, id: any }> }) {
     // 1. Properly resolve params
     const resolvedParams = use(params);
     // const idStr = resolvedParams?.courseId;
-    const idStr = resolvedParams?.courseId;
+    // const idStr = resolvedParams?.courseId;
+    const idStr = resolvedParams?.courseId || resolvedParams?.courseid || resolvedParams?.id;
     
     // 2. Safely parse courseId
     const courseId = idStr ? parseInt(idStr, 10) : NaN;

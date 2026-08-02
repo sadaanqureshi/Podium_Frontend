@@ -7,6 +7,14 @@ import Cookies from 'js-cookie';
 // process.env use karne se Next.js khud hi environment ke mutabiq URL utha lega
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006';
 
+export const getToken = (serverToken?: string) => {
+    if (serverToken) return serverToken; 
+    if (typeof window !== 'undefined') {
+        return Cookies.get('authToken'); 
+    }
+    return null;
+};
+
 // =======================================
 // AUTH APIs
 // ================================
@@ -25,10 +33,7 @@ export const loginUser = async (credentials: { email: string; password: string }
     return await response.json();
 };
 
-
-
 // src/lib/api/apiService.ts ke andar add karein
-
 export const fetchProfileAPI = async (token: string) => {
     const response = await fetch(`${API_URL}/auth/profile`, {
         method: 'GET',
@@ -44,9 +49,6 @@ export const fetchProfileAPI = async (token: string) => {
 
     return await response.json();
 };
-
-
-
 
 // ==============================
 // STUDENT REGISTER API (NEW)
@@ -98,7 +100,7 @@ export const resetPasswordAPI = async (token: string, newPassword: any) => {
 };
 
 export const logoutUserAPI = async () => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     if (!token) return;
 
     const response = await fetch(`${API_URL}/auth/logout`, {
@@ -126,7 +128,7 @@ export const logoutLocal = () => {
 // USER PROFILE
 // ==============================
 export const updateUserProfileAPI = async (userId: number, data: any) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/admin/users/${userId}`, {
         method: 'PATCH',
         headers: {
@@ -147,7 +149,7 @@ export const updateUserProfileAPI = async (userId: number, data: any) => {
 // COURSE APIs
 // ==============================
 export const getAllCoursesAPI = async (page = 1, limit = 10) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     if (!token) throw new Error('No authentication token found');
 
     const response = await fetch(`${API_URL}/courses/all?page=${page}&limit=${limit}`, {
@@ -167,7 +169,7 @@ export const getAllCoursesAPI = async (page = 1, limit = 10) => {
 };
 
 export const createCourseAPI = async (formData: FormData) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     if (!token) throw new Error('Authentication token missing');
 
     const response = await fetch(`${API_URL}/courses/create`, {
@@ -185,7 +187,7 @@ export const createCourseAPI = async (formData: FormData) => {
 };
 
 export const getCourseCategoriesAPI = async () => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/courses/categories/all`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -195,7 +197,7 @@ export const getCourseCategoriesAPI = async () => {
 };
 
 export const getCourseByIdAPI = async (id: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/courses/${id}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -205,7 +207,7 @@ export const getCourseByIdAPI = async (id: number) => {
 };
 
 export const getCourseWithContentAPI = async (courseId: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     if (!token) throw new Error('No authentication token found');
 
     const response = await fetch(`${API_URL}/courses/${courseId}/with-content`, {
@@ -225,7 +227,7 @@ export const getCourseWithContentAPI = async (courseId: number) => {
 };
 
 export const getMyEnrolledCoursesAPI = async () => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     if (!token) throw new Error('No authentication token found');
     
     const response = await fetch(`${API_URL}/enrollments/my-courses`, {
@@ -245,7 +247,7 @@ export const getMyEnrolledCoursesAPI = async () => {
 };
 
 export const updateCourseAPI = async (id: number, formData: FormData) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/courses/${id}`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` },
@@ -256,7 +258,7 @@ export const updateCourseAPI = async (id: number, formData: FormData) => {
 };
 
 export const getCourseDetailsAPI = async (id: string) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/courses/${id}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -268,7 +270,7 @@ export const getCourseDetailsAPI = async (id: string) => {
 // SECTION & LECTURES
 // ==============================
 export const createSectionAPI = async (courseId: number, data: { title: string; description: string }) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/courses/${courseId}/sections`, {
         method: 'POST',
         headers: {
@@ -283,7 +285,7 @@ export const createSectionAPI = async (courseId: number, data: { title: string; 
 };
 
 export const createRecordedLectureAPI = async (formData: FormData) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/lectures/recorded`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
@@ -294,7 +296,7 @@ export const createRecordedLectureAPI = async (formData: FormData) => {
 };
 
 export const createLiveLectureAPI = async (data: any) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/lectures/live`, {
         method: 'POST',
         headers: {
@@ -311,7 +313,7 @@ export const createLiveLectureAPI = async (data: any) => {
 // RESOURCES
 // ==============================
 export const createResourceAPI = async (courseId: number, sectionId: number, formData: FormData) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/resources/${courseId}/sections/${sectionId}/resources`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
@@ -326,7 +328,7 @@ export const createResourceAPI = async (courseId: number, sectionId: number, for
 // ASSIGNMENTS
 // ==============================
 export const createAssignmentAPI = async (formData: FormData) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/assignments`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
@@ -338,7 +340,7 @@ export const createAssignmentAPI = async (formData: FormData) => {
 
 // # ASSIGNMENT DELETE API
 export const deleteAssignmentAPI = async (id: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/assignments/delete/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -351,7 +353,7 @@ export const deleteAssignmentAPI = async (id: number) => {
 // ==============================
 export const submitAssignmentAPI = async (assignmentId: number, formData: FormData) => {
     // 1. Aapki file ke mutabiq Cookies se token uthayen
-    const token = Cookies.get('authToken');
+    const token = getToken();
     
     if (!token) throw new Error('Authentication token missing. Please login again.');
 
@@ -383,7 +385,7 @@ export const submitAssignmentAPI = async (assignmentId: number, formData: FormDa
 
 // # FUTURE ASSIGNMENT UPDATE API (Commented for now)
 /* export const updateAssignmentAPI = async (id: number, formData: FormData) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/assignments/update/${id}`, {
         method: 'PATCH', // ya PUT, backend ke mutabiq
         headers: { 'Authorization': `Bearer ${token}` },
@@ -395,7 +397,7 @@ export const submitAssignmentAPI = async (assignmentId: number, formData: FormDa
 */
 
 export const getAssignmentDetailAPI = async (id: string | number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/assignments/${id}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -405,7 +407,7 @@ export const getAssignmentDetailAPI = async (id: string | number) => {
 };
 
 export const uploadAssignmentSubmissionAPI = async (assignmentId: string | number, files: File[]) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     if (!token) throw new Error('Authentication token missing');
     
     const formData = new FormData();
@@ -425,7 +427,7 @@ export const uploadAssignmentSubmissionAPI = async (assignmentId: string | numbe
 };
 
 export const getAssignmentSubmissionsAPI = async (id: string | number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/assignments/${id}/submissions`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -439,7 +441,7 @@ export const gradeSubmissionAPI = async (
     studentId: string | number,
     data: { marksObtained: number; comments: string }
 ) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/assignments/${assignmentId}/submissions/${studentId}/grade`, {
         method: 'PATCH',
         headers: {
@@ -456,7 +458,7 @@ export const gradeSubmissionAPI = async (
 // ENROLLMENT
 // ==============================
 export const enrollStudentAPI = async (payload: { courseId: number; studentId: number }) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
 
     const response = await fetch(`${API_URL}/enrollments`, {
         method: 'POST',
@@ -476,7 +478,7 @@ export const enrollStudentAPI = async (payload: { courseId: number; studentId: n
 };
 
 export const getEnrolledStudentsAPI = async (courseId: string) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/admin/enrollments/course/${courseId}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -488,7 +490,7 @@ export const getEnrolledStudentsAPI = async (courseId: string) => {
 // STUDENT APIs
 // ==============================
 export const createStudentsAPI = async (data: any) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const res = await fetch(`${API_URL}/admin/users/students`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -499,7 +501,7 @@ export const createStudentsAPI = async (data: any) => {
 };
 
 export const getAllStudentsAPI = async (page = 1, limit = 10) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const res = await fetch(`${API_URL}/admin/users/students?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -509,7 +511,7 @@ export const getAllStudentsAPI = async (page = 1, limit = 10) => {
 };
 
 export const updateStudentsAPI = async (userId: number, data: any) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const res = await fetch(`${API_URL}/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -520,7 +522,7 @@ export const updateStudentsAPI = async (userId: number, data: any) => {
 };
 
 export const deleteStudentsAPI = async (id: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const res = await fetch(`${API_URL}/admin/users/students/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -530,7 +532,7 @@ export const deleteStudentsAPI = async (id: number) => {
 };
 
 export const getStudentsAPI = async () => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     if (!token) throw new Error('Authentication token missing');
 
     const response = await fetch(`${API_URL}/admin/users/students`, {
@@ -552,7 +554,7 @@ export const getStudentsAPI = async () => {
 // TEACHER APIs
 // ==============================
 export const createTeachersAPI = async (data: any) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const res = await fetch(`${API_URL}/admin/users/teachers`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -563,7 +565,7 @@ export const createTeachersAPI = async (data: any) => {
 };
 
 export const getTeachersAPI = async () => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/admin/users/teachers`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -573,7 +575,7 @@ export const getTeachersAPI = async () => {
 };
 
 export const getAllTeachersAPI = async (page = 1, limit = 10) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const res = await fetch(`${API_URL}/admin/users/teachers?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -583,7 +585,7 @@ export const getAllTeachersAPI = async (page = 1, limit = 10) => {
 };
 
 export const updateTeachersAPI = async (id: number, data: any) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
 
     const payload = {
         ...data,
@@ -607,7 +609,7 @@ export const updateTeachersAPI = async (id: number, data: any) => {
 };
 
 export const deleteTeachersAPI = async (id: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const res = await fetch(`${API_URL}/admin/users/teachers/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -620,7 +622,7 @@ export const deleteTeachersAPI = async (id: number) => {
 // FEES
 // ==============================
 export const getFeesDataAPI = async (page = 1, limit = 10) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const res = await fetch(`${API_URL}/admin/fees?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -633,7 +635,7 @@ export const getFeesDataAPI = async (page = 1, limit = 10) => {
 // ASSIGNED COURSES
 // ==============================
 export const getAssignedCoursesAPI = async (page = 1, limit = 10) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/courses/assign-courses?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -646,7 +648,7 @@ export const getAssignedCoursesAPI = async (page = 1, limit = 10) => {
 // GOOGLE CALENDAR
 // ==============================
 export const connectGoogleCalendarAPI = async () => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/google-calendar/connect`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -660,7 +662,7 @@ export const connectGoogleCalendarAPI = async () => {
 // LECTURE ACTIONS (DELETE & PATCH)
 // ==============================
 export const deleteLectureAPI = async (lectureId: number, courseId: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/lectures/${lectureId}/course/${courseId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -671,7 +673,7 @@ export const deleteLectureAPI = async (lectureId: number, courseId: number) => {
 
 // # Update Lecture API: JSON Payload conversion
 export const updateLectureAPI = async (lectureId: number, courseId: number, data: FormData) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
 
     // # FormData ko plain object mein convert kar rahe hain
     const payload = Object.fromEntries(data);
@@ -696,7 +698,7 @@ export const updateLectureAPI = async (lectureId: number, courseId: number, data
 // RESOURCE ACTIONS (DELETE & PATCH)
 // ==============================
 export const deleteResourceAPI = async (courseId: number, sectionId: number, resourceId: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/resources/${courseId}/sections/${sectionId}/resources/${resourceId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -706,7 +708,7 @@ export const deleteResourceAPI = async (courseId: number, sectionId: number, res
 };
 
 export const updateResourceAPI = async (courseId: number, sectionId: number, resourceId: number, data: FormData) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/resources/${courseId}/sections/${sectionId}/resources/${resourceId}`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` },
@@ -719,7 +721,7 @@ export const updateResourceAPI = async (courseId: number, sectionId: number, res
 // src/lib/api/apiService.ts
 
 export const getSpecificResourceAPI = async (courseId: number, sectionId: number, resourceId: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/resources/${courseId}/sections/${sectionId}/resources/${resourceId}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -731,7 +733,7 @@ export const getSpecificResourceAPI = async (courseId: number, sectionId: number
 
 //student delete from course
 export const dismissStudentAPI = async (enrollmentId: number, courseId: number, studentId: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/enrollments/${enrollmentId}`, {
         method: 'PATCH',
         headers: {
@@ -751,7 +753,7 @@ export const dismissStudentAPI = async (enrollmentId: number, courseId: number, 
 };
 
 export const getLecturesBySectionAPI = async (courseId: number, sectionId: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/lectures/course/${courseId}/section/${sectionId}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -764,7 +766,7 @@ export const getLecturesBySectionAPI = async (courseId: number, sectionId: numbe
 //--------------------------------------------------------------------------------
 // # QUIZ CRUD APIs
 export const createQuizAPI = async (data: any) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/quizzes/create`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -775,7 +777,7 @@ export const createQuizAPI = async (data: any) => {
 };
 
 export const updateQuizAPI = async (id: number, data: any) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/quizzes/update/${id}`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -786,7 +788,7 @@ export const updateQuizAPI = async (id: number, data: any) => {
 };
 
 export const deleteQuizAPI = async (id: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/quizzes/delete/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -796,7 +798,7 @@ export const deleteQuizAPI = async (id: number) => {
 };
 
 export const getSpecificQuizAPI = async (id: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/quizzes/${id}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` },
@@ -808,7 +810,7 @@ export const getSpecificQuizAPI = async (id: number) => {
 
 // apiService.ts mein add karein
 export const submitQuizAnswersAPI = async (payload: any) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/quizzes/submit`, {
         method: 'POST',
         headers: { 
@@ -826,7 +828,7 @@ export const submitQuizAnswersAPI = async (payload: any) => {
 
 // # QUIZ SUBMISSIONS & GRADING APIs
 export const getQuizSubmissionsAPI = async (quizId: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/quizzes/quiz/${quizId}/attempts`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -836,7 +838,7 @@ export const getQuizSubmissionsAPI = async (quizId: number) => {
 };
 
 export const getQuizAttemptDetailAPI = async (attemptId: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/quizzes/attempt/${attemptId}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -846,7 +848,7 @@ export const getQuizAttemptDetailAPI = async (attemptId: number) => {
 };
 
 // export const gradeQuizAttemptAPI = async (attemptId: number, data: { marksObtained: number, comments: string }) => {
-//     const token = Cookies.get('authToken');
+//     const token = getToken();
 //     const response = await fetch(`${API_URL}/quizzes/grade/${attemptId}`, {
 //         method: 'POST',
 //         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -860,7 +862,7 @@ export const getQuizAttemptDetailAPI = async (attemptId: number) => {
 // QUIZ GRADING API (PATCH)
 // ==============================
 export const gradeQuizAttemptAPI = async (attemptId: number, data: { comments: string, questions: any[] }) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     
     if (!token) throw new Error('Authentication token missing.');
 
@@ -883,7 +885,7 @@ export const gradeQuizAttemptAPI = async (attemptId: number, data: { comments: s
 
 // student views their own graded quiz result
 export const getStudentQuizResultAPI = async (attemptId: number) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/quizzes/my-result/${attemptId}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -894,7 +896,7 @@ export const getStudentQuizResultAPI = async (attemptId: number) => {
 
 // # ATTENDANCE APIs
 export const getAllAttendancesAPI = async () => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/attendance/all`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` },
@@ -905,7 +907,7 @@ export const getAllAttendancesAPI = async () => {
 };
 
 export const updateAttendanceAPI = async (attendanceId: number, payload: any) => {
-    const token = Cookies.get('authToken');
+    const token = getToken();
     const response = await fetch(`${API_URL}/attendance/${attendanceId}`, {
         method: 'PATCH',
         headers: {
@@ -920,7 +922,7 @@ export const updateAttendanceAPI = async (attendanceId: number, payload: any) =>
 
 export const enrollWithProofAPI = async (formData: FormData) => {
     // Token retrieve karein
-    const token = Cookies.get('authToken');
+    const token = getToken();
 
     const response = await fetch(`${API_URL}/enrollments`, {
         method: 'POST',
@@ -941,7 +943,8 @@ export const enrollWithProofAPI = async (formData: FormData) => {
 
 // Enrollments fetch karne ki API
 export const getEnrollmentsAPI = async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    // const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const token = getToken();
     const response = await fetch(`${API_URL}/admin/enrollments`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -953,7 +956,8 @@ export const getEnrollmentsAPI = async () => {
 
 // Enrollment status update karne ki API (Approve/Reject)
 export const updateEnrollmentStatusAPI = async (id: number, data: { action: string; rejectionReason?: string }) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    // const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const token = getToken();
     
     // Note: Backend method POST, PUT ya PATCH ho sakta hai. Agar error aaye toh PATCH ko POST kar lijiyega.
     const response = await fetch(`${API_URL}/enrollments/${id}/status`, {
@@ -971,7 +975,8 @@ export const updateEnrollmentStatusAPI = async (id: number, data: { action: stri
 
 // # 1. Fetch Transaction Details (GET)
 export const getTransactionByIdAPI = async (transactionId: number | string) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    // const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const token = getToken();
     const response = await fetch(`${API_URL}/admin/fees/transactions/${transactionId}`, {
         method: 'GET',
         headers: { 
@@ -986,7 +991,8 @@ export const getTransactionByIdAPI = async (transactionId: number | string) => {
 
 // # 2. Update Transaction Status (PATCH)
 export const updateTransactionStatusAPI = async (transactionId: number | string, payload: any) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    // const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const token = getToken();
     const response = await fetch(`${API_URL}/admin/fees/transactions/${transactionId}`, {
         method: 'PATCH',
         headers: { 
