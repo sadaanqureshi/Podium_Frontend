@@ -84,13 +84,14 @@ const TeacherManagement = () => {
     return (
         <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
-                <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight italic text-text-main">Faculty Terminal</h1>
-                <button onClick={() => { setSelectedUser(null); setModalOpen(true); }} className="px-8 py-4 bg-accent-blue text-white rounded-2xl font-black text-xs uppercase flex items-center gap-2 shadow-xl shadow-accent-blue/20 hover:opacity-90 active:scale-95 transition-all">
-                    <Plus size={18} strokeWidth={3} /> Register Faculty
+                <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight italic text-text-main">Teacher List</h1>
+                <button onClick={() => { setSelectedUser(null); setModalOpen(true); }}
+                className="flex items-center gap-2 px-4 py-2 bg-accent-blue text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95">
+                    <Plus size={18} strokeWidth={3} /> Register Teacher
                 </button>
             </div>
 
-            <div className="bg-card-bg rounded-[2.5rem] shadow-2xl border border-border-subtle overflow-hidden">
+            <div className="bg-card-bg rounded-[1rem] shadow-2xl border border-border-subtle overflow-hidden">
                 <UserManagementTable
                     data={teachers.data || []}
                     loading={loading || false}
@@ -103,7 +104,7 @@ const TeacherManagement = () => {
             </div>
 
             <DeleteConfirmationModal isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={async () => { await deleteTeachersAPI(deleteId!); dispatch(fetchAllTeachers({ page: 1, limit: 10 })); setDeleteId(null); }} title={deleteName} />
-            <GenericFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={selectedUser ? "Modify Faculty Intel" : "Initialize Faculty Record"} fields={teacherFields} onSubmit={handleSubmit} loading={modalLoading} initialData={selectedUser} />
+            <GenericFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={selectedUser ? "Modify Teacher Information" : "Initialize Teacher Information"} fields={teacherFields} onSubmit={handleSubmit} loading={modalLoading} initialData={selectedUser} />
         </div>
     );
 };

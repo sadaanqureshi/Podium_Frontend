@@ -86,12 +86,13 @@ const StudentManagement = () => {
         <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main">
             <div className="flex justify-between items-center mb-10">
                 <h1 className="text-3xl font-black uppercase tracking-tight italic">Student Registry</h1>
-                <button onClick={() => { setSelectedUser(null); setModalOpen(true); }} className="px-8 py-4 bg-accent-blue text-white rounded-2xl font-black text-xs uppercase flex items-center gap-2 shadow-xl shadow-accent-blue/20 transition-all active:scale-95">
+                <button onClick={() => { setSelectedUser(null); setModalOpen(true); }}
+                className="flex items-center gap-2 px-4 py-2 bg-accent-blue text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95">
                     <Plus size={18} strokeWidth={3} /> Register Student
                 </button>
             </div>
 
-            <div className="bg-card-bg rounded-[2.5rem] shadow-2xl border border-border-subtle overflow-hidden">
+            <div className="bg-card-bg rounded-[1rem] shadow-2xl border border-border-subtle overflow-hidden">
                 <UserManagementTable
                     data={students.data || []}
                     loading={loading || false}

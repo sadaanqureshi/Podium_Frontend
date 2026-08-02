@@ -78,7 +78,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { setAuth, logout } from '@/lib/store/features/authSlice'; 
-import { logoutLocal, fetchProfileAPI } from '@/lib/api/apiService'; // fetchProfileAPI zaroor import karein
+import { logoutLocal, fetchProfileAPI } from '@/lib/api/apiService'; 
 import Cookies from 'js-cookie';
 import { Loader2 } from 'lucide-react';
 
@@ -88,12 +88,22 @@ export const SessionManager = ({ children }: { children: React.ReactNode }) => {
   // Redux state se current user nikal rahe hain
   const user = useAppSelector((state) => state.auth.user);
   
-  // Token cookies se le rahe hain (Middleware bhi yahi use karta hai)
-  // const token = Cookies.get('authToken') || localStorage.getItem('access_token');
-  const token = Cookies.get('authToken') || (typeof window !== 'undefined' ? localStorage.getItem('access_token') : null);  
   const [isHydrating, setIsHydrating] = useState(true);
+  
+  // 👉 HYDRATION FIX: Mounted state aur token ko state mein rakhein
+  const [mounted, setMounted] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+
+  // 👉 HYDRATION FIX: Pehla render server jaisa hoga, phir client par mount hone ke baad token check hoga
+  useEffect(() => {
+    setMounted(true);
+    const currentToken = Cookies.get('authToken') || localStorage.getItem('access_token');
+    setToken(currentToken);
+  }, []);
 
   useEffect(() => {
+    if (!mounted) return; // Jab tak browser mein mount na ho, kuch check mat karo
+
     const handleLogout = () => {
       logoutLocal(); // Cookies clear karega
       dispatch(logout()); // Redux state clear karega
@@ -105,28 +115,25 @@ export const SessionManager = ({ children }: { children: React.ReactNode }) => {
     const checkSessionAndHydrate = async () => {
       const lastActive = localStorage.getItem('last_active_time');
 
-      // --- LOGIC 1: Tab Close & Inactivity Check (Aapka purana logic) ---
+      // --- LOGIC 1: Tab Close & Inactivity Check ---
       if (token && lastActive) {
         const now = Date.now();
         const diff = now - parseInt(lastActive);
         
-        // Fix: 2 Minutes logic (2 * 60 * 1000)
+        // 2 Minutes logic (2 * 60 * 1000)
         const twoMinutes = 2 * 60 * 1000; 
 
         if (diff > twoMinutes) {
           handleLogout();
-          return; // Execute rok do agar session expire ho gaya hai
+          return; 
         } else {
-          // Agar user 2 min ke andar wapas aa gaya, toh timestamp clear kar dein
           localStorage.removeItem('last_active_time');
         }
       }
 
       // --- LOGIC 2: Session Hydration (Secure Auth Flow) ---
-      // Agar token majood hai magar Redux khali hai (yani Refresh hua hai)
       if (token && !user) {
         try {
-          // Backend se fresh permissions aur data mangwao
           const res = await fetchProfileAPI(token);
           
           dispatch(setAuth({
@@ -137,11 +144,11 @@ export const SessionManager = ({ children }: { children: React.ReactNode }) => {
           }));
         } catch (error) {
           console.error("Session verification failed. Token might be invalid.", error);
-          handleLogout(); // Token fake ya expire ho chuka hai toh bahar phenk do
+          handleLogout(); 
         }
       }
 
-      setIsHydrating(false); // Checking khatam
+      setIsHydrating(false); 
     };
 
     checkSessionAndHydrate();
@@ -156,9 +163,14 @@ export const SessionManager = ({ children }: { children: React.ReactNode }) => {
     return () => {
       window.removeEventListener('beforeunload', saveTimeOnClose);
     };
-  }, [dispatch, token, user]);
+  }, [dispatch, token, user, mounted]);
 
-  // Jab tak backend se data aa raha hai, UI ko rok kar ek Loader dikhayen
+  // 👉 HYDRATION FIX: Agar component abhi mount nahi hua toh server wala default view (children) dikhao
+  if (!mounted) {
+    return <>{children}</>;
+  }
+
+  // Jab tak backend se data aa raha hai aur token majood hai, Loader dikhayen
   if (isHydrating && token && !user) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-app-bg">

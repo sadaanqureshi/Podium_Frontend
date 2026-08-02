@@ -1072,3 +1072,1376 @@ export const authSlice = createSlice({
 
 export const { setAuth, logout, setUser } = authSlice.actions;
 export default authSlice.reducer;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // 'use client';
+// // import React, { useEffect, useMemo } from 'react';
+// // import { DollarSign, TrendingUp, Clock, CreditCard } from 'lucide-react';
+// // import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+// // import { fetchFeesData } from '@/lib/store/features/financeSlice';
+// // import UserManagementTable from '@/components/ui/UserManagementTable';
+
+// // const FeesManagement = () => {
+// //     const dispatch = useAppDispatch();
+
+// //     // # 1. REDUX STATE ACCESS
+// //     const { transactions, stats, loading } = useAppSelector((state) => state.finance);
+
+// //     useEffect(() => {
+// //         dispatch(fetchFeesData());
+// //     }, [dispatch]);
+
+// //     // # 2. TABLE COLUMN CONFIGURATION (Using Design Tokens)
+// //     const feesColumns = useMemo(() => [
+// //         {
+// //             header: 'Transaction ID',
+// //             key: 'uuid',
+// //             render: (item: any) => <span className="font-bold text-accent-blue italic text-xs">#{item.uuid?.slice(0, 8)}</span>
+// //         },
+// //         {
+// //             header: 'Course / Detail',
+// //             key: 'courseName',
+// //             render: (item: any) => (
+// //                 <div>
+// //                     <p className="font-black text-text-main uppercase tracking-tight text-sm italic">{item.courseName || 'General Payment'}</p>
+// //                     <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider">{item.studentEmail}</p>
+// //                 </div>
+// //             )
+// //         },
+// //         {
+// //             header: 'Amount',
+// //             key: 'amount',
+// //             render: (item: any) => <span className="font-black text-text-main tracking-tighter italic text-base">${item.amount}</span>
+// //         },
+// //         {
+// //             header: 'Status',
+// //             key: 'status',
+// //             align: 'center' as const,
+// //             render: (item: any) => (
+// //                 <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-colors ${
+// //                     item.status === 'paid' 
+// //                     ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+// //                     : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+// //                 }`}>
+// //                     {item.status}
+// //                 </span>
+// //             )
+// //         },
+// //         {
+// //             header: 'Date',
+// //             key: 'createdAt',
+// //             align: 'right' as const,
+// //             render: (item: any) => <span className="text-text-muted font-black text-[10px] uppercase">{new Date(item.createdAt).toLocaleDateString('en-GB')}</span>
+// //         }
+// //     ], []);
+
+// //     return (
+// //         <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main">
+// //             <div className="mb-10">
+// //                 <h1 className="text-3xl md:text-4xl font-black tracking-tight uppercase">Finance Terminal</h1>
+// //                 <p className="text-text-muted font-medium mt-1 italic underline decoration-accent-blue/20">Real-time revenue tracking and transaction auditing.</p>
+// //             </div>
+
+// //             {/* Stats Section: Fully Dynamic */}
+// //             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+// //                 <StatCard title="Gross Revenue" value={`$${stats?.totalRevenue || 0}`} icon={<DollarSign />} color="text-emerald-500" bgColor="bg-emerald-500/10" />
+// //                 <StatCard title="Cleared Trans." value={stats?.paidTransactionCount} icon={<TrendingUp />} color="text-accent-blue" bgColor="bg-accent-blue/10" />
+// //                 <StatCard title="Awaiting" value={stats?.pendingPayments} icon={<Clock />} color="text-amber-500" bgColor="bg-amber-500/10" />
+// //                 <StatCard title="Volume" value={stats?.totalTransactions} icon={<CreditCard />} color="text-purple-500" bgColor="bg-purple-500/10" />
+// //             </div>
+
+// //             {/* Table Section: Uses Table's own dark mode logic through card-bg token */}
+// //             <div className="bg-card-bg rounded-[2.5rem] shadow-2xl overflow-hidden border border-border-subtle">
+// //                 <UserManagementTable
+// //                     data={transactions}
+// //                     loading={loading}
+// //                     columnConfig={feesColumns}
+// //                     type="Transaction"
+// //                     visibleActions={[]}
+// //                 />
+// //             </div>
+// //         </div>
+// //     );
+// // };
+
+// // // StatCard Sub-component (Refactored with Design Tokens)
+// // const StatCard = ({ title, value, icon, color, bgColor }: any) => (
+// //     <div className="bg-card-bg p-7 rounded-[2.5rem] border border-border-subtle shadow-sm flex items-center gap-6 hover:scale-[1.02] group">
+// //         <div className={`w-16 h-16 rounded-[1.5rem] ${bgColor} ${color} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform`}>
+// //             {React.cloneElement(icon, { size: 28, strokeWidth: 2.5 })}
+// //         </div>
+// //         <div>
+// //             <p className="text-text-muted text-[9px] font-black uppercase tracking-[0.2em]">{title}</p>
+// //             <h3 className="text-2xl font-black text-text-main mt-1 tracking-tighter italic">{value || 0}</h3>
+// //         </div>
+// //     </div>
+// // );
+
+// // export default FeesManagement;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // 'use client';
+// // import React, { useEffect, useMemo, useState } from 'react';
+// // import { DollarSign, TrendingUp, Clock, CreditCard, Check, X, Image as ImageIcon } from 'lucide-react';
+// // import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+// // import { fetchFeesData, fetchEnrollmentsData } from '@/lib/store/features/financeSlice';
+// // import { updateEnrollmentStatusAPI } from '@/lib/api/apiService';
+// // import { useToast } from '@/context/ToastContext';
+// // import UserManagementTable from '@/components/ui/UserManagementTable';
+
+// // const FeesManagement = () => {
+// //     const dispatch = useAppDispatch();
+// //     const { showToast } = useToast();
+
+// //     // UI States
+// //     const [activeTab, setActiveTab] = useState<'transactions' | 'enrollments'>('transactions');
+// //     const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+// //     // Naya Modal State Screenshot Dikhane Ke Liye
+// //     const [proofModal, setProofModal] = useState<{ isOpen: boolean, url: string, id: number, status: string }>({ 
+// //         isOpen: false, url: '', id: 0, status: '' 
+// //     });
+
+// //     // Redux State Access
+// //     const { transactions, enrollments, stats, loading, enrollmentsLoading } = useAppSelector((state) => state.finance);
+
+// //     useEffect(() => {
+// //         if (activeTab === 'transactions') {
+// //             dispatch(fetchFeesData());
+// //         } else {
+// //             dispatch(fetchEnrollmentsData());
+// //         }
+// //     }, [dispatch, activeTab]);
+
+// //     // Handle Approve / Reject
+// //     const handleStatusUpdate = async (id: number, action: 'approve' | 'reject') => {
+// //         let payload: any = { action };
+
+// //         if (action === 'reject') {
+// //             const reason = window.prompt("Please enter a rejection reason:");
+// //             if (!reason) return; // Action cancel kar diya agar reason nahi dia
+// //             payload.rejectionReason = reason;
+// //         }
+
+// //         setActionLoading(id);
+// //         try {
+// //             await updateEnrollmentStatusAPI(id, payload);
+// //             showToast(`Enrollment successfully ${action}d!`, 'success');
+// //             dispatch(fetchEnrollmentsData()); // Refresh list
+// //             setProofModal({ ...proofModal, isOpen: false }); // Action successful hone par modal band kar dein
+// //         } catch (error: any) {
+// //             showToast(error.message || 'Action failed', 'error');
+// //         } finally {
+// //             setActionLoading(null);
+// //         }
+// //     };
+
+// //     // --- TABLE COLUMNS: TRANSACTIONS ---
+// //     const feesColumns = useMemo(() => [
+// //         {
+// //             header: 'Transaction ID',
+// //             key: 'uuid',
+// //             render: (item: any) => <span className="font-bold text-accent-blue text-xs uppercase">#{item.uuid?.slice(0, 8) || 'N/A'}</span>
+// //         },
+// //         {
+// //             header: 'Course / Detail',
+// //             key: 'courseName',
+// //             render: (item: any) => (
+// //                 <div>
+// //                     <p className="font-black text-text-main uppercase tracking-tight text-sm">{item.courseName || 'General Payment'}</p>
+// //                     <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider mt-0.5">{item.studentEmail}</p>
+// //                 </div>
+// //             )
+// //         },
+// //         {
+// //             header: 'Amount',
+// //             key: 'amount',
+// //             render: (item: any) => <span className="font-black text-emerald-500 tracking-tighter text-base">${item.amount}</span>
+// //         },
+// //         {
+// //             header: 'Status',
+// //             key: 'status',
+// //             align: 'center' as const,
+// //             render: (item: any) => (
+// //                 <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-colors ${
+// //                     item.status === 'paid' 
+// //                     ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+// //                     : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+// //                 }`}>
+// //                     {item.status}
+// //                 </span>
+// //             )
+// //         },
+// //         {
+// //             header: 'Date',
+// //             key: 'createdAt',
+// //             align: 'right' as const,
+// //             render: (item: any) => <span className="text-text-muted font-bold text-xs">{new Date(item.createdAt).toLocaleDateString('en-GB')}</span>
+// //         }
+// //     ], []);
+
+// //     // --- TABLE COLUMNS: ENROLLMENTS ---
+// //     const enrollmentColumns = useMemo(() => [
+// //         {
+// //             header: 'Student',
+// //             key: 'student',
+// //             render: (item: any) => (
+// //                 <div className="flex items-center gap-3">
+// //                     <div className="w-10 h-10 rounded-xl bg-accent-blue/10 text-accent-blue flex items-center justify-center font-black text-sm uppercase shrink-0 border border-accent-blue/20">
+// //                         {item.student?.firstName?.[0] || 'U'}
+// //                     </div>
+// //                     <div>
+// //                         <p className="font-black text-text-main uppercase tracking-tight text-sm">{item.student?.firstName} {item.student?.lastName}</p>
+// //                         <p className="text-[10px] text-text-muted font-bold tracking-wider mt-0.5">{item.student?.email}</p>
+// //                     </div>
+// //                 </div>
+// //             )
+// //         },
+// //         {
+// //             header: 'Course',
+// //             key: 'course',
+// //             render: (item: any) => (
+// //                 <div>
+// //                     <p className="font-black text-text-main text-sm">{item.course?.courseName}</p>
+// //                     <p className="text-[11px] text-emerald-500 font-bold mt-0.5">${item.course?.price}</p>
+// //                 </div>
+// //             )
+// //         },
+// //         {
+// //             header: 'Proof',
+// //             key: 'screenshot',
+// //             align: 'center' as const,
+// //             render: (item: any) => (
+// //                 // Agar screenshot hai, toh View ka button dikhayein
+// //                 item.screenshot ? (
+// //                     <button 
+// //                         onClick={() => setProofModal({ isOpen: true, url: item.screenshot, id: item.id, status: item.paymentStatus })}
+// //                         className="flex items-center justify-center gap-2 mx-auto px-4 py-2 bg-accent-blue/10 text-accent-blue rounded-xl hover:bg-accent-blue hover:text-white transition-all shadow-sm"
+// //                     >
+// //                         <ImageIcon size={14} strokeWidth={2.5} />
+// //                         <span className="text-[10px] font-black uppercase tracking-wider">View</span>
+// //                     </button>
+// //                 ) : (
+// //                     <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest opacity-50">No Proof</span>
+// //                 )
+// //             )
+// //         },
+// //         {
+// //             header: 'Status',
+// //             key: 'paymentStatus',
+// //             align: 'center' as const,
+// //             render: (item: any) => (
+// //                 <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-colors ${
+// //                     item.paymentStatus === 'approved' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+// //                     item.paymentStatus === 'rejected' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
+// //                     'bg-amber-500/10 text-amber-500 border-amber-500/20'
+// //                 }`}>
+// //                     {item.paymentStatus}
+// //                 </span>
+// //             )
+// //         },
+// //         {
+// //             header: 'Action',
+// //             key: 'actions',
+// //             align: 'right' as const,
+// //             render: (item: any) => (
+// //                 item.paymentStatus === 'pending' ? (
+// //                     <div className="flex justify-end gap-2">
+// //                         <button 
+// //                             onClick={() => handleStatusUpdate(item.id, 'approve')} 
+// //                             disabled={actionLoading === item.id}
+// //                             className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm disabled:opacity-50"
+// //                             title="Approve"
+// //                         >
+// //                             <Check size={16} strokeWidth={3} />
+// //                         </button>
+// //                         <button 
+// //                             onClick={() => handleStatusUpdate(item.id, 'reject')} 
+// //                             disabled={actionLoading === item.id}
+// //                             className="p-2 bg-red-500/10 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm disabled:opacity-50"
+// //                             title="Reject"
+// //                         >
+// //                             <X size={16} strokeWidth={3} />
+// //                         </button>
+// //                     </div>
+// //                 ) : (
+// //                     <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Locked</span>
+// //                 )
+// //             )
+// //         }
+// //     ], [actionLoading]);
+
+// //     return (
+// //         <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main animate-in fade-in duration-300 relative">
+
+// //             {/* Header & Tabs Container */}
+// //             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 border-b border-border-subtle pb-6">
+// //                 <div>
+// //                     <h1 className="text-3xl md:text-4xl font-black tracking-tight uppercase">Finance & Enrollment</h1>
+// //                     <p className="text-text-muted font-medium text-sm mt-1">Audit transactions and manage student enrollment requests.</p>
+// //                 </div>
+
+// //                 {/* Minimalist Tab Switcher */}
+// //                 <div className="flex bg-card-bg border border-border-subtle p-1.5 rounded-2xl shadow-sm w-full md:w-auto">
+// //                     <button 
+// //                         onClick={() => setActiveTab('transactions')}
+// //                         className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${activeTab === 'transactions' ? 'bg-accent-blue text-white shadow-md' : 'text-text-muted hover:text-text-main'}`}
+// //                     >
+// //                         Transactions
+// //                     </button>
+// //                     <button 
+// //                         onClick={() => setActiveTab('enrollments')}
+// //                         className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${activeTab === 'enrollments' ? 'bg-accent-blue text-white shadow-md' : 'text-text-muted hover:text-text-main'}`}
+// //                     >
+// //                         Enrollments
+// //                     </button>
+// //                 </div>
+// //             </div>
+
+// //             {/* TAB 1: Transactions View */}
+// //             {activeTab === 'transactions' && (
+// //                 <div className="space-y-8 animate-in slide-in-from-left-4 duration-300">
+// //                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+// //                         <StatCard title="Gross Revenue" value={`$${stats?.totalRevenue || 0}`} icon={<DollarSign />} color="text-emerald-500" bgColor="bg-emerald-500/10" />
+// //                         <StatCard title="Cleared Trans." value={stats?.paidTransactionCount} icon={<TrendingUp />} color="text-accent-blue" bgColor="bg-accent-blue/10" />
+// //                         <StatCard title="Awaiting" value={stats?.pendingPayments} icon={<Clock />} color="text-amber-500" bgColor="bg-amber-500/10" />
+// //                         <StatCard title="Volume" value={stats?.totalTransactions} icon={<CreditCard />} color="text-purple-500" bgColor="bg-purple-500/10" />
+// //                     </div>
+
+// //                     <div className="bg-card-bg rounded-3xl shadow-sm border border-border-subtle overflow-hidden">
+// //                         <UserManagementTable
+// //                             data={transactions}
+// //                             loading={loading}
+// //                             columnConfig={feesColumns}
+// //                             type="Transaction"
+// //                             visibleActions={[]} 
+// //                         />
+// //                     </div>
+// //                 </div>
+// //             )}
+
+// //             {/* TAB 2: Enrollments View */}
+// //             {activeTab === 'enrollments' && (
+// //                 <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+// //                     <div className="bg-card-bg rounded-3xl shadow-sm border border-border-subtle overflow-hidden">
+// //                         <UserManagementTable
+// //                             data={enrollments}
+// //                             loading={enrollmentsLoading}
+// //                             columnConfig={enrollmentColumns}
+// //                             type="Enrollment"
+// //                             visibleActions={[]} 
+// //                         />
+// //                     </div>
+// //                 </div>
+// //             )}
+
+// //             {/* IMAGE PREVIEW MODAL */}
+// //             {proofModal.isOpen && (
+// //                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-app-bg/90 backdrop-blur-sm animate-in fade-in duration-200">
+// //                     <div className="bg-card-bg border border-border-subtle rounded-[2rem] p-6 w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+
+// //                         {/* Header & Close */}
+// //                         <div className="flex items-center justify-between mb-4 border-b border-border-subtle pb-4">
+// //                             <h2 className="text-xl font-black text-text-main uppercase tracking-tight">Payment Verification</h2>
+// //                             <button 
+// //                                 onClick={() => setProofModal({ isOpen: false, url: '', id: 0, status: '' })}
+// //                                 className="p-2 bg-app-bg text-text-muted hover:text-red-500 rounded-full transition-colors border border-border-subtle"
+// //                             >
+// //                                 <X size={20} strokeWidth={2.5} />
+// //                             </button>
+// //                         </div>
+
+// //                         {/* Image Container (Scrollable if image is too tall) */}
+// //                         <div className="flex-1 overflow-auto rounded-xl bg-app-bg/50 border border-border-subtle flex items-center justify-center p-2">
+// //                             <img 
+// //                                 src={proofModal.url} 
+// //                                 alt="Payment Proof" 
+// //                                 className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-inner"
+// //                                 onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Invalid+Image+URL' }}
+// //                             />
+// //                         </div>
+
+// //                         {/* Action Buttons Inside Modal (Sirf tab dikhenge jab status pending ho) */}
+// //                         {proofModal.status === 'pending' && (
+// //                             <div className="flex items-center justify-end gap-4 mt-6 pt-4 border-t border-border-subtle">
+// //                                 <button 
+// //                                     onClick={() => handleStatusUpdate(proofModal.id, 'reject')}
+// //                                     disabled={actionLoading === proofModal.id}
+// //                                     className="px-6 py-3 bg-red-500/10 text-red-500 font-black text-xs uppercase tracking-wider rounded-xl hover:bg-red-500 hover:text-white transition-all flex items-center gap-2 disabled:opacity-50"
+// //                                 >
+// //                                     <X size={16} strokeWidth={3} /> Reject Enrollment
+// //                                 </button>
+// //                                 <button 
+// //                                     onClick={() => handleStatusUpdate(proofModal.id, 'approve')}
+// //                                     disabled={actionLoading === proofModal.id}
+// //                                     className="px-6 py-3 bg-emerald-500 text-white font-black text-xs uppercase tracking-wider rounded-xl hover:opacity-90 shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
+// //                                 >
+// //                                     <Check size={16} strokeWidth={3} /> Approve & Enroll
+// //                                 </button>
+// //                             </div>
+// //                         )}
+// //                     </div>
+// //                 </div>
+// //             )}
+// //         </div>
+// //     );
+// // };
+
+// // // Refactored StatCard for Flat Design
+// // const StatCard = ({ title, value, icon, color, bgColor }: any) => (
+// //     <div className="bg-card-bg p-6 rounded-2xl border border-border-subtle shadow-sm flex items-center gap-5 hover:border-accent-blue/30 transition-colors">
+// //         <div className={`w-14 h-14 rounded-xl ${bgColor} ${color} flex items-center justify-center shrink-0`}>
+// //             {React.cloneElement(icon, { size: 24, strokeWidth: 2.5 })}
+// //         </div>
+// //         <div>
+// //             <p className="text-text-muted text-[10px] font-black uppercase tracking-widest">{title}</p>
+// //             <h3 className="text-2xl font-black text-text-main mt-0.5 tracking-tight">{value || 0}</h3>
+// //         </div>
+// //     </div>
+// // );
+
+// // export default FeesManagement;
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // 'use client';
+// // import React, { useEffect, useMemo, useState } from 'react';
+// // import { DollarSign, TrendingUp, Clock, CreditCard, Check, X } from 'lucide-react';
+// // import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+// // import { fetchFeesData, fetchEnrollmentsData } from '@/lib/store/features/financeSlice';
+// // import { updateEnrollmentStatusAPI } from '@/lib/api/apiService';
+// // import { useToast } from '@/context/ToastContext';
+// // import UserManagementTable from '@/components/ui/UserManagementTable';
+
+// // const FeesManagement = () => {
+// //     const dispatch = useAppDispatch();
+// //     const { showToast } = useToast();
+
+// //     // UI States
+// //     const [activeTab, setActiveTab] = useState<'transactions' | 'enrollments'>('transactions');
+// //     const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+// //     // Redux State Access
+// //     const { transactions, enrollments, stats, loading, enrollmentsLoading } = useAppSelector((state) => state.finance);
+
+// //     useEffect(() => {
+// //         if (activeTab === 'transactions') {
+// //             dispatch(fetchFeesData());
+// //         } else {
+// //             dispatch(fetchEnrollmentsData());
+// //         }
+// //     }, [dispatch, activeTab]);
+
+// //     // Handle Approve / Reject Directly from Table
+// //     const handleStatusUpdate = async (id: number, action: 'approve' | 'reject') => {
+// //         let payload: any = { action };
+
+// //         if (action === 'reject') {
+// //             const reason = window.prompt("Please enter a rejection reason:");
+// //             if (!reason) return; // Action cancel kar diya agar reason nahi dia
+// //             payload.rejectionReason = reason;
+// //         }
+
+// //         setActionLoading(id);
+// //         try {
+// //             await updateEnrollmentStatusAPI(id, payload);
+// //             showToast(`Enrollment successfully ${action}d!`, 'success');
+// //             dispatch(fetchEnrollmentsData()); // Refresh list automatically
+// //         } catch (error: any) {
+// //             showToast(error.message || 'Action failed', 'error');
+// //         } finally {
+// //             setActionLoading(null);
+// //         }
+// //     };
+
+// //     // --- TABLE COLUMNS: TRANSACTIONS ---
+// //     const feesColumns = useMemo(() => [
+// //         {
+// //             header: 'Transaction ID',
+// //             key: 'uuid',
+// //             render: (item: any) => <span className="font-bold text-accent-blue text-xs uppercase">#{item.uuid?.slice(0, 8) || 'N/A'}</span>
+// //         },
+// //         {
+// //             header: 'Course / Detail',
+// //             key: 'courseName',
+// //             render: (item: any) => (
+// //                 <div>
+// //                     <p className="font-black text-text-main uppercase tracking-tight text-sm">{item.courseName || 'General Payment'}</p>
+// //                     <p className="text-[10px] text-text-muted font-bold uppercase tracking-wider mt-0.5">{item.studentEmail}</p>
+// //                 </div>
+// //             )
+// //         },
+// //         {
+// //             header: 'Amount',
+// //             key: 'amount',
+// //             render: (item: any) => <span className="font-black text-emerald-500 tracking-tighter text-base">${item.amount}</span>
+// //         },
+// //         {
+// //             header: 'Status',
+// //             key: 'status',
+// //             align: 'center' as const,
+// //             render: (item: any) => (
+// //                 <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-colors ${
+// //                     item.status === 'paid' 
+// //                     ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+// //                     : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+// //                 }`}>
+// //                     {item.status}
+// //                 </span>
+// //             )
+// //         },
+// //         {
+// //             header: 'Date',
+// //             key: 'createdAt',
+// //             align: 'right' as const,
+// //             render: (item: any) => <span className="text-text-muted font-bold text-xs">{new Date(item.createdAt).toLocaleDateString('en-GB')}</span>
+// //         }
+// //     ], []);
+
+// //     // --- TABLE COLUMNS: ENROLLMENTS ---
+// //     // const enrollmentColumns = useMemo(() => [
+// //     //     {
+// //     //         header: 'Student',
+// //     //         key: 'student',
+// //     //         render: (item: any) => (
+// //     //             <div className="flex items-center gap-3">
+// //     //                 <div className="w-10 h-10 rounded-xl bg-accent-blue/10 text-accent-blue flex items-center justify-center font-black text-sm uppercase shrink-0 border border-accent-blue/20">
+// //     //                     {item.student?.firstName?.[0] || 'U'}
+// //     //                 </div>
+// //     //                 <div>
+// //     //                     <p className="font-black text-text-main uppercase tracking-tight text-sm">{item.student?.firstName} {item.student?.lastName}</p>
+// //     //                     <p className="text-[10px] text-text-muted font-bold tracking-wider mt-0.5">{item.student?.email}</p>
+// //     //                 </div>
+// //     //             </div>
+// //     //         )
+// //     //     },
+// //     //     {
+// //     //         header: 'Course',
+// //     //         key: 'course',
+// //     //         render: (item: any) => (
+// //     //             <div>
+// //     //                 <p className="font-black text-text-main text-sm">{item.course?.courseName}</p>
+// //     //                 <p className="text-[11px] text-emerald-500 font-bold mt-0.5">${item.course?.price}</p>
+// //     //             </div>
+// //     //         )
+// //     //     },
+// //     //     {
+// //     //         header: 'Status',
+// //     //         key: 'paymentStatus',
+// //     //         align: 'center' as const,
+// //     //         render: (item: any) => (
+// //     //             <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-colors ${
+// //     //                 item.paymentStatus === 'approved' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+// //     //                 item.paymentStatus === 'rejected' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
+// //     //                 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+// //     //             }`}>
+// //     //                 {item.paymentStatus}
+// //     //             </span>
+// //     //         )
+// //     //     },
+// //     //     {
+// //     //         header: 'Action',
+// //     //         key: 'actions',
+// //     //         align: 'right' as const,
+// //     //         render: (item: any) => (
+// //     //             item.paymentStatus === 'pending' ? (
+// //     //                 <div className="flex justify-end gap-2">
+// //     //                     <button 
+// //     //                         onClick={() => handleStatusUpdate(item.id, 'approve')} 
+// //     //                         disabled={actionLoading === item.id}
+// //     //                         className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm disabled:opacity-50"
+// //     //                         title="Approve"
+// //     //                     >
+// //     //                         <Check size={16} strokeWidth={3} />
+// //     //                     </button>
+// //     //                     <button 
+// //     //                         onClick={() => handleStatusUpdate(item.id, 'reject')} 
+// //     //                         disabled={actionLoading === item.id}
+// //     //                         className="p-2 bg-red-500/10 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm disabled:opacity-50"
+// //     //                         title="Reject"
+// //     //                     >
+// //     //                         <X size={16} strokeWidth={3} />
+// //     //                     </button>
+// //     //                 </div>
+// //     //             ) : (
+// //     //                 <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Locked</span>
+// //     //             )
+// //     //         )
+// //     //     }
+// //     // ], [actionLoading]);
+
+// //     // --- TABLE COLUMNS: ENROLLMENTS ---
+// //     const enrollmentColumns = useMemo(() => [
+// //         {
+// //             header: 'Student',
+// //             key: 'student',
+// //             render: (item: any) => (
+// //                 <div className="flex items-center gap-3">
+// //                     <div className="w-10 h-10 rounded-xl bg-accent-blue/10 text-accent-blue flex items-center justify-center font-black text-sm uppercase shrink-0 border border-accent-blue/20">
+// //                         {item.student?.firstName?.[0] || 'U'}
+// //                     </div>
+// //                     <div>
+// //                         <p className="font-black text-text-main uppercase tracking-tight text-sm">{item.student?.firstName} {item.student?.lastName}</p>
+// //                         <p className="text-[10px] text-text-muted font-bold tracking-wider mt-0.5">{item.student?.email}</p>
+// //                     </div>
+// //                 </div>
+// //             )
+// //         },
+// //         {
+// //             header: 'Course',
+// //             key: 'course',
+// //             render: (item: any) => (
+// //                 <div>
+// //                     <p className="font-black text-text-main text-sm">{item.course?.courseName}</p>
+// //                     <p className="text-[11px] text-emerald-500 font-bold mt-0.5">${item.course?.price}</p>
+// //                 </div>
+// //             )
+// //         },
+// //         {
+// //             header: 'Status',
+// //             key: 'status', // 👉 FIX: 'paymentStatus' ki jagah sirf 'status'
+// //             align: 'center' as const,
+// //             render: (item: any) => {
+// //                 // 👉 FIX: API ki new values (enrolled, dismissed) ke hisaab se colors
+// //                 const currentStatus = item.status?.toLowerCase();
+// //                 let statusClasses = 'bg-amber-500/10 text-amber-500 border-amber-500/20'; // Default Pending
+
+// //                 if (currentStatus === 'enrolled' || currentStatus === 'approved') {
+// //                     statusClasses = 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+// //                 } else if (currentStatus === 'dismissed' || currentStatus === 'rejected') {
+// //                     statusClasses = 'bg-red-500/10 text-red-500 border-red-500/20';
+// //                 }
+
+// //                 return (
+// //                     <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-colors ${statusClasses}`}>
+// //                         {item.status}
+// //                     </span>
+// //                 );
+// //             }
+// //         },
+// //         // {
+// //         //     header: 'Action',
+// //         //     key: 'actions',
+// //         //     align: 'right' as const,
+// //         //     render: (item: any) => (
+// //         //         item.status === 'pending' ? ( // 👉 FIX: Yahan bhi 'status' kar diya
+// //         //             <div className="flex justify-end gap-2">
+// //         //                 <button 
+// //         //                     onClick={() => handleStatusUpdate(item.id, 'approve')} 
+// //         //                     disabled={actionLoading === item.id}
+// //         //                     className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm disabled:opacity-50"
+// //         //                     title="Approve"
+// //         //                 >
+// //         //                     <Check size={16} strokeWidth={3} />
+// //         //                 </button>
+// //         //                 <button 
+// //         //                     onClick={() => handleStatusUpdate(item.id, 'reject')} 
+// //         //                     disabled={actionLoading === item.id}
+// //         //                     className="p-2 bg-red-500/10 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm disabled:opacity-50"
+// //         //                     title="Reject"
+// //         //                 >
+// //         //                     <X size={16} strokeWidth={3} />
+// //         //                 </button>
+// //         //             </div>
+// //         //         ) : (
+// //         //             <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Locked</span>
+// //         //         )
+// //         //     )
+// //         // }
+
+// //         {
+// //             header: 'Action',
+// //             key: 'actions',
+// //             align: 'right' as const,
+// //             render: (item: any) => {
+// //                 const currentStatus = item.status?.toLowerCase();
+
+// //                 return (
+// //                     <div className="flex justify-end gap-2">
+// //                         {/* Approve Button: Tab dikhega jab status already enrolled na ho */}
+// //                         {currentStatus !== 'enrolled' && (
+// //                             <button 
+// //                                 onClick={() => handleStatusUpdate(item.id, 'approve')} 
+// //                                 disabled={actionLoading === item.id}
+// //                                 className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm disabled:opacity-50"
+// //                                 title="Approve & Enroll"
+// //                             >
+// //                                 <Check size={16} strokeWidth={3} />
+// //                             </button>
+// //                         )}
+
+// //                         {/* Reject Button: Tab dikhega jab status already dismissed na ho */}
+// //                         {currentStatus !== 'dismissed' && (
+// //                             <button 
+// //                                 onClick={() => handleStatusUpdate(item.id, 'reject')} 
+// //                                 disabled={actionLoading === item.id}
+// //                                 className="p-2 bg-red-500/10 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm disabled:opacity-50"
+// //                                 title="Reject/Dismiss"
+// //                             >
+// //                                 <X size={16} strokeWidth={3} />
+// //                             </button>
+// //                         )}
+// //                     </div>
+// //                 );
+// //             }
+// //         }
+// //     ], [actionLoading]);
+
+// //     return (
+// //         <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main animate-in fade-in duration-300 relative">
+
+// //             {/* Header & Tabs Container */}
+// //             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 border-b border-border-subtle pb-6">
+// //                 <div>
+// //                     <h1 className="text-3xl md:text-4xl font-black tracking-tight uppercase">Finance & Enrollment</h1>
+// //                     <p className="text-text-muted font-medium text-sm mt-1">Audit transactions and manage student enrollment requests.</p>
+// //                 </div>
+
+// //                 {/* Minimalist Tab Switcher */}
+// //                 <div className="flex bg-card-bg border border-border-subtle p-1.5 rounded-2xl shadow-sm w-full md:w-auto">
+// //                     <button 
+// //                         onClick={() => setActiveTab('transactions')}
+// //                         className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${activeTab === 'transactions' ? 'bg-accent-blue text-white shadow-md' : 'text-text-muted hover:text-text-main'}`}
+// //                     >
+// //                         Transactions
+// //                     </button>
+// //                     <button 
+// //                         onClick={() => setActiveTab('enrollments')}
+// //                         className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${activeTab === 'enrollments' ? 'bg-accent-blue text-white shadow-md' : 'text-text-muted hover:text-text-main'}`}
+// //                     >
+// //                         Enrollments
+// //                     </button>
+// //                 </div>
+// //             </div>
+
+// //             {/* TAB 1: Transactions View */}
+// //             {activeTab === 'transactions' && (
+// //                 <div className="space-y-8 animate-in slide-in-from-left-4 duration-300">
+// //                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+// //                         <StatCard title="Gross Revenue" value={`$${stats?.totalRevenue || 0}`} icon={<DollarSign />} color="text-emerald-500" bgColor="bg-emerald-500/10" />
+// //                         <StatCard title="Cleared Trans." value={stats?.paidTransactionCount} icon={<TrendingUp />} color="text-accent-blue" bgColor="bg-accent-blue/10" />
+// //                         <StatCard title="Awaiting" value={stats?.pendingPayments} icon={<Clock />} color="text-amber-500" bgColor="bg-amber-500/10" />
+// //                         <StatCard title="Volume" value={stats?.totalTransactions} icon={<CreditCard />} color="text-purple-500" bgColor="bg-purple-500/10" />
+// //                     </div>
+
+// //                     <div className="bg-card-bg rounded-3xl shadow-sm border border-border-subtle overflow-hidden">
+// //                         <UserManagementTable
+// //                             data={transactions}
+// //                             loading={loading}
+// //                             columnConfig={feesColumns}
+// //                             type="Transaction"
+// //                             visibleActions={[]} 
+// //                         />
+// //                     </div>
+// //                 </div>
+// //             )}
+
+// //             {/* TAB 2: Enrollments View */}
+// //             {activeTab === 'enrollments' && (
+// //                 <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+// //                     <div className="bg-card-bg rounded-3xl shadow-sm border border-border-subtle overflow-hidden">
+// //                         <UserManagementTable
+// //                             data={enrollments}
+// //                             loading={enrollmentsLoading}
+// //                             columnConfig={enrollmentColumns}
+// //                             type="Enrollment"
+// //                             visibleActions={[]} 
+// //                         />
+// //                     </div>
+// //                 </div>
+// //             )}
+// //         </div>
+// //     );
+// // };
+
+// // // Refactored StatCard for Flat Design
+// // const StatCard = ({ title, value, icon, color, bgColor }: any) => (
+// //     <div className="bg-card-bg p-6 rounded-2xl border border-border-subtle shadow-sm flex items-center gap-5 hover:border-accent-blue/30 transition-colors">
+// //         <div className={`w-14 h-14 rounded-xl ${bgColor} ${color} flex items-center justify-center shrink-0`}>
+// //             {React.cloneElement(icon, { size: 24, strokeWidth: 2.5 })}
+// //         </div>
+// //         <div>
+// //             <p className="text-text-muted text-[10px] font-black uppercase tracking-widest">{title}</p>
+// //             <h3 className="text-2xl font-black text-text-main mt-0.5 tracking-tight">{value || 0}</h3>
+// //         </div>
+// //     </div>
+// // );
+
+// // export default FeesManagement;
+
+
+
+
+// 'use client';
+// import React, { useEffect, useMemo, useState } from 'react';
+// import { DollarSign, TrendingUp, Clock, CreditCard, Check, X, AlertCircle } from 'lucide-react';
+// import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+// import { fetchFeesData, fetchEnrollmentsData } from '@/lib/store/features/financeSlice';
+// import { updateEnrollmentStatusAPI } from '@/lib/api/apiService';
+// import { useToast } from '@/context/ToastContext';
+// import UserManagementTable from '@/components/ui/UserManagementTable';
+
+// const FeesManagement = () => {
+//     const dispatch = useAppDispatch();
+//     const { showToast } = useToast();
+
+//     // UI States
+//     const [activeTab, setActiveTab] = useState<'transactions' | 'enrollments'>('transactions');
+//     const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+//     // Rejection Modal States
+//     const [rejectModal, setRejectModal] = useState<{ isOpen: boolean, id: number | null }>({ isOpen: false, id: null });
+//     const [rejectionReason, setRejectionReason] = useState('');
+
+//     // Redux State Access
+//     const { transactions, enrollments, stats, loading, enrollmentsLoading } = useAppSelector((state) => state.finance);
+
+//     useEffect(() => {
+//         if (activeTab === 'transactions') {
+//             dispatch(fetchFeesData());
+//         } else {
+//             dispatch(fetchEnrollmentsData());
+//         }
+//     }, [dispatch, activeTab]);
+
+//     // Main Function for API Call
+//     const executeStatusUpdate = async (id: number, action: 'approve' | 'reject', reason?: string) => {
+//         setActionLoading(id);
+//         try {
+//             const payload: any = { action };
+//             if (reason) payload.rejectionReason = reason;
+
+//             await updateEnrollmentStatusAPI(id, payload);
+//             showToast(`Enrollment successfully ${action === 'approve' ? 'approved' : 'dismissed'}!`, 'success');
+//             dispatch(fetchEnrollmentsData()); // Refresh list
+
+//             // Modal band kar dein agar reject ho gaya
+//             if (action === 'reject') {
+//                 setRejectModal({ isOpen: false, id: null });
+//                 setRejectionReason('');
+//             }
+//         } catch (error: any) {
+//             showToast(error.message || 'Action failed', 'error');
+//         } finally {
+//             setActionLoading(null);
+//         }
+//     };
+
+//     // Button Click Handlers
+//     const handleApprove = (id: number) => {
+//         executeStatusUpdate(id, 'approve');
+//     };
+
+//     const handleRejectClick = (id: number) => {
+//         setRejectionReason(''); // Purana reason clear karo
+//         setRejectModal({ isOpen: true, id }); // Modal kholo
+//     };
+
+//     const submitRejection = () => {
+//         if (!rejectionReason.trim()) {
+//             showToast('Please enter a rejection reason', 'error');
+//             return;
+//         }
+//         if (rejectModal.id) {
+//             executeStatusUpdate(rejectModal.id, 'reject', rejectionReason);
+//         }
+//     };
+
+//     // --- TABLE COLUMNS: TRANSACTIONS ---
+//     const feesColumns = useMemo(() => [
+//         {
+//             header: 'Transaction ID',
+//             key: 'uuid',
+//             render: (item: any) => <span className="font-bold text-accent-blue text-xs uppercase">#{item.uuid?.slice(0, 8) || 'N/A'}</span>
+//         },
+//         {
+//             header: 'Student Name',
+//             key: 'student',
+//             render: (item: any) => (
+//                 <div>
+//                     <p className="font-black text-text-main uppercase tracking-tight text-sm">{item.studentName}</p>
+//                 </div>
+//             )
+//         },
+//         {
+//             header: 'Course / Detail',
+//             key: 'courseName',
+//             render: (item: any) => (
+//                 <div>
+//                     <p className="font-black text-text-main uppercase tracking-tight text-sm">{item.courseName || 'General Payment'}</p>
+//                 </div>
+//             )
+//         },
+//         {
+//             header: 'Amount',
+//             key: 'amount',
+//             render: (item: any) => <span className="font-black text-emerald-500 tracking-tighter text-base">${item.amount}</span>
+//         },
+//         {
+//             header: 'Status',
+//             key: 'status',
+//             align: 'center' as const,
+//             render: (item: any) => (
+//                 <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-colors ${item.status === 'paid'
+//                         ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+//                         : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+//                     }`}>
+//                     {item.status}
+//                 </span>
+//             )
+//         },
+//         {
+//             header: 'Date',
+//             key: 'createdAt',
+//             align: 'right' as const,
+//             render: (item: any) => <span className="text-text-muted font-bold text-xs">{new Date(item.createdAt).toLocaleDateString('en-GB')}</span>
+//         }
+//     ], []);
+
+//     // --- TABLE COLUMNS: ENROLLMENTS ---
+//     const enrollmentColumns = useMemo(() => [
+//         {
+//             header: 'Student',
+//             key: 'student',
+//             render: (item: any) => (
+//                 <div className="flex items-center gap-3">
+//                     <div className="w-10 h-10 rounded-xl bg-accent-blue/10 text-accent-blue flex items-center justify-center font-black text-sm uppercase shrink-0 border border-accent-blue/20">
+//                         {item.student?.firstName?.[0] || 'U'}
+//                     </div>
+//                     <div>
+//                         <p className="font-black text-text-main uppercase tracking-tight text-sm">{item.student?.firstName} {item.student?.lastName}</p>
+//                         <p className="text-[10px] text-text-muted font-bold tracking-wider mt-0.5">{item.student?.email}</p>
+//                     </div>
+//                 </div>
+//             )
+//         },
+//         {
+//             header: 'Course',
+//             key: 'course',
+//             render: (item: any) => (
+//                 <div>
+//                     <p className="font-black text-text-main text-sm">{item.course?.courseName}</p>
+//                     <p className="text-[11px] text-emerald-500 font-bold mt-0.5">${item.course?.price}</p>
+//                 </div>
+//             )
+//         },
+//         {
+//             header: 'Status',
+//             key: 'status',
+//             align: 'center' as const,
+//             render: (item: any) => {
+//                 const currentStatus = item.status?.toLowerCase();
+//                 let statusClasses = 'bg-amber-500/10 text-amber-500 border-amber-500/20'; // Default Pending
+
+//                 if (currentStatus === 'enrolled' || currentStatus === 'approved') {
+//                     statusClasses = 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+//                 } else if (currentStatus === 'dismissed' || currentStatus === 'rejected') {
+//                     statusClasses = 'bg-red-500/10 text-red-500 border-red-500/20';
+//                 }
+
+//                 return (
+//                     <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-colors ${statusClasses}`}>
+//                         {item.status}
+//                     </span>
+//                 );
+//             }
+//         },
+//         {
+//             header: 'Action',
+//             key: 'actions',
+//             align: 'right' as const,
+//             render: (item: any) => {
+//                 const currentStatus = item.status?.toLowerCase();
+
+//                 // 👉 FIX: Sirf pending walon par buttons dikhao, baqi sab par LOCKED
+//                 return currentStatus === 'pending' ? (
+//                     <div className="flex justify-end gap-2">
+//                         <button
+//                             onClick={() => handleApprove(item.id)}
+//                             disabled={actionLoading === item.id}
+//                             className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm disabled:opacity-50"
+//                             title="Approve & Enroll"
+//                         >
+//                             <Check size={16} strokeWidth={3} />
+//                         </button>
+
+//                         <button
+//                             onClick={() => handleRejectClick(item.id)}
+//                             disabled={actionLoading === item.id}
+//                             className="p-2 bg-red-500/10 text-red-600 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm disabled:opacity-50"
+//                             title="Reject/Dismiss"
+//                         >
+//                             <X size={16} strokeWidth={3} />
+//                         </button>
+//                     </div>
+//                 ) : (
+//                     <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Locked</span>
+//                 );
+//             }
+//         }
+//     ], [actionLoading]);
+
+//     return (
+//         <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main animate-in fade-in duration-300 relative">
+
+//             {/* Header & Tabs Container */}
+//             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 border-b border-border-subtle pb-6">
+//                 <div>
+//                     <h1 className="text-3xl md:text-4xl font-black tracking-tight uppercase">Finance & Enrollment</h1>
+//                     <p className="text-text-muted font-medium text-sm mt-1">Audit transactions and manage student enrollment requests.</p>
+//                 </div>
+
+//                 <div className="flex bg-card-bg border border-border-subtle p-1.5 rounded-2xl shadow-sm w-full md:w-auto">
+//                     <button
+//                         onClick={() => setActiveTab('transactions')}
+//                         className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${activeTab === 'transactions' ? 'bg-accent-blue text-white shadow-md' : 'text-text-muted hover:text-text-main'}`}
+//                     >
+//                         Transactions
+//                     </button>
+//                     <button
+//                         onClick={() => setActiveTab('enrollments')}
+//                         className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${activeTab === 'enrollments' ? 'bg-accent-blue text-white shadow-md' : 'text-text-muted hover:text-text-main'}`}
+//                     >
+//                         Enrollments
+//                     </button>
+//                 </div>
+//             </div>
+
+//             {/* TAB 1: Transactions View */}
+//             {activeTab === 'transactions' && (
+//                 <div className="space-y-8 animate-in slide-in-from-left-4 duration-300">
+//                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+//                         <StatCard title="Gross Revenue" value={`$${stats?.totalRevenue || 0}`} icon={<DollarSign />} color="text-emerald-500" bgColor="bg-emerald-500/10" />
+//                         <StatCard title="Cleared Trans." value={stats?.paidTransactionCount} icon={<TrendingUp />} color="text-accent-blue" bgColor="bg-accent-blue/10" />
+//                         <StatCard title="Awaiting" value={stats?.pendingPayments} icon={<Clock />} color="text-amber-500" bgColor="bg-amber-500/10" />
+//                         <StatCard title="Volume" value={stats?.totalTransactions} icon={<CreditCard />} color="text-purple-500" bgColor="bg-purple-500/10" />
+//                     </div>
+
+//                     <div className="bg-card-bg rounded-[1rem] shadow-sm border border-border-subtle overflow-hidden">
+//                         <UserManagementTable
+//                             data={transactions}
+//                             loading={loading}
+//                             columnConfig={feesColumns}
+//                             type="Transaction"
+//                         />
+//                     </div>
+//                 </div>
+//             )}
+
+//             {/* TAB 2: Enrollments View */}
+//             {activeTab === 'enrollments' && (
+//                 <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+//                     <div className="bg-card-bg rounded-[1rem] shadow-sm border border-border-subtle overflow-hidden">
+//                         <UserManagementTable
+//                             data={enrollments}
+//                             loading={enrollmentsLoading}
+//                             columnConfig={enrollmentColumns}
+//                             type="Enrollment"
+//                         />
+//                     </div>
+//                 </div>
+//             )}
+
+//             {/* REJECTION CUSTOM MODAL */}
+//             {rejectModal.isOpen && (
+//                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-app-bg/80 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
+//                     <div className="bg-card-bg border border-border-subtle rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl relative">
+
+//                         {/* Header */}
+//                         <div className="flex items-center gap-3 text-red-500 mb-6">
+//                             <div className="p-3 bg-red-500/10 rounded-2xl">
+//                                 <AlertCircle size={24} strokeWidth={2.5} />
+//                             </div>
+//                             <div>
+//                                 <h2 className="text-lg font-black uppercase tracking-tight text-text-main">Dismiss Enrollment</h2>
+//                                 <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">Action cannot be undone</p>
+//                             </div>
+//                         </div>
+
+//                         {/* Input Area */}
+//                         <div className="space-y-2 mb-8">
+//                             <label className="block text-[11px] font-bold text-text-main ml-1 uppercase tracking-wider">
+//                                 Reason for Rejection <span className="text-red-500">*</span>
+//                             </label>
+//                             <textarea
+//                                 value={rejectionReason}
+//                                 onChange={(e) => setRejectionReason(e.target.value)}
+//                                 placeholder="E.g., Payment proof is invalid..."
+//                                 className="w-full px-4 py-3 bg-app-bg border border-border-subtle rounded-2xl text-sm text-text-main outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-all resize-none h-28"
+//                             />
+//                         </div>
+
+//                         {/* Actions */}
+//                         <div className="flex items-center justify-end gap-3">
+//                             <button
+//                                 onClick={() => {
+//                                     setRejectModal({ isOpen: false, id: null });
+//                                     setRejectionReason('');
+//                                 }}
+//                                 disabled={actionLoading === rejectModal.id}
+//                                 className="px-6 py-3 rounded-xl font-black text-xs uppercase tracking-wider text-text-muted hover:bg-app-bg hover:text-text-main transition-colors disabled:opacity-50"
+//                             >
+//                                 Cancel
+//                             </button>
+//                             <button
+//                                 onClick={submitRejection}
+//                                 disabled={actionLoading === rejectModal.id || !rejectionReason.trim()}
+//                                 className="px-6 py-3 rounded-xl font-black text-xs uppercase tracking-wider bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all disabled:opacity-50 active:scale-95"
+//                             >
+//                                 {actionLoading === rejectModal.id ? 'Processing...' : 'Confirm Reject'}
+//                             </button>
+//                         </div>
+//                     </div>
+//                 </div>
+//             )}
+//         </div>
+//     );
+// };
+
+// // StatCard Component
+// const StatCard = ({ title, value, icon, color, bgColor }: any) => (
+//     <div className="bg-card-bg p-6 rounded-2xl border border-border-subtle shadow-sm flex items-center gap-5 hover:border-accent-blue/30 transition-colors">
+//         <div className={`w-14 h-14 rounded-xl ${bgColor} ${color} flex items-center justify-center shrink-0`}>
+//             {React.cloneElement(icon, { size: 24, strokeWidth: 2.5 })}
+//         </div>
+//         <div>
+//             <p className="text-text-muted text-[10px] font-black uppercase tracking-widest">{title}</p>
+//             <h3 className="text-2xl font-black text-text-main mt-0.5 tracking-tight">{value || 0}</h3>
+//         </div>
+//     </div>
+// );
+
+// export default FeesManagement;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+// import { getFeesDataAPI } from '@/lib/api/apiService';
+
+// // # THUNK: Fetch Finance Data
+// export const fetchFeesData = createAsyncThunk(
+//     'finance/fetchFeesData',
+//     async (params: { page: number; limit: number } | undefined, { rejectWithValue }) => {
+//         try {
+//             const res = await getFeesDataAPI(params?.page || 1, params?.limit || 10);
+//             return res.data || res; // Expecting { transactions: [], stats: {}, meta: {} }
+//         } catch (err: any) {
+//             return rejectWithValue(err.message || 'Finance data load nahi ho saka');
+//         }
+//     }
+// );
+
+// interface FinanceState {
+//     transactions: any[];
+//     stats: any | null;
+//     meta: any | null;
+//     loading: boolean;
+//     error: string | null;
+// }
+
+// const initialState: FinanceState = {
+//     transactions: [],
+//     stats: null,
+//     meta: null,
+//     loading: false,
+//     error: null,
+// };
+
+// const financeSlice = createSlice({
+//     name: 'finance',
+//     initialState,
+//     reducers: {
+//         clearFinanceCache: (state) => {
+//             state.transactions = [];
+//             state.stats = null;
+//             state.meta = null;
+//         }
+//     },
+//     extraReducers: (builder) => {
+//         builder
+//             .addCase(fetchFeesData.pending, (state) => {
+//                 state.loading = true;
+//             })
+//             .addCase(fetchFeesData.fulfilled, (state, action) => {
+//                 state.loading = false;
+//                 state.transactions = action.payload.transactions || [];
+//                 state.stats = action.payload.stats || null;
+//                 state.meta = action.payload.meta || null;
+//             })
+//             .addCase(fetchFeesData.rejected, (state, action) => {
+//                 state.loading = false;
+//                 state.error = action.payload as string;
+//             });
+//     }
+// });
+
+// export const { clearFinanceCache } = financeSlice.actions;
+// export default financeSlice.reducer;
+
+// import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+// import { getFeesDataAPI, getEnrollmentsAPI } from '@/lib/api/apiService';
+
+// // # THUNK 1: Fetch Finance Data
+// export const fetchFeesData = createAsyncThunk(
+//     'finance/fetchFeesData',
+//     async (params: { page: number; limit: number } | undefined, { rejectWithValue }) => {
+//         try {
+//             const res = await getFeesDataAPI(params?.page || 1, params?.limit || 10);
+//             return res.data || res;
+//         } catch (err: any) {
+//             return rejectWithValue(err.message || 'Finance data load nahi ho saka');
+//         }
+//     }
+// );
+
+// // # THUNK 2: Fetch Enrollments Data
+// export const fetchEnrollmentsData = createAsyncThunk(
+//     'finance/fetchEnrollmentsData',
+//     async (_, { rejectWithValue }) => {
+//         try {
+//             const res = await getEnrollmentsAPI();
+//             return res; // Backend array return kar raha hai
+//         } catch (err: any) {
+//             return rejectWithValue(err.message || 'Enrollments data load nahi ho saka');
+//         }
+//     }
+// );
+
+// interface FinanceState {
+//     transactions: any[];
+//     enrollments: any[]; // Nayi state
+//     stats: any | null;
+//     meta: any | null;
+//     loading: boolean;
+//     enrollmentsLoading: boolean; // Nayi loading state
+//     error: string | null;
+// }
+
+// const initialState: FinanceState = {
+//     transactions: [],
+//     enrollments: [],
+//     stats: null,
+//     meta: null,
+//     loading: false,
+//     enrollmentsLoading: false,
+//     error: null,
+// };
+
+// const financeSlice = createSlice({
+//     name: 'finance',
+//     initialState,
+//     reducers: {
+//         clearFinanceCache: (state) => {
+//             state.transactions = [];
+//             state.enrollments = [];
+//             state.stats = null;
+//             state.meta = null;
+//         }
+//     },
+//     extraReducers: (builder) => {
+//         builder
+//             // Transactions Cases
+//             .addCase(fetchFeesData.pending, (state) => {
+//                 state.loading = true;
+//             })
+//             .addCase(fetchFeesData.fulfilled, (state, action) => {
+//                 state.loading = false;
+//                 state.transactions = action.payload.transactions || [];
+//                 state.stats = action.payload.stats || null;
+//                 state.meta = action.payload.meta || null;
+//             })
+//             .addCase(fetchFeesData.rejected, (state, action) => {
+//                 state.loading = false;
+//                 state.error = action.payload as string;
+//             })
+//             // Enrollments Cases
+//             .addCase(fetchEnrollmentsData.pending, (state) => {
+//                 state.enrollmentsLoading = true;
+//             })
+//             .addCase(fetchEnrollmentsData.fulfilled, (state, action) => {
+//                 state.enrollmentsLoading = false;
+//                 state.enrollments = action.payload || [];
+//             })
+//             .addCase(fetchEnrollmentsData.rejected, (state, action) => {
+//                 state.enrollmentsLoading = false;
+//                 state.error = action.payload as string;
+//             });
+//     }
+// });
+
+// export const { clearFinanceCache } = financeSlice.actions;
+// export default financeSlice.reducer;
