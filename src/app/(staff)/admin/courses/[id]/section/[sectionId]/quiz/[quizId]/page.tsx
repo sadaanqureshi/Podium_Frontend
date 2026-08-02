@@ -163,7 +163,7 @@ const AdminQuizDetailPage = ({ params }: { params: Promise<any> }) => {
     if (isInitialLoading) return (
         <div className="h-screen flex flex-col items-center justify-center bg-app-bg">
             <Loader2 className="animate-spin text-accent-blue mb-4" size={48} />
-            <p className="text-text-muted font-black uppercase tracking-[0.2em] text-[10px]">Syncing Admin Data...</p>
+            <p className="text-text-muted font-black uppercase tracking-[0.2em] text-[10px]">Loading Admin Data...</p>
         </div>
     );
 

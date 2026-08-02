@@ -3,9 +3,9 @@ import Cookies from 'js-cookie';
 // ==============================
 // BASE URL
 // ==============================
-// const API_URL = 'http://localhost:3006';
+const API_URL = 'http://localhost:3006';
 // process.env use karne se Next.js khud hi environment ke mutabiq URL utha lega
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006';
+// const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006';
 
 // =======================================
 // AUTH APIs
@@ -915,5 +915,87 @@ export const updateAttendanceAPI = async (attendanceId: number, payload: any) =>
         body: JSON.stringify(payload)
     });
     if (!response.ok) throw new Error('Update fail ho gaya');
+    return await response.json();
+};
+
+export const enrollWithProofAPI = async (formData: FormData) => {
+    // Token retrieve karein
+    const token = Cookies.get('authToken');
+
+    const response = await fetch(`${API_URL}/enrollments`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+            // Note: FormData ke sath 'Content-Type' header mat lagayen. Browser automatically attach karega.
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Enrollment request failed. Please try again.');
+    }
+
+    return await response.json();
+};
+
+// Enrollments fetch karne ki API
+export const getEnrollmentsAPI = async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const response = await fetch(`${API_URL}/admin/enrollments`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch enrollments');
+    return await response.json();
+};
+
+// Enrollment status update karne ki API (Approve/Reject)
+export const updateEnrollmentStatusAPI = async (id: number, data: { action: string; rejectionReason?: string }) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    
+    // Note: Backend method POST, PUT ya PATCH ho sakta hai. Agar error aaye toh PATCH ko POST kar lijiyega.
+    const response = await fetch(`${API_URL}/enrollments/${id}/status`, {
+        method: 'PATCH', 
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify(data)
+    });
+
+    if (!response.ok) throw new Error('Failed to update status');
+    return await response.json();
+};
+
+// # 1. Fetch Transaction Details (GET)
+export const getTransactionByIdAPI = async (transactionId: number | string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const response = await fetch(`${API_URL}/admin/fees/transactions/${transactionId}`, {
+        method: 'GET',
+        headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch transaction details');
+    return await response.json();
+};
+
+// # 2. Update Transaction Status (PATCH)
+export const updateTransactionStatusAPI = async (transactionId: number | string, payload: any) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const response = await fetch(`${API_URL}/admin/fees/transactions/${transactionId}`, {
+        method: 'PATCH',
+        headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) throw new Error('Failed to update transaction status');
     return await response.json();
 };

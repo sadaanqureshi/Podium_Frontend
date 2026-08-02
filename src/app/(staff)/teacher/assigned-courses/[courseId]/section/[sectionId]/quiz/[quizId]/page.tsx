@@ -57,7 +57,7 @@ const QuizDetailPage = ({ params }: { params: Promise<any> }) => {
         finally { setModalLoading(false); }
     };
 
-    if (isInitialLoading) return <div className="h-screen flex flex-col items-center justify-center bg-app-bg"><Loader2 className="animate-spin text-accent-blue mb-4" size={48} /><p className="text-text-muted font-black uppercase tracking-widest text-[10px]">Syncing Data...</p></div>;
+    if (isInitialLoading) return <div className="h-screen flex flex-col items-center justify-center bg-app-bg"><Loader2 className="animate-spin text-accent-blue mb-4" size={48} /><p className="text-text-muted font-black uppercase tracking-widest text-[10px]">Loading Data...</p></div>;
 
     if (!displayQuiz) return <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-app-bg"><AlertCircle className="text-red-500 mb-4" size={48} /><h2 className="text-xl font-black uppercase tracking-tight">Quiz Not Found</h2><Link href={`/teacher/assigned-courses/${courseId}`} className="mt-4 text-accent-blue font-black uppercase text-xs underline decoration-accent-blue/30 underline-offset-8">Return to Course</Link></div>;
 

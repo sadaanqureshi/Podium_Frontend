@@ -20,6 +20,7 @@ export const ICON_MAPPING: Record<string, any> = {
   "fees": CreditCard,
   "announcements": Megaphone,
   "configuration": Settings,
+  "enrollments": Users,
 };
 
 export const getRolePath = (roleInput: any, itemName: string): string => {
@@ -55,6 +56,7 @@ export const getRolePath = (roleInput: any, itemName: string): string => {
     "courses management": "/admin/courses",
     "student management": "/admin/student",
     "teacher management": "/admin/teacher",
+    "student enrollments": "/admin/enrollments",
     "assigned courses": "/teacher/assigned-courses",
     "enrolled courses": "/student/enrolled-courses", // # Updated
     "available courses": "/student/available-courses", // # Updated

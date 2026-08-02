@@ -2,11 +2,13 @@
 import React, { useState, use } from 'react';
 import {
   Loader2, ArrowLeft, Upload, CheckCircle2,
-  CreditCard, Info, ShieldCheck, Send
+  CreditCard, Info, ShieldCheck, Send, Image as ImageIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
+import { useAppSelector } from '@/lib/store/hooks';
+import { enrollWithProofAPI } from '@/lib/api/apiService'; // API Import ki hai
 
 const EnrollmentPaymentPage = ({ params }: { params: Promise<any> }) => {
   const resolvedParams = use(params);
@@ -14,10 +16,12 @@ const EnrollmentPaymentPage = ({ params }: { params: Promise<any> }) => {
 
   const { showToast } = useToast();
   const router = useRouter();
+  
+  // Redux se User details nikal rahe hain taake studentId mil sakay
+  const user = useAppSelector((state) => state.auth.user);
 
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
   // File change handler
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,130 +30,117 @@ const EnrollmentPaymentPage = ({ params }: { params: Promise<any> }) => {
     }
   };
 
-  // Form Submission Logic
-  // src/app/(student)/available-courses/[courseId]/payment/page.tsx
-
+  // Form Submission Logic API ke sath
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!file) {
-      showToast("Please upload payment screenshot", "error");
+      showToast("Please upload a payment screenshot first.", "error");
+      return;
+    }
+
+    if (!user?.id) {
+      showToast("User session not found. Please log in again.", "error");
       return;
     }
 
     setUploading(true);
+    
     try {
-      // # Yahan aapki real API call aayegi
-      // await enrollWithProofAPI(formData);
+      // 1. FormData tayyar karein
+      const formData = new FormData();
+      formData.append('courseId', courseId.toString());
+      // formData.append('studentId', user.id.toString());
+      formData.append('screenshot', file);
 
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Mock delay
+      // 2. API Call hit karein
+      await enrollWithProofAPI(formData);
 
-      showToast("Proof uploaded!", "success");
+      showToast("Screenshot uploaded successfully!", "success");
 
-      // Redirecting to the success page inside the payment folder
+      // 3. Success page par bhej dein
       router.push(`/student/available-courses/${courseId}/payment/success`);
-    } catch (err) {
-      showToast("Upload failed.", "error");
+    } catch (err: any) {
+      showToast(err.message || "Failed to upload proof.", "error");
     } finally {
       setUploading(false);
     }
   };
 
-  if (isSubmitted) return (
-    <div className="h-screen flex flex-col items-center justify-center bg-app-bg p-6 text-center">
-      <div className="bg-card-bg border border-emerald-500/20 rounded-[3rem] p-12 max-w-xl space-y-8 shadow-2xl animate-in zoom-in-95">
-        <div className="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto border border-emerald-500/20">
-          <CheckCircle2 size={50} className="text-emerald-500" />
-        </div>
-        <div className="space-y-4">
-          <h2 className="text-3xl font-black uppercase tracking-tight text-text-main">Request Logged!</h2>
-          <p className="text-text-muted text-sm font-medium leading-relaxed uppercase tracking-wider">
-            Aapka payment proof admin ko bhej dia gaya hai. <br />
-            **Admin verification** ke baad aapka course enroll ho jayega. <br />
-            Isme taqreeban 2-4 ghante lag sakte hain.
-          </p>
-        </div>
-        <Link
-          href="/student/dashboard"
-          className="inline-block w-full py-5 bg-text-main text-card-bg rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:opacity-90 transition-all"
-        >
-          Back to Dashboard
-        </Link>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="min-h-screen bg-app-bg text-text-main pb-20">
-      <div className="max-w-4xl mx-auto px-6 pt-12 space-y-12">
+    <div className="min-h-screen bg-app-bg text-text-main pb-20 animate-in fade-in duration-300">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 pt-8 space-y-8">
 
         {/* Navigation */}
-        <Link href={`/student/available-courses/${courseId}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-[10px] uppercase tracking-widest transition-all">
-          <ArrowLeft size={16} /> Back to Course Detail
+        <Link href={`/student/available-courses/${courseId}`} className="inline-flex items-center gap-2 text-text-muted hover:text-text-main font-bold text-xs uppercase tracking-wider transition-colors mb-2">
+          <ArrowLeft size={16} /> Back to Course
         </Link>
 
-        {/* Header */}
-        <div className="hero-registry-card rounded-[2.5rem] p-8 md:p-12 border border-border-subtle shadow-xl relative overflow-hidden">
-          <div className="relative z-10">
-            <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none">Enrollment Registry</h1>
-            <p className="text-text-muted mt-4 font-medium uppercase text-[10px] tracking-[0.2em]">Finalize your access by providing payment proof.</p>
-          </div>
+        {/* Flat Minimalist Header */}
+        <div className="border-b border-border-subtle pb-6">
+          <h1 className="text-2xl md:text-4xl font-black tracking-tight text-text-main">Complete Enrollment</h1>
+          <p className="text-text-muted mt-2 font-medium text-sm">Please transfer the fee to the account below and upload the screenshot.</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-          {/* Podium Details Card */}
-          <div className="bg-card-bg border border-border-subtle rounded-[2.5rem] p-8 md:p-10 shadow-lg space-y-8">
-            <div className="flex items-center gap-4 text-accent-blue">
-              <CreditCard size={24} />
-              <h3 className="font-black uppercase tracking-widest text-xs">Podium Professional Account Details</h3>
+          {/* Account Details Card (Clean & Professional) */}
+          <div className="bg-card-bg border border-border-subtle rounded-2xl p-6 md:p-8 shadow-sm h-fit">
+            <div className="flex items-center gap-3 text-text-main mb-6 border-b border-border-subtle pb-4">
+              <CreditCard size={20} className="text-accent-blue" />
+              <h3 className="font-black uppercase tracking-wider text-xs">Bank Account Details</h3>
             </div>
 
-            <div className="space-y-6 bg-app-bg p-6 rounded-3xl border border-border-subtle/50 shadow-inner">
+            <div className="space-y-5">
               <div>
-                <p className="text-[9px] font-bold text-text-muted uppercase mb-1">Account Title</p>
-                <p className="text-sm font-black uppercase tracking-tight">Academy Podium Professional</p>
+                <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Account Title</p>
+                <p className="text-sm font-black text-text-main">Academy Podium Professional</p>
               </div>
               <div>
-                <p className="text-[9px] font-bold text-text-muted uppercase mb-1">Account Number / IBAN</p>
-                <p className="text-sm font-black uppercase tracking-tighter">PK70 PODI 0000 1234 5678 9012</p>
+                <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">IBAN / Account Number</p>
+                <p className="text-sm font-black text-text-main tracking-wide">PK70 PODI 0000 1234 5678 9012</p>
               </div>
               <div>
-                <p className="text-[9px] font-bold text-text-muted uppercase mb-1">Bank Name</p>
-                <p className="text-sm font-black uppercase tracking-tight">Standard Chartered Bank</p>
+                <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Bank Name</p>
+                <p className="text-sm font-black text-text-main">Standard Chartered Bank</p>
               </div>
             </div>
 
-            <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl flex gap-4 items-start">
-              <Info size={20} className="text-amber-500 shrink-0" />
-              <p className="text-[10px] font-bold text-amber-500/80 leading-relaxed uppercase">
-                Transaction ID should be visible in the screenshot.
+            <div className="mt-8 p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex gap-3 items-start">
+              <Info size={16} className="text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-[11px] font-semibold text-amber-600/90 leading-relaxed">
+                Ensure the Transaction ID and Date are clearly visible in the screenshot.
               </p>
             </div>
           </div>
 
           {/* Upload Form */}
-          <form onSubmit={handlePaymentSubmit} className="bg-card-bg border border-border-subtle rounded-[2.5rem] p-8 md:p-10 shadow-lg flex flex-col justify-between">
+          <form onSubmit={handlePaymentSubmit} className="bg-card-bg border border-border-subtle rounded-2xl p-6 md:p-8 shadow-sm flex flex-col justify-between">
             <div className="space-y-6">
-              <div className="flex items-center gap-4 text-emerald-500">
-                <ShieldCheck size={24} />
-                <h3 className="font-black uppercase tracking-widest text-xs">Secure Evidence Upload</h3>
+              <div className="flex items-center gap-3 text-text-main mb-2 border-b border-border-subtle pb-4">
+                <ShieldCheck size={20} className="text-emerald-500" />
+                <h3 className="font-black uppercase tracking-wider text-xs">Upload Payment Proof</h3>
               </div>
 
-              <label className="group relative cursor-pointer border-2 border-dashed border-border-subtle hover:border-accent-blue/50 rounded-[2rem] p-10 flex flex-col items-center justify-center bg-app-bg/30">
+              <label className="group cursor-pointer border-2 border-dashed border-border-subtle hover:border-accent-blue rounded-xl p-8 flex flex-col items-center justify-center bg-app-bg transition-colors">
                 <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                 {file ? (
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle2 className="text-emerald-500" />
+                  <div className="text-center w-full">
+                    <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle2 size={24} className="text-emerald-500" />
                     </div>
-                    <p className="text-xs font-black uppercase tracking-tight truncate max-w-[150px]">{file.name}</p>
+                    <p className="text-sm font-bold text-text-main truncate px-4">{file.name}</p>
+                    <p className="text-[10px] text-text-muted mt-1 uppercase font-bold tracking-widest">Click to change file</p>
                   </div>
                 ) : (
-                  <div className="text-center space-y-4">
-                    <div className="w-16 h-16 bg-accent-blue/10 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-all">
-                      <Upload className="text-accent-blue" />
+                  <div className="text-center space-y-3">
+                    <div className="w-12 h-12 bg-accent-blue/10 rounded-full flex items-center justify-center mx-auto text-accent-blue group-hover:scale-110 transition-transform">
+                      <ImageIcon size={24} />
                     </div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Attach Screenshot</p>
+                    <div>
+                      <p className="text-xs font-bold text-text-main">Click to browse file</p>
+                      <p className="text-[10px] font-medium text-text-muted mt-1 uppercase tracking-widest">JPG, PNG allowed</p>
+                    </div>
                   </div>
                 )}
               </label>
@@ -158,9 +149,9 @@ const EnrollmentPaymentPage = ({ params }: { params: Promise<any> }) => {
             <button
               type="submit"
               disabled={uploading || !file}
-              className="mt-10 w-full py-5 bg-accent-blue text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-accent-blue/20 flex items-center justify-center gap-3 disabled:opacity-50 transition-all active:scale-95"
+              className="mt-8 w-full py-3.5 bg-accent-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-60 transition-all active:scale-95"
             >
-              {uploading ? <Loader2 className="animate-spin" /> : <><Send size={18} /> Upload Screenshot</>}
+              {uploading ? <Loader2 className="animate-spin" size={16} /> : <><Send size={16} /> Submit Proof</>}
             </button>
           </form>
 

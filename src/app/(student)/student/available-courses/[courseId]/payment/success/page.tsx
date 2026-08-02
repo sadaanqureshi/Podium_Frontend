@@ -5,60 +5,55 @@ import Link from 'next/link';
 
 const EnrollmentSuccessPage = () => {
     return (
-        <div className="h-screen flex flex-col items-center justify-center bg-app-bg p-6 text-center">
+        <div className="min-h-screen flex items-center justify-center bg-app-bg p-4">
 
-            {/* Main Success Container */}
-            <div className="bg-card-bg border border-emerald-500/20 rounded-[3rem] p-10 md:p-16 max-w-2xl space-y-8 shadow-2xl animate-in zoom-in-95">
+            {/* Clean & Minimal Success Card */}
+            <div className="bg-card-bg border border-border-subtle rounded-2xl p-8 md:p-12 w-full max-w-lg space-y-8 shadow-sm animate-in zoom-in-95">
 
-                {/* Animated Icon */}
-                <div className="relative mx-auto w-24 h-24">
-                    <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping opacity-20"></div>
-                    <div className="relative w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
-                        <CheckCircle2 size={50} className="text-emerald-500" />
-                    </div>
+                {/* Flat Icon Design */}
+                <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto border border-emerald-500/20">
+                    <CheckCircle2 size={40} className="text-emerald-500" />
                 </div>
 
-                {/* Text Content in Easy English */}
-                <div className="space-y-4">
-                    <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-text-main">
-                        Payment Sent!
+                {/* Humanized Text */}
+                <div className="space-y-3 text-center">
+                    <h1 className="text-2xl md:text-3xl font-black tracking-tight text-text-main">
+                        Screenshot Received
                     </h1>
-                    <div className="h-1 w-20 bg-emerald-500/30 mx-auto rounded-full"></div>
-                    <p className="text-text-muted text-sm md:text-base font-medium leading-relaxed max-w-md mx-auto">
-                        We have received your payment screenshot. <br />
-                        Now, please wait for our **Admin Team** to check it.
+                    <p className="text-text-muted text-sm font-medium leading-relaxed max-w-sm mx-auto">
+                        Your payment proof has been successfully submitted. Our team will review the transaction shortly.
                     </p>
                 </div>
 
-                {/* Status Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                    <div className="flex items-center gap-3 p-4 bg-app-bg rounded-2xl border border-border-subtle">
-                        <Clock size={20} className="text-accent-blue" />
-                        <p className="text-[10px] font-black uppercase text-left">
-                            Takes 2-4 Hours <br />
-                            <span className="text-text-muted font-bold tracking-normal">Verification Time</span>
-                        </p>
+                {/* Flat Status Indicators */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div className="flex items-center gap-3 p-4 bg-app-bg rounded-xl border border-border-subtle">
+                        <Clock size={18} className="text-accent-blue shrink-0" />
+                        <div className="text-left">
+                            <p className="text-xs font-bold text-text-main">Under Review</p>
+                            <p className="text-[10px] text-text-muted font-semibold uppercase tracking-widest mt-0.5">Takes 2-4 Hours</p>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-3 p-4 bg-app-bg rounded-2xl border border-border-subtle">
-                        <ShieldCheck size={20} className="text-emerald-500" />
-                        <p className="text-[10px] font-black uppercase text-left">
-                            Secure Registry <br />
-                            <span className="text-text-muted font-bold tracking-normal">Data Protected</span>
-                        </p>
+                    <div className="flex items-center gap-3 p-4 bg-app-bg rounded-xl border border-border-subtle">
+                        <ShieldCheck size={18} className="text-emerald-500 shrink-0" />
+                        <div className="text-left">
+                            <p className="text-xs font-bold text-text-main">Secured</p>
+                            <p className="text-[10px] text-text-muted font-semibold uppercase tracking-widest mt-0.5">Data Protected</p>
+                        </div>
                     </div>
                 </div>
 
                 {/* Primary Action Button */}
-                <div className="pt-6">
+                <div className="pt-4">
                     <Link
                         href="/student/dashboard"
-                        className="group flex items-center justify-center gap-3 w-full py-5 bg-text-main text-card-bg rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-95"
+                        className="flex items-center justify-center gap-2 w-full py-3.5 bg-text-main text-card-bg rounded-xl font-bold text-xs uppercase tracking-wider hover:opacity-90 transition-opacity shadow-md"
                     >
-                        <LayoutDashboard size={18} className="group-hover:rotate-12 transition-transform" />
-                        Go to My Dashboard
+                        <LayoutDashboard size={16} />
+                        Return to Dashboard
                     </Link>
-                    <p className="mt-6 text-[9px] text-text-muted font-black uppercase tracking-widest opacity-50">
-                        You will be enrolled automatically after approval.
+                    <p className="mt-4 text-[10px] text-center text-text-muted font-bold uppercase tracking-widest">
+                        You will be automatically enrolled upon approval.
                     </p>
                 </div>
             </div>

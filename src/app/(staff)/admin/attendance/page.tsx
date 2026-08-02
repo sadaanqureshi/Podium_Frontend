@@ -66,7 +66,7 @@ const AttendancePage = () => {
                 <p className="text-text-muted font-medium mt-1 italic underline decoration-accent-blue/20">Real-time classroom attendance tracking.</p>
             </div>
 
-            <div className="bg-card-bg rounded-[2.5rem] shadow-2xl overflow-hidden border border-border-subtle">
+            <div className="bg-card-bg rounded-[1rem] shadow-2xl overflow-hidden border border-border-subtle">
                 <UserManagementTable
                     data={attendance}
                     loading={loading}
