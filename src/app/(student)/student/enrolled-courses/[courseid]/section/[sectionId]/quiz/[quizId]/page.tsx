@@ -182,8 +182,10 @@ import QuizResultView from '@/components/student/QuizResultView';
 
 const StudentQuizDetailPage = ({ params }: { params: Promise<any> }) => {
     const resolvedParams = use(params);
-    const courseId = Number(resolvedParams.courseId);
-    const quizId = Number(resolvedParams.quizId);
+    const courseId = Number(resolvedParams?.courseId || resolvedParams?.courseid);
+const quizId = Number(resolvedParams?.quizId || resolvedParams?.quizid || resolvedParams?.id);
+    // const courseId = Number(resolvedParams.courseId);
+    // const quizId = Number(resolvedParams.quizId);
     
     const dispatch = useAppDispatch();
     const { showToast } = useToast();

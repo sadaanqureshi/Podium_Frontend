@@ -169,7 +169,10 @@ import { fetchCourseContent } from '@/lib/store/features/courseSlice';
 
 const LectureDetailPage = ({ params }: { params: Promise<any> }) => {
     const resolvedParams = use(params);
-    const { courseId, sectionId, lectureId } = resolvedParams;
+    // const { courseId, sectionId, lectureId } = resolvedParams;
+    const courseId = Number(resolvedParams?.courseId || resolvedParams?.courseid);
+const sectionId = Number(resolvedParams?.sectionId || resolvedParams?.sectionid);
+const lectureId = Number(resolvedParams?.lectureId || resolvedParams?.lectureid || resolvedParams?.id);
     const dispatch = useAppDispatch();
 
     const { courseContent, loading } = useAppSelector((state) => state.course);
