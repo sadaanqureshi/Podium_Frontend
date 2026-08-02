@@ -190,8 +190,10 @@ import GenericFormModal, { FormField } from '@/components/ui/GenericFormModal';
 const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
     const resolvedParams = use(params);
 
-    const courseId = Number(resolvedParams.courseId);
-    const assignmentId = Number(resolvedParams.assignmentId || resolvedParams.id);
+    // const courseId = Number(resolvedParams.courseId);
+    // const assignmentId = Number(resolvedParams.assignmentId || resolvedParams.id);
+    const courseId = Number(resolvedParams?.courseId || resolvedParams?.courseid);
+const assignmentId = Number(resolvedParams?.assignmentId || resolvedParams?.assignmentid || resolvedParams?.id);
 
     const dispatch = useAppDispatch();
     const { showToast } = useToast();

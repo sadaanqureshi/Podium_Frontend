@@ -146,7 +146,10 @@ import { fetchCourseContent } from '@/lib/store/features/courseSlice';
 
 const ResourceDetailPage = ({ params }: { params: Promise<any> }) => {
     const resolvedParams = use(params);
-    const { courseId, sectionId, resourceId } = resolvedParams;
+    const courseId = resolvedParams?.courseId || resolvedParams?.courseid;
+    const sectionId = resolvedParams?.sectionId || resolvedParams?.sectionid;
+    const resourceId = resolvedParams?.resourceId || resolvedParams?.resourceid;
+    // const { courseId, sectionId, resourceId } = resolvedParams;
     const dispatch = useAppDispatch();
 
     const { courseContent, loading: reduxLoading } = useAppSelector((state) => state.course);
