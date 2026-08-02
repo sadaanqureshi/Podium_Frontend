@@ -40,7 +40,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
       <div className="min-h-screen w-full flex items-center justify-center bg-app-bg">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="animate-spin text-accent-blue" size={40} />
-          <p className="text-[10px] text-text-muted font-black uppercase tracking-[0.2em]">Verifying Terminal Access...</p>
+          <p className="text-[10px] text-text-muted font-black uppercase tracking-[0.2em]">Loading...</p>
         </div>
       </div>
     );
