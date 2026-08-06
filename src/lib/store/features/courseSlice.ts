@@ -6,6 +6,14 @@ import {
     getCourseCategoriesAPI,
     getTeachersAPI,
     getMyEnrolledCoursesAPI,
+    getMyEnrollmentRequestsAPI,
+    getMyCourseUpdatesAPI,
+    MyEnrollmentRequestItem,
+    MyEnrollmentRequestsResponse,
+    EnrollmentRequestStatus,
+    CourseUpdateItem,
+    CourseUpdateType,
+    MyCourseUpdatesResponse,
 } from '@/lib/api/apiService';
 
 // ==============================
@@ -17,6 +25,16 @@ interface CourseContent {
     enrollments?: any[];
 }
 
+type MyEnrollmentRequestsSummary = MyEnrollmentRequestsResponse['summary'];
+
+const emptyRequestSummary: MyEnrollmentRequestsSummary = {
+    pending: 0,
+    enrolled: 0,
+    rejected: 0,
+    dismissed: 0,
+    total: 0,
+};
+
 interface CourseState {
     assignedCourses: any[];
     adminCourses: { data: any[]; meta: any | null };
@@ -26,6 +44,14 @@ interface CourseState {
     enrolledCourses: any[];
     availableCourses: { data: any[]; meta: any | null };
     preflightedCourses: number[];
+    myEnrollmentRequests: MyEnrollmentRequestItem[];
+    myEnrollmentRequestsSummary: MyEnrollmentRequestsSummary;
+    myEnrollmentRequestsLoading: boolean;
+    myEnrollmentRequestsError: string | null;
+    myCourseUpdates: CourseUpdateItem[];
+    myCourseUpdatesMeta: MyCourseUpdatesResponse['meta'] | null;
+    myCourseUpdatesLoading: boolean;
+    myCourseUpdatesError: string | null;
     loading: {
         enrolledCourses: boolean;
         assignedCourses: boolean;
@@ -46,6 +72,14 @@ const initialState: CourseState = {
     preflightedCourses: [],
     enrolledCourses: [],
     availableCourses: { data: [], meta: {} },
+    myEnrollmentRequests: [],
+    myEnrollmentRequestsSummary: emptyRequestSummary,
+    myEnrollmentRequestsLoading: false,
+    myEnrollmentRequestsError: null,
+    myCourseUpdates: [],
+    myCourseUpdatesMeta: null,
+    myCourseUpdatesLoading: false,
+    myCourseUpdatesError: null,
     loading: {
         enrolledCourses: false,
         assignedCourses: false,
@@ -136,6 +170,37 @@ export const fetchEnrolledCourses = createAsyncThunk(
 
 );
 
+export const fetchMyEnrollmentRequests = createAsyncThunk(
+    'course/fetchMyEnrollmentRequests',
+    async (params: { status?: EnrollmentRequestStatus } | undefined, { rejectWithValue }) => {
+        try {
+            return await getMyEnrollmentRequestsAPI(params);
+        } catch (err: any) {
+            return rejectWithValue(err.message || 'Failed to fetch enrollment requests');
+        }
+    }
+);
+
+export const fetchMyCourseUpdates = createAsyncThunk(
+    'course/fetchMyCourseUpdates',
+    async (
+        params:
+            | {
+                  limit?: number;
+                  courseId?: number;
+                  types?: CourseUpdateType[] | string;
+              }
+            | undefined,
+        { rejectWithValue }
+    ) => {
+        try {
+            return await getMyCourseUpdatesAPI(params);
+        } catch (err: any) {
+            return rejectWithValue(err.message || 'Failed to fetch course updates');
+        }
+    }
+);
+
 export const fetchAllCourses = createAsyncThunk(
     'course/fetchAllCourses',
     async ({ page, limit }: { page?: number; limit?: number } = {}, { rejectWithValue }) => {
@@ -163,8 +228,28 @@ export const courseSlice = createSlice({
             state.enrolledCourses = [];
             state.categories = [];
             state.teachers = [];
+            state.myEnrollmentRequests = [];
+            state.myEnrollmentRequestsSummary = emptyRequestSummary;
+            state.myEnrollmentRequestsError = null;
+            state.myEnrollmentRequestsLoading = false;
+            state.myCourseUpdates = [];
+            state.myCourseUpdatesMeta = null;
+            state.myCourseUpdatesError = null;
+            state.myCourseUpdatesLoading = false;
             state.error = null;
             state.loading = initialState.loading;
+        },
+        clearMyEnrollmentRequests: (state) => {
+            state.myEnrollmentRequests = [];
+            state.myEnrollmentRequestsSummary = emptyRequestSummary;
+            state.myEnrollmentRequestsError = null;
+            state.myEnrollmentRequestsLoading = false;
+        },
+        clearMyCourseUpdates: (state) => {
+            state.myCourseUpdates = [];
+            state.myCourseUpdatesMeta = null;
+            state.myCourseUpdatesError = null;
+            state.myCourseUpdatesLoading = false;
         },
         refreshCourseContent: (state, action: PayloadAction<number>) => {
             delete state.courseContent[action.payload];
@@ -241,6 +326,40 @@ export const courseSlice = createSlice({
                 state.loading.enrolledCourses = false;
             })
 
+            .addCase(fetchMyEnrollmentRequests.pending, (state) => {
+                state.myEnrollmentRequestsLoading = true;
+                state.myEnrollmentRequestsError = null;
+            })
+            .addCase(fetchMyEnrollmentRequests.fulfilled, (state, action: PayloadAction<MyEnrollmentRequestsResponse>) => {
+                state.myEnrollmentRequestsLoading = false;
+                state.myEnrollmentRequests = action.payload?.data || [];
+                state.myEnrollmentRequestsSummary = action.payload?.summary || emptyRequestSummary;
+                state.myEnrollmentRequestsError = null;
+            })
+            .addCase(fetchMyEnrollmentRequests.rejected, (state, action) => {
+                state.myEnrollmentRequestsLoading = false;
+                state.myEnrollmentRequests = [];
+                state.myEnrollmentRequestsSummary = emptyRequestSummary;
+                state.myEnrollmentRequestsError = (action.payload as string) || 'Failed to fetch enrollment requests';
+            })
+
+            .addCase(fetchMyCourseUpdates.pending, (state) => {
+                state.myCourseUpdatesLoading = true;
+                state.myCourseUpdatesError = null;
+            })
+            .addCase(fetchMyCourseUpdates.fulfilled, (state, action: PayloadAction<MyCourseUpdatesResponse>) => {
+                state.myCourseUpdatesLoading = false;
+                state.myCourseUpdates = action.payload?.data || [];
+                state.myCourseUpdatesMeta = action.payload?.meta || null;
+                state.myCourseUpdatesError = null;
+            })
+            .addCase(fetchMyCourseUpdates.rejected, (state, action) => {
+                state.myCourseUpdatesLoading = false;
+                state.myCourseUpdates = [];
+                state.myCourseUpdatesMeta = null;
+                state.myCourseUpdatesError = (action.payload as string) || 'Failed to fetch course updates';
+            })
+
             // FETCH ALL COURSES cases
             .addCase(fetchAllCourses.pending, (state) => { state.loading.availableCourses = true; })
             .addCase(fetchAllCourses.fulfilled, (state, action) => { state.loading.availableCourses = false; state.availableCourses = action.payload; })
@@ -249,7 +368,7 @@ export const courseSlice = createSlice({
 });
 
 export const {
-    clearCourseCache, refreshCourseContent,
+    clearCourseCache, clearMyEnrollmentRequests, clearMyCourseUpdates, refreshCourseContent,
     removeLectureLocal, removeResourceLocal, removeCourseFromAdminList
 } = courseSlice.actions;
 

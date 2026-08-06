@@ -225,8 +225,8 @@ const AdminSignInPage = () => {
 
             // # 1. ROLE CHECK & SESSION COOKIE SETTING
             if (userRole === 'admin') {
-                Cookies.set('authToken', response.access_token);
-                Cookies.set('userRole', response.user.role.roleName);
+                Cookies.set('authToken', response.access_token, { path: '/', sameSite: 'lax' });
+                Cookies.set('userRole', response.user.role.roleName, { path: '/', sameSite: 'lax' });
 
                 // # 2. REDUX AUTH UPDATE
                 dispatch(setAuth({
@@ -237,6 +237,7 @@ const AdminSignInPage = () => {
                 }));
                 
                 localStorage.removeItem('last_active_time');
+                localStorage.removeItem('access_token');
                 router.replace('/admin/dashboard');
             } else {
                 logoutLocal();

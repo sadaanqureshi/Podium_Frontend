@@ -1,80 +1,165 @@
 'use client';
-import React from 'react';
-import { useAppSelector } from '@/lib/store/hooks';
-import { Trophy, Star, Bell, UserCircle, ShieldCheck, Activity } from 'lucide-react';
-import Link from 'next/link';
+
+import React, { useEffect } from 'react';
+import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import { fetchStudentDashboard } from '@/lib/store/features/studentDashboardSlice';
+import {
+    DashboardMetricCards,
+    RecentCoursesWidget,
+    PendingEnrollmentsWidget,
+    RecentUpdatesWidget,
+    RecentAttendanceWidget,
+} from '@/components/student/dashboard/DashboardWidgets';
+import {
+    CourseProgressChart,
+    AttendanceBreakdownChart,
+    UpdatesTypeChart,
+} from '@/components/student/dashboard/DashboardCharts';
 
 export default function StudentDashboard() {
-    const { user } = useAppSelector((state) => state.auth); //
+    const dispatch = useAppDispatch();
+    const { data, loading, error } = useAppSelector((s) => s.studentDashboard);
+
+    useEffect(() => {
+        dispatch(fetchStudentDashboard());
+    }, [dispatch]);
+
+    const refresh = () => {
+        dispatch(fetchStudentDashboard());
+    };
+
+    if (loading && !data) {
+        return (
+            <div className="bg-app-bg h-full">
+                <div className="max-w-6xl mx-auto px-6 pt-12 space-y-8">
+                    <div className="hero-registry-card rounded-[3rem] p-10 md:p-16 border border-border-subtle animate-pulse">
+                        <div className="h-4 w-40 bg-border-subtle rounded mb-6" />
+                        <div className="h-10 w-3/4 max-w-xl bg-border-subtle rounded mb-4" />
+                        <div className="h-4 w-2/3 max-w-md bg-border-subtle rounded" />
+                    </div>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="h-24 rounded-2xl bg-card-bg border border-border-subtle animate-pulse"
+                            />
+                        ))}
+                    </div>
+                    <div className="flex items-center justify-center py-16 text-text-muted gap-3">
+                        <Loader2 className="animate-spin" size={20} />
+                        <span className="text-xs font-black uppercase tracking-widest">
+                            Loading dashboard…
+                        </span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error && !data) {
+        return (
+            <div className="bg-app-bg h-full flex items-center justify-center px-6">
+                <div className="max-w-md w-full bg-card-bg border border-border-subtle rounded-2xl p-8 text-center space-y-4 shadow-sm">
+                    <div className="mx-auto w-12 h-12 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center">
+                        <AlertCircle size={22} />
+                    </div>
+                    <p className="text-sm font-black uppercase tracking-wider">{error}</p>
+                    <button
+                        type="button"
+                        onClick={refresh}
+                        className="inline-flex items-center gap-2 mx-auto px-5 py-3 rounded-xl bg-accent-blue text-white text-[10px] font-black uppercase tracking-widest hover:opacity-90"
+                    >
+                        <RefreshCw size={14} /> Try again
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!data) return null;
+
+    const { welcome, metrics, recentCourses, pendingEnrollments, recentUpdates, recentAttendance } =
+        data;
 
     return (
         <div className="bg-app-bg h-full">
-            <div className="max-w-6xl mx-auto px-6 pt-12 space-y-10">
-
-                {/* Professional Welcome Hero */}
-                <div className="hero-registry-card rounded-[3rem] p-10 md:p-16 border border-border-subtle relative overflow-hidden shadow-2xl">
-                    <div className="absolute top-0 right-0 w-80 h-80 bg-accent-blue/5 rounded-full blur-[100px] -mr-40 -mt-40"></div>
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 md:pt-12 pb-16 space-y-8 md:space-y-10">
+                {/* Welcome hero */}
+                <div className="hero-registry-card rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 border border-border-subtle relative overflow-hidden shadow-2xl">
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-accent-blue/5 rounded-full blur-[100px] -mr-40 -mt-40" />
                     <div className="relative z-10 space-y-4 text-center md:text-left">
-                        <span className="text-[10px] font-black text-accent-blue uppercase tracking-[0.3em]">Student Dashboard</span>
-                        <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter">
-                            Welcome to Podium Professional, {user?.firstName} {user?.lastName}
+                        <span className="text-[10px] font-black text-accent-blue uppercase tracking-[0.3em]">
+                            Student Dashboard
+                        </span>
+                        <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter">
+                            Welcome to Podium Professional, {welcome.firstName}{' '}
+                            {welcome.lastName}
                         </h1>
                         <p className="text-text-muted text-sm font-medium max-w-xl leading-relaxed uppercase tracking-wider">
-                            Your learning record is safe and up to date. Explore your achievements and stay updated with campus news.
+                            Your learning overview at a glance — courses, progress, attendance, and
+                            recent updates.
                         </p>
                     </div>
                 </div>
 
-                {/* Dashboard Highlights */}
-                {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-card-bg p-8 rounded-[2.5rem] border border-border-subtle flex items-center gap-6 shadow-lg">
-                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500"><Trophy /></div>
-                        <div>
-                            <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">Professional Level</p>
-                            <p className="text-2xl font-black">Level 04</p>
-                        </div>
+                {error && (
+                    <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-bold uppercase tracking-wider">
+                        <span>{error}</span>
+                        <button
+                            type="button"
+                            onClick={refresh}
+                            className="inline-flex items-center gap-1.5 shrink-0 hover:underline"
+                        >
+                            <RefreshCw size={12} /> Retry
+                        </button>
                     </div>
-                    <div className="bg-card-bg p-8 rounded-[2.5rem] border border-border-subtle flex items-center gap-6 shadow-lg">
-                        <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500"><Star /></div>
-                        <div>
-                            <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">Points Earned</p>
-                            <p className="text-2xl font-black">2,450</p>
-                        </div>
-                    </div>
-                    <div className="bg-card-bg p-8 rounded-[2.5rem] border border-border-subtle flex items-center gap-6 shadow-lg">
-                        <div className="w-14 h-14 bg-accent-blue/10 rounded-2xl flex items-center justify-center text-accent-blue"><ShieldCheck /></div>
-                        <div>
-                            <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">Status</p>
-                            <p className="text-2xl font-black text-emerald-500">Verified</p>
-                        </div>
-                    </div>
-                </div> */}
+                )}
 
-                {/* Updates and News */}
-                {/* <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle p-10 space-y-8 shadow-xl">
-                    <div className="flex items-center justify-between border-b border-border-subtle pb-6">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-text-muted flex items-center gap-3">
-                            <Bell size={18} className="text-accent-blue" /> Latest Announcements
-                        </h3>
-                    </div>
-                    <div className="space-y-4">
-                        <div className="p-6 bg-app-bg rounded-2xl border border-border-subtle flex items-center gap-4">
-                            <Activity size={16} className="text-emerald-500" />
-                            <p className="text-sm font-medium text-text-muted uppercase tracking-wide">New learning materials will be released next week.</p>
-                        </div>
-                        <div className="p-6 bg-app-bg rounded-2xl border border-border-subtle flex items-center gap-4">
-                            <Activity size={16} className="text-accent-blue" />
-                            <p className="text-sm font-medium text-text-muted uppercase tracking-wide">System maintenance is scheduled for Sunday at 12:00 AM.</p>
-                        </div>
-                    </div>
-                </div> */}
+                <DashboardMetricCards metrics={metrics} />
 
-                {/* <div className="flex justify-center">
-                    <Link href="/student/profile" className="flex items-center gap-3 px-10 py-5 bg-text-main text-card-bg rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all">
-                        <UserCircle size={18} /> Profile Details
-                    </Link>
-                </div> */}
+                {/* Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+                    <ChartCard title="Course Progress" className="lg:col-span-1">
+                        <CourseProgressChart courses={recentCourses} />
+                    </ChartCard>
+                    <ChartCard title="Attendance Breakdown">
+                        <AttendanceBreakdownChart attendance={metrics.attendance} />
+                    </ChartCard>
+                    <ChartCard title="Recent Activity Mix">
+                        <UpdatesTypeChart updates={recentUpdates} />
+                    </ChartCard>
+                </div>
+
+                {/* Widgets */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                    <RecentCoursesWidget courses={recentCourses} />
+                    <PendingEnrollmentsWidget items={pendingEnrollments} />
+                    <RecentUpdatesWidget updates={recentUpdates} />
+                    <RecentAttendanceWidget items={recentAttendance} />
+                </div>
             </div>
+        </div>
+    );
+}
+
+function ChartCard({
+    title,
+    children,
+    className = '',
+}: {
+    title: string;
+    children: React.ReactNode;
+    className?: string;
+}) {
+    return (
+        <div
+            className={`bg-card-bg border border-border-subtle rounded-2xl p-5 md:p-6 shadow-sm space-y-2 ${className}`}
+        >
+            <h3 className="text-xs font-black uppercase tracking-widest text-text-muted">
+                {title}
+            </h3>
+            {children}
         </div>
     );
 }
