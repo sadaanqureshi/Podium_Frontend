@@ -6,6 +6,7 @@ import uiReducer, { startLoading, stopLoading } from './features/uiSlice';
 import userReducer from './features/userSlice'; // # New
 import academicReducer from './features/academicSlice'; // # New
 import financeReducer from './features/financeSlice'; // # New
+import studentDashboardReducer from './features/studentDashboardSlice';
 
 const loadingMiddleware: Middleware = (storeAPI) => (next) => (action: any) => {
   if (isPending(action)) storeAPI.dispatch(startLoading());
@@ -23,6 +24,7 @@ export const makeStore = () => {
       users: userReducer,
       academic: academicReducer,
       finance: financeReducer,
+      studentDashboard: studentDashboardReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({ serializableCheck: false }).concat(loadingMiddleware),

@@ -364,6 +364,99 @@ export const getMyCourseUpdatesAPI = async (params?: {
     return await response.json();
 };
 
+export type StudentDashboardResponse = {
+    welcome: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        email: string;
+    };
+    metrics: {
+        enrolledCoursesCount: number;
+        pendingEnrollmentCount: number;
+        averageProgressPercent: number | null;
+        attendance: {
+            present: number;
+            absent: number;
+            pending: number;
+            total: number;
+            ratePercent: number | null;
+        };
+    };
+    recentCourses: Array<{
+        enrollmentId: number;
+        courseId: number;
+        courseName: string;
+        coverImg: string | null;
+        shortDescription: string | null;
+        overall: { total: number; completed: number };
+        progressPercent: number | null;
+    }>;
+    pendingEnrollments: Array<{
+        id: number;
+        courseId: number;
+        courseName: string;
+        coverImg: string | null;
+        createdAt: string | null;
+        paymentStatus: string | null;
+    }>;
+    recentUpdates: Array<{
+        type: 'lecture' | 'assignment' | 'quiz' | 'resource';
+        id: number;
+        title: string;
+        occurredAt: string | null;
+        lectureType?: string | null;
+        course: { id: number; courseName: string };
+        section: { id: number; title: string } | null;
+    }>;
+    recentAttendance: Array<{
+        attendanceId: number;
+        attendanceDate: string | null;
+        status: 'present' | 'absent' | '-';
+        lectureTitle: string;
+        courseName: string;
+        courseId: number;
+    }>;
+};
+
+export const getStudentDashboardAPI = async (): Promise<StudentDashboardResponse> => {
+    const token = getToken();
+    if (!token) {
+        logoutLocal();
+        throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_URL}/enrollments/my-dashboard`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+    });
+
+    if (response.status === 401) {
+        logoutLocal();
+        throw new Error('Unauthorized. Please sign in again.');
+    }
+
+    if (!response.ok) {
+        let message = 'Failed to load student dashboard';
+        try {
+            const errorData = await response.json();
+            message = errorData.message || message;
+        } catch {
+            /* ignore */
+        }
+        if (response.status === 403) {
+            throw new Error(message || 'Only students can view this dashboard.');
+        }
+        throw new Error(message);
+    }
+
+    return await response.json();
+};
+
 export type EnrollmentRequestStatus = 'pending' | 'enrolled' | 'rejected' | 'dismissed';
 export type TransactionStatus = 'pending' | 'paid' | 'free' | 'failed';
 
