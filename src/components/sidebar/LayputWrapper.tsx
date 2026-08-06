@@ -12,7 +12,7 @@ import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { logout } from '@/lib/store/features/authSlice';
 import { clearCourseCache } from '@/lib/store/features/courseSlice';
 import { logoutUserAPI, logoutLocal } from '@/lib/api/apiService';
-import { getRolePath } from '@/lib/navigationConfig';
+import { getPortalRoleFromPath, getRolePath, normalizeRole, roleFromRoleId } from '@/lib/navigationConfig';
 
 const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -28,7 +28,12 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   useEffect(() => { setMounted(true); }, []);
 
   const user = useAppSelector((state) => state.auth.user);
-  const userRole = user?.role?.roleName || (typeof user?.role === 'string' ? user.role : "");
+  const authRole = useAppSelector((state) => state.auth.role);
+  const roleId = useAppSelector((state) => state.auth.roleId);
+  const profileSynced = useAppSelector((state) => state.auth.profileSynced);
+  const portalRole = getPortalRoleFromPath(pathname);
+  const apiRole = roleFromRoleId(roleId) || normalizeRole(user?.role) || normalizeRole(authRole);
+  const userRole = (profileSynced && apiRole ? apiRole : portalRole || apiRole) as string;
   const profilePath = getRolePath(userRole, "profile");
 
   const handleLogout = async () => {

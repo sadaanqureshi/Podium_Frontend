@@ -221,8 +221,8 @@ const SignInPage = () => {
             const userRole = response.user.role.roleName.toLowerCase();
 
             if (userRole === 'student') {
-                Cookies.set('authToken', response.access_token);
-                Cookies.set('userRole', response.user.role.roleName);
+                Cookies.set('authToken', response.access_token, { path: '/', sameSite: 'lax' });
+                Cookies.set('userRole', response.user.role.roleName, { path: '/', sameSite: 'lax' });
 
                 dispatch(setAuth({
                     user: response.user,
@@ -231,6 +231,7 @@ const SignInPage = () => {
                     sidebar: response.sidebar
                 }));
                 localStorage.removeItem('last_active_time');
+                localStorage.removeItem('access_token');
                 router.replace('/student/dashboard');
             } else {
                 logoutLocal();

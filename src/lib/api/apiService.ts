@@ -35,16 +35,35 @@ export const loginUser = async (credentials: { email: string; password: string }
 
 // src/lib/api/apiService.ts ke andar add karein
 export const fetchProfileAPI = async (token: string) => {
-    const response = await fetch(`${API_URL}/auth/profile`, {
-        method: 'GET',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` 
-        },
-    });
+    let response: Response;
+    try {
+        response = await fetch(`${API_URL}/auth/profile`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            cache: 'no-store',
+        });
+    } catch {
+        // Backend down / CORS / offline — do not throw raw TypeError (Next overlays it)
+        const err: any = new Error('Unable to reach auth server');
+        err.status = 0;
+        err.isNetworkError = true;
+        throw err;
+    }
 
     if (!response.ok) {
-        throw new Error('Session expired or invalid');
+        let message = 'Session expired or invalid';
+        try {
+            const errorData = await response.json();
+            message = errorData.message || message;
+        } catch {
+            /* ignore */
+        }
+        const err: any = new Error(message);
+        err.status = response.status;
+        throw err;
     }
 
     return await response.json();
@@ -115,13 +134,26 @@ export const logoutUserAPI = async () => {
     return await response.json();
 };
 
+export const clearAuthCookies = () => {
+    Cookies.remove('authToken', { path: '/' });
+    Cookies.remove('userRole', { path: '/' });
+    if (typeof window !== 'undefined') {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('last_active_time');
+    }
+};
+
+export const setAuthCookies = (token: string, roleName: string) => {
+    Cookies.set('authToken', token, { path: '/', sameSite: 'lax' });
+    Cookies.set('userRole', roleName, { path: '/', sameSite: 'lax' });
+};
+
 export const logoutLocal = () => {
-    Cookies.remove('authToken');
-    const role = Cookies.get('userRole');
+    const role = String(Cookies.get('userRole') || '').toLowerCase();
+    clearAuthCookies();
     if (role === 'admin') window.location.href = '/admin/signin';
     else if (role === 'teacher') window.location.href = '/teacher/signin';
     else window.location.href = '/student/signin';
-    Cookies.remove('userRole');
 };
 
 // ==============================
@@ -243,6 +275,182 @@ export const getMyEnrolledCoursesAPI = async () => {
         throw new Error(errorData.message || 'Failed to fetch enrolled courses');
     }
     
+    return await response.json();
+};
+
+export type CourseUpdateType = 'lecture' | 'assignment' | 'quiz' | 'resource';
+
+export type CourseUpdateItem = {
+    type: CourseUpdateType;
+    id: number;
+    title: string;
+    occurredAt: string | null;
+    lectureType?: 'online' | 'live' | 'recorded' | null;
+    resourceType?: string | null;
+    course: {
+        id: number;
+        courseName: string;
+    };
+    section: {
+        id: number;
+        title: string;
+    } | null;
+};
+
+export type MyCourseUpdatesResponse = {
+    data: CourseUpdateItem[];
+    meta: {
+        returned: number;
+        limit: number;
+    };
+};
+
+export const getMyCourseUpdatesAPI = async (params?: {
+    limit?: number;
+    courseId?: number;
+    types?: CourseUpdateType[] | string;
+}): Promise<MyCourseUpdatesResponse> => {
+    const token = getToken();
+    if (!token) {
+        logoutLocal();
+        throw new Error('No authentication token found');
+    }
+
+    const query = new URLSearchParams();
+    if (params?.limit != null) {
+        query.set('limit', String(Math.min(Math.max(params.limit, 1), 50)));
+    }
+    if (params?.courseId != null) query.set('courseId', String(params.courseId));
+    if (params?.types != null) {
+        const types =
+            Array.isArray(params.types) ? params.types.join(',') : params.types;
+        if (types && types !== 'all') query.set('types', types);
+    }
+    const qs = query.toString();
+
+    const response = await fetch(
+        `${API_URL}/enrollments/my-updates${qs ? `?${qs}` : ''}`,
+        {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            cache: 'no-store',
+        }
+    );
+
+    if (response.status === 401) {
+        logoutLocal();
+        throw new Error('Unauthorized. Please sign in again.');
+    }
+
+    if (!response.ok) {
+        let message = 'Failed to fetch course updates';
+        try {
+            const errorData = await response.json();
+            message = errorData.message || message;
+        } catch {
+            /* ignore */
+        }
+        if (response.status === 403) {
+            throw new Error(
+                message || 'You do not have access to updates for this course.'
+            );
+        }
+        throw new Error(message);
+    }
+
+    return await response.json();
+};
+
+export type EnrollmentRequestStatus = 'pending' | 'enrolled' | 'rejected' | 'dismissed';
+export type TransactionStatus = 'pending' | 'paid' | 'free' | 'failed';
+
+export type MyEnrollmentRequestItem = {
+    id: number;
+    status: EnrollmentRequestStatus;
+    isActive: boolean;
+    rejectionReason: string | null;
+    createdAt: string | null;
+    updatedAt: string | null;
+    course: {
+        id: number;
+        courseName: string;
+        price: string | null;
+        coverImg: string | null;
+        shortDescription: string | null;
+        courseCategory: { id: number; name: string | null } | null;
+        teacher: {
+            id: number;
+            firstName: string;
+            lastName: string;
+            email: string;
+        } | null;
+    } | null;
+    transaction: {
+        id: number;
+        amount: string;
+        status: TransactionStatus;
+        paymentType: 'online' | 'cash' | null;
+        screenshotUrl: string | null;
+        createdAt: string | null;
+        updatedAt: string | null;
+    } | null;
+};
+
+export type MyEnrollmentRequestsResponse = {
+    data: MyEnrollmentRequestItem[];
+    summary: {
+        pending: number;
+        enrolled: number;
+        rejected: number;
+        dismissed: number;
+        total: number;
+    };
+};
+
+export const getMyEnrollmentRequestsAPI = async (params?: {
+    status?: EnrollmentRequestStatus;
+}): Promise<MyEnrollmentRequestsResponse> => {
+    const token = getToken();
+    if (!token) {
+        logoutLocal();
+        throw new Error('No authentication token found');
+    }
+
+    const query = new URLSearchParams();
+    if (params?.status) query.set('status', params.status);
+    const qs = query.toString();
+
+    const response = await fetch(`${API_URL}/enrollments/my-requests${qs ? `?${qs}` : ''}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+    });
+
+    if (response.status === 401) {
+        logoutLocal();
+        throw new Error('Unauthorized. Please sign in again.');
+    }
+
+    if (!response.ok) {
+        let message = 'Failed to fetch enrollment requests';
+        try {
+            const errorData = await response.json();
+            message = errorData.message || message;
+        } catch {
+            /* ignore */
+        }
+        if (response.status === 403) {
+            throw new Error(message || 'Only students can view enrollment requests.');
+        }
+        throw new Error(message);
+    }
+
     return await response.json();
 };
 
@@ -921,6 +1129,84 @@ export const getStudentQuizResultAPI = async (attemptId: number) => {
 };
 
 // # ATTENDANCE APIs
+export type StudentAttendanceStatus = 'present' | 'absent' | '-';
+
+export type StudentAttendanceItem = {
+    attendanceId: number;
+    attendanceDate: string | null;
+    status: StudentAttendanceStatus;
+    lecture: {
+        id: number;
+        title: string;
+        lectureType: string;
+        lectureOrder: number | null;
+    };
+    course: {
+        id: number;
+        courseName: string;
+    };
+};
+
+export type StudentAttendanceResponse = {
+    data: StudentAttendanceItem[];
+    summary: {
+        present: number;
+        absent: number;
+        pending: number;
+        total: number;
+    };
+};
+
+export const getMyAttendanceAPI = async (params?: {
+    courseId?: number;
+    lectureId?: number;
+}): Promise<StudentAttendanceResponse> => {
+    const token = getToken();
+    if (!token) {
+        logoutLocal();
+        throw new Error('No authentication token found');
+    }
+
+    const query = new URLSearchParams();
+    if (params?.courseId != null) query.set('courseId', String(params.courseId));
+    if (params?.lectureId != null) query.set('lectureId', String(params.lectureId));
+    const qs = query.toString();
+
+    const response = await fetch(`${API_URL}/attendance/me${qs ? `?${qs}` : ''}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+    });
+
+    if (response.status === 401) {
+        logoutLocal();
+        throw new Error('Unauthorized. Please sign in again.');
+    }
+
+    if (!response.ok) {
+        let message = 'Failed to fetch attendance';
+        try {
+            const errorData = await response.json();
+            message = errorData.message || message;
+        } catch {
+            /* ignore parse errors */
+        }
+
+        if (response.status === 403) {
+            throw new Error(message || 'You are not enrolled in this course or do not have access.');
+        }
+        if (response.status === 404) {
+            throw new Error(message || 'Lecture not found for this course.');
+        }
+        throw new Error(message);
+    }
+
+    return await response.json();
+};
+
 export const getAllAttendancesAPI = async () => {
     const token = getToken();
     const response = await fetch(`${API_URL}/attendance/all`, {

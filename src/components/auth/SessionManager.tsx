@@ -1,184 +1,246 @@
-// 'use client';
-// import { useEffect } from 'react';
-// import { useAppDispatch } from '@/lib/store/hooks';
-// import { logout } from '@/lib/store/features/authSlice'; 
-// import { logoutLocal } from '@/lib/api/apiService'; 
-// import Cookies from 'js-cookie';
-
-// export const SessionManager = () => {
-//   const dispatch = useAppDispatch();
-
-//   useEffect(() => {
-//     const checkSession = () => {
-//       const token = Cookies.get('authToken');
-//       const lastActive = localStorage.getItem('last_active_time');
-
-//       if (token && lastActive) {
-//         const now = Date.now();
-//         const diff = now - parseInt(lastActive);
-        
-//         // 2 Minutes logic (2 * 60 * 1000)
-//         const twoMinutes = 1 * 60 * 1000;
-
-//         if (diff > twoMinutes) {
-//           handleLogout();
-//         } else {
-//           // Agar user 2 min ke andar wapas aa gaya, toh timestamp clear kar dein
-//           localStorage.removeItem('last_active_time');
-//         }
-//       }
-//     };
-
-//     const handleLogout = () => {
-//       logoutLocal(); // Cookies clear karega
-//       dispatch(logout()); // Redux state clear karega
-//       localStorage.removeItem('last_active_time');
-//       window.location.href = '/'; 
-//     };
-
-//     // 1. App khulne par session check karein
-//     checkSession();
-
-//     // 2. Tab band hote waqt timestamp save karein
-//     const saveTimeOnClose = () => {
-//       localStorage.setItem('last_active_time', Date.now().toString());
-//     };
-
-//     // --- HATAYI GAYI CHEEZEN (EXTRA LOGIC) ---
-//     /* let idleTimer: NodeJS.Timeout;
-//     const resetIdleTimer = () => {
-//       if (idleTimer) clearTimeout(idleTimer);
-//       idleTimer = setTimeout(handleLogout, 2 * 60 * 1000);
-//       localStorage.setItem('last_active_time', Date.now().toString());
-//     };
-//     */
-
-//     window.addEventListener('beforeunload', saveTimeOnClose);
-
-//     // Activity tracking events commented out (Inactivity par logout nahi hoga)
-//     // window.addEventListener('mousemove', resetIdleTimer);
-//     // window.addEventListener('keydown', resetIdleTimer);
-//     // window.addEventListener('click', resetIdleTimer);
-
-//     return () => {
-//       window.removeEventListener('beforeunload', saveTimeOnClose);
-      
-//       // Clean up activity listeners commented out
-//       // window.removeEventListener('mousemove', resetIdleTimer);
-//       // window.removeEventListener('keydown', resetIdleTimer);
-//       // window.removeEventListener('click', resetIdleTimer);
-//       // if (idleTimer) clearTimeout(idleTimer);
-//     };
-//   }, [dispatch]);
-
-//   return null; 
-// };
-
 'use client';
-import React, { useEffect, useState } from 'react';
+
+/**
+ * Auth bootstrap — JWT is the only credential; GET /auth/profile is the
+ * source of truth for user / role / sidebar on every refresh.
+ *
+ * Prevents role spoofing via Redux DevTools / localStorage / sessionStorage.
+ */
+
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
-import { setAuth, logout } from '@/lib/store/features/authSlice'; 
-import { logoutLocal, fetchProfileAPI } from '@/lib/api/apiService'; 
+import {
+  setAuth,
+  logout,
+  setAuthBootstrapping,
+} from '@/lib/store/features/authSlice';
+import {
+  clearAuthCookies,
+  fetchProfileAPI,
+  setAuthCookies,
+} from '@/lib/api/apiService';
+import { clearPersistedAuthSession } from '@/lib/auth/authSession';
 import Cookies from 'js-cookie';
 import { Loader2 } from 'lucide-react';
+import {
+  getDashboardPathForRole,
+  getPortalRoleFromPath,
+  getSignInPathForRole,
+  roleFromProfileUser,
+  normalizeRole,
+} from '@/lib/navigationConfig';
+
+function getStoredToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return Cookies.get('authToken') || localStorage.getItem('access_token') || null;
+}
+
+function isAuthRoute(pathname: string) {
+  return pathname.includes('/signin') || pathname.includes('/signup');
+}
+
+function isProtectedPortalRoute(pathname: string) {
+  const portal = getPortalRoleFromPath(pathname);
+  return !!portal && !isAuthRoute(pathname);
+}
+
+function readErrorMeta(error: unknown): {
+  status?: number;
+  isNetworkError: boolean;
+  message: string;
+} {
+  if (typeof error !== 'object' || error === null) {
+    return { isNetworkError: false, message: String(error) };
+  }
+  const e = error as {
+    status?: number;
+    isNetworkError?: boolean;
+    message?: string;
+  };
+  return {
+    status: e.status,
+    isNetworkError: !!e.isNetworkError || e.status === 0,
+    message: e.message || 'Auth profile sync failed',
+  };
+}
 
 export const SessionManager = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useAppDispatch();
-  
-  // Redux state se current user nikal rahe hain
-  const user = useAppSelector((state) => state.auth.user);
-  
-  const [isHydrating, setIsHydrating] = useState(true);
-  
-  // 👉 HYDRATION FIX: Mounted state aur token ko state mein rakhein
-  const [mounted, setMounted] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
 
-  // 👉 HYDRATION FIX: Pehla render server jaisa hoga, phir client par mount hone ke baad token check hoga
+  const { user, authBootstrapping, profileSynced, roleId } = useAppSelector(
+    (state) => state.auth
+  );
+
+  const [mounted, setMounted] = useState(false);
+  const syncInFlight = useRef(false);
+  const lastSyncedToken = useRef<string | null>(null);
+  const lastFocusSyncAt = useRef(0);
+
+  const hardLogout = useCallback(
+    (portalHint?: string) => {
+      const portal =
+        normalizeRole(portalHint) ||
+        getPortalRoleFromPath(pathname) ||
+        'student';
+      dispatch(logout());
+      clearAuthCookies();
+      clearPersistedAuthSession();
+      window.location.href = getSignInPathForRole(portal);
+    },
+    [dispatch, pathname]
+  );
+
+  const syncProfile = useCallback(
+    async (opts?: { force?: boolean; silent?: boolean }) => {
+      const token = getStoredToken();
+      const portal = getPortalRoleFromPath(pathname);
+
+      if (!token) {
+        lastSyncedToken.current = null;
+        dispatch(logout());
+        dispatch(setAuthBootstrapping(false));
+        return;
+      }
+
+      if (!opts?.force && lastSyncedToken.current === token && profileSynced) {
+        dispatch(setAuthBootstrapping(false));
+        return;
+      }
+
+      if (syncInFlight.current) return;
+      syncInFlight.current = true;
+
+      if (!opts?.silent) {
+        dispatch(setAuthBootstrapping(true));
+      }
+
+      try {
+        const profile = await fetchProfileAPI(token);
+        const apiUser = profile.user;
+        const apiRole = apiUser?.role;
+        const apiRoleName = apiRole?.roleName || apiRole?.name || '';
+        const realPortal = roleFromProfileUser(apiUser);
+
+        dispatch(
+          setAuth({
+            token,
+            user: apiUser,
+            role: apiRole || apiRoleName,
+            sidebar: profile.sidebar || [],
+          })
+        );
+
+        setAuthCookies(token, String(apiRoleName || realPortal));
+        clearPersistedAuthSession();
+        lastSyncedToken.current = token;
+
+        if (portal && realPortal && portal !== realPortal) {
+          router.replace(getDashboardPathForRole(realPortal));
+        }
+
+        if (realPortal && isAuthRoute(pathname)) {
+          router.replace(getDashboardPathForRole(realPortal));
+        }
+      } catch (error: unknown) {
+        const { status, isNetworkError, message } = readErrorMeta(error);
+
+        // Network / backend down: keep current session, never crash the UI
+        if (isNetworkError) {
+          if (!opts?.silent) {
+            console.warn('[SessionManager]', message);
+          }
+          dispatch(setAuthBootstrapping(false));
+          return;
+        }
+
+        if (status === 401 || status === 400 || status === 403) {
+          hardLogout(portal || undefined);
+          return;
+        }
+
+        if (!opts?.silent) {
+          console.warn('[SessionManager] profile sync failed:', message);
+        }
+        dispatch(setAuthBootstrapping(false));
+      } finally {
+        syncInFlight.current = false;
+      }
+    },
+    [dispatch, hardLogout, pathname, profileSynced, router]
+  );
+
   useEffect(() => {
     setMounted(true);
-    const currentToken = Cookies.get('authToken') || localStorage.getItem('access_token');
-    setToken(currentToken);
   }, []);
 
+  // Every full page refresh / first mount
   useEffect(() => {
-    if (!mounted) return; // Jab tak browser mein mount na ho, kuch check mat karo
+    if (!mounted) return;
+    void syncProfile({ force: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- boot once on mount
+  }, [mounted]);
 
-    const handleLogout = () => {
-      logoutLocal(); // Cookies clear karega
-      dispatch(logout()); // Redux state clear karega
-      localStorage.removeItem('last_active_time');
-      localStorage.removeItem('access_token');
-      window.location.href = '/'; 
+  // Quiet re-validate on focus (debounced) — corrects Inspect edits without overlays
+  useEffect(() => {
+    if (!mounted) return;
+
+    const onFocus = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!getStoredToken()) return;
+
+      const now = Date.now();
+      if (now - lastFocusSyncAt.current < 15_000) return;
+      lastFocusSyncAt.current = now;
+
+      void syncProfile({ force: true, silent: true });
     };
 
-    const checkSessionAndHydrate = async () => {
-      const lastActive = localStorage.getItem('last_active_time');
-
-      // --- LOGIC 1: Tab Close & Inactivity Check ---
-      if (token && lastActive) {
-        const now = Date.now();
-        const diff = now - parseInt(lastActive);
-        
-        // 2 Minutes logic (2 * 60 * 1000)
-        const twoMinutes = 2 * 60 * 1000; 
-
-        if (diff > twoMinutes) {
-          handleLogout();
-          return; 
-        } else {
-          localStorage.removeItem('last_active_time');
-        }
-      }
-
-      // --- LOGIC 2: Session Hydration (Secure Auth Flow) ---
-      if (token && !user) {
-        try {
-          const res = await fetchProfileAPI(token);
-          
-          dispatch(setAuth({
-            user: res.user,
-            role: res.user.role.roleName,
-            sidebar: res.sidebar,
-            token: token
-          }));
-        } catch (error) {
-          console.error("Session verification failed. Token might be invalid.", error);
-          handleLogout(); 
-        }
-      }
-
-      setIsHydrating(false); 
-    };
-
-    checkSessionAndHydrate();
-
-    // --- LOGIC 3: Save Timestamp on Close/Refresh ---
-    const saveTimeOnClose = () => {
-      localStorage.setItem('last_active_time', Date.now().toString());
-    };
-
-    window.addEventListener('beforeunload', saveTimeOnClose);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
 
     return () => {
-      window.removeEventListener('beforeunload', saveTimeOnClose);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
     };
-  }, [dispatch, token, user, mounted]);
+  }, [mounted, syncProfile]);
 
-  // 👉 HYDRATION FIX: Agar component abhi mount nahi hua toh server wala default view (children) dikhao
+  // Soft portal guard after sync (API role wins)
+  useEffect(() => {
+    if (!profileSynced || authBootstrapping) return;
+
+    const portal = getPortalRoleFromPath(pathname);
+    const real =
+      roleFromProfileUser(user) ||
+      (roleId === 1
+        ? 'admin'
+        : roleId === 2
+          ? 'teacher'
+          : roleId === 3
+            ? 'student'
+            : '');
+
+    if (portal && real && portal !== real && !isAuthRoute(pathname)) {
+      router.replace(getDashboardPathForRole(real));
+    }
+  }, [authBootstrapping, pathname, profileSynced, roleId, router, user]);
+
   if (!mounted) {
     return <>{children}</>;
   }
 
-  // Jab tak backend se data aa raha hai aur token majood hai, Loader dikhayen
-  if (isHydrating && token && !user) {
+  if (authBootstrapping && isProtectedPortalRoute(pathname)) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-app-bg">
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-app-bg gap-3">
         <Loader2 className="animate-spin text-accent-blue" size={40} />
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">
+          Verifying session
+        </p>
       </div>
     );
   }
 
-  // Sab safe hai, poori app ko render hone do
-  return <>{children}</>; 
+  return <>{children}</>;
 };

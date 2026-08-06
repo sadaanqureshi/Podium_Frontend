@@ -137,33 +137,37 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { ChevronDown, ChevronRight, Box, FileText } from 'lucide-react';
 
-import { useAppDispatch, useAppSelector } from '../../lib/store/hooks';
-import { ICON_MAPPING, getRolePath } from '@/lib/navigationConfig';
-// 👉 YEH IMPORT LAZMI ADD KAREIN
-import { fetchEnrollmentsData } from '@/lib/store/features/financeSlice';
+import { useAppSelector } from '../../lib/store/hooks';
+import {
+  getNavIcon,
+  getNavLabel,
+  getRolePath,
+  getPortalRoleFromPath,
+  normalizeRole,
+  roleFromRoleId,
+} from '@/lib/navigationConfig';
 
 const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => {
   const pathname = usePathname();
-  const dispatch = useAppDispatch(); // 👉 DISPATCH ADD KIYA
 
   const user = useAppSelector((state) => state.auth.user);
-  const userRole = user?.role?.roleName || (typeof user?.role === 'string' ? user.role : "");
+  const authRole = useAppSelector((state) => state.auth.role);
+  const roleId = useAppSelector((state) => state.auth.roleId);
+  const profileSynced = useAppSelector((state) => state.auth.profileSynced);
   const dynamicMenu = useAppSelector((state) => state.auth.menu) || [];
-  
-  // 👉 ENROLLMENTS STATE REDUX SE NIKALI
-  const { enrollments } = useAppSelector((state) => state.finance);
+
+  // After profile sync, API role is authority. Portal path is only a fallback shell hint.
+  const roleFromPath = getPortalRoleFromPath(pathname);
+  const apiRole =
+    roleFromRoleId(roleId) || normalizeRole(user?.role) || normalizeRole(authRole);
+  const effectiveRole = (profileSynced && apiRole ? apiRole : roleFromPath || apiRole) as string;
 
   const [openMenus, setOpenMenus] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
 
-  // 👉 COMPONENT MOUNT HOTE HI API CALL
-  useEffect(() => { 
+  useEffect(() => {
     setMounted(true);
-    dispatch(fetchEnrollmentsData()); 
-  }, [dispatch]);
-
-  // 👉 PENDING COUNT CALCULATE KIYA
-  const pendingCount = enrollments?.filter((req: any) => req.status?.toLowerCase() === 'pending').length || 0;
+  }, []);
 
   const toggleMenu = (name: string) => {
     setOpenMenus(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
@@ -171,11 +175,7 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
 
   if (!mounted) return <aside className="w-[280px] h-full bg-card-bg border-r border-border-subtle" />;
 
-  const getIcon = (name: string) => {
-    const lowerName = name.toLowerCase();
-    const key = Object.keys(ICON_MAPPING).find(k => lowerName.includes(k));
-    return key ? ICON_MAPPING[key] : FileText;
-  };
+  const getIcon = (name: string) => getNavIcon(name) || FileText;
 
   const baseNavItemClasses = 'flex items-center gap-[12px] py-3 px-[12px] rounded-md cursor-pointer text-sm font-medium whitespace-nowrap transition-colors ';
   const baseSubNavItemClasses = 'flex items-center justify-between py-2 px-[12px] mb-1 rounded-md text-[13px] cursor-pointer whitespace-nowrap transition-colors ';
@@ -184,12 +184,6 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
     hidden: { opacity: 0, height: 0 },
     show: { opacity: 1, height: 'auto', transition: { duration: 0.2 } },
     exit: { opacity: 0, height: 0, transition: { duration: 0.2 } },
-  };
-
-  // Helper function to check if this item should show the badge
-  const shouldShowBadge = (itemName: string) => {
-    const lowerName = itemName.toLowerCase();
-    return lowerName.includes('fee') || lowerName.includes('finance');
   };
 
   return (
@@ -205,12 +199,10 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
           <ul className="list-none p-0 m-0">
             {dynamicMenu.filter(item => item.is_enable).map((item) => {
               const Icon = getIcon(item.name);
+              const label = getNavLabel(item.name, effectiveRole);
               const enabledChildren = item.children?.filter(child => child.is_enable) || [];
               const hasChildren = enabledChildren.length > 0;
-              const currentPath = getRolePath(userRole, item.name);
-              
-              // Check if parent needs badge
-              const isParentBadgeTarget = shouldShowBadge(item.name);
+              const currentPath = getRolePath(effectiveRole, item.name);
 
               if (hasChildren) {
                 const isOpen = openMenus.includes(item.name);
@@ -223,13 +215,7 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
                     >
                       <div className="flex items-center gap-[12px]">
                         <Icon size={18} />
-                        <span className="capitalize">{item.name}</span>
-                        {/* PARENT BADGE IF MENU IS COLLAPSED */}
-                        {isParentBadgeTarget && !isOpen && pendingCount > 0 && (
-                          <span className="ml-2 px-2 py-0.5 bg-accent-blue text-white text-[10px] font-black rounded-full shadow-md animate-in zoom-in duration-200">
-                            {pendingCount}
-                          </span>
-                        )}
+                        <span className="capitalize">{label}</span>
                       </div>
                       {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                     </button>
@@ -237,9 +223,8 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
                       {isOpen && (
                         <motion.ul className="list-none p-0 mt-1 pl-10 overflow-hidden" variants={subMenuVariants} initial="hidden" animate="show" exit="exit">
                           {enabledChildren.map((child) => {
-                            const dynamicChildPath = getRolePath(userRole, child.name);
+                            const dynamicChildPath = getRolePath(effectiveRole, child.name);
                             const isActive = pathname === dynamicChildPath;
-                            const isChildBadgeTarget = shouldShowBadge(child.name);
 
                             return (
                               <li key={child.id}>
@@ -251,13 +236,7 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
                                       ? 'bg-text-main text-card-bg dark:bg-hover-blue dark:text-white'
                                       : 'text-text-muted hover:bg-text-main hover:text-card-bg dark:hover:bg-hover-blue'}`}
                                 >
-                                  <span>{child.name}</span>
-                                  {/* CHILD BADGE */}
-                                  {isChildBadgeTarget && pendingCount > 0 && (
-                                    <span className="px-2 py-0.5 bg-accent-blue text-white text-[9px] font-black rounded-full shadow-sm">
-                                      {pendingCount}
-                                    </span>
-                                  )}
+                                  <span>{getNavLabel(child.name, effectiveRole)}</span>
                                 </Link>
                               </li>
                             );
@@ -269,12 +248,20 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
                 );
               }
 
-              const isItemActive = pathname === currentPath;
+              const isItemActive =
+                currentPath !== '#' &&
+                (pathname === currentPath || pathname.startsWith(`${currentPath}/`));
               return (
                 <li key={item.id} className="mb-1">
                   <Link
-                    href={currentPath}
-                    onClick={onLinkClick}
+                    href={currentPath === '#' ? pathname : currentPath}
+                    onClick={(e) => {
+                      if (currentPath === '#') {
+                        e.preventDefault();
+                        return;
+                      }
+                      onLinkClick?.();
+                    }}
                     className={`${baseNavItemClasses} w-full justify-between
                       ${isItemActive
                         ? 'bg-text-main text-card-bg dark:bg-hover-blue dark:text-white'
@@ -282,14 +269,8 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
                   >
                     <div className="flex items-center gap-[12px]">
                       <Icon size={18} />
-                      <span className="capitalize">{item.name}</span>
+                      <span className="capitalize">{label}</span>
                     </div>
-                    {/* SINGLE LINK BADGE */}
-                    {isParentBadgeTarget && pendingCount > 0 && (
-                      <span className="px-2 py-0.5 bg-accent-blue text-white text-[10px] font-black rounded-full shadow-sm animate-in zoom-in duration-200">
-                        {pendingCount}
-                      </span>
-                    )}
                   </Link>
                 </li>
               );
