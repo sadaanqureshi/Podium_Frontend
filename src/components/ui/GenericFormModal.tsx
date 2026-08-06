@@ -4,17 +4,20 @@
 // import {
 //     X,
 //     Loader2,
-//     ChevronDown,
-//     Plus,
-//     Trash2,
-//     CheckCircle2,
-//     AlertCircle
+//     AlertCircle,
+//     CalendarDays
 // } from 'lucide-react';
+// import DatePicker from 'react-datepicker';
+// import 'react-datepicker/dist/react-datepicker.css';
+// import QuizBuilderField from './QuizBuilderField';
+// import CustomDropdown from './CustomDropdown';
+
+// import countryCodesData from '@/lib/countryCodesData.json';
 
 // export interface FormField {
 //     name: string;
 //     label: string;
-//     type: 'text' | 'number' | 'textarea' | 'select' | 'files' | 'checkbox-group' | 'date' | 'time' | 'datetime-local' | 'quiz-builder';
+//     type: 'text' | 'number' | 'textarea' | 'select' | 'files' | 'checkbox-group' | 'date' | 'time' | 'datetime-local' | 'quiz-builder' | 'phone';
 //     placeholder?: string;
 //     required?: boolean;
 //     options?: { label: string; value: string | number }[];
@@ -31,180 +34,6 @@
 //     submitText?: string;
 // }
 
-// // ==========================================
-// // 1. QUESTION BUILDER COMPONENT
-// // ==========================================
-// const QuestionBuilder = ({
-//     onChange,
-//     initialData,
-//     error // Parent se error receive kar raha hai
-// }: {
-//     onChange: (data: any) => void;
-//     initialData?: any[];
-//     error?: string;
-// }) => {
-//     const [questions, setQuestions] = useState<any[]>([]);
-
-//     useEffect(() => {
-//         if (initialData && initialData.length > 0) {
-//             setQuestions(initialData);
-//         }
-//     }, [initialData]);
-
-//     const updateAndNotify = (updated: any[]) => {
-//         setQuestions(updated);
-//         onChange(updated);
-//     };
-
-//     const addQuestion = () => {
-//         const newQuestions = [
-//             ...questions,
-//             { question_text: '', question_type: 'MCQ', marks: 5, options: [] }
-//         ];
-//         updateAndNotify(newQuestions);
-//     };
-
-//     const removeQuestion = (index: number) => {
-//         const updated = questions.filter((_, i) => i !== index);
-//         updateAndNotify(updated);
-//     };
-
-//     const toggleCorrectOption = (qIndex: number, oIndex: number) => {
-//         const updated = [...questions];
-//         const currentQ = updated[qIndex];
-
-//         if (currentQ.question_type === 'MCQ') {
-//             currentQ.options.forEach((opt: any, i: number) => {
-//                 opt.is_correct = i === oIndex;
-//             });
-//         } else {
-//             currentQ.options[oIndex].is_correct = !currentQ.options[oIndex].is_correct;
-//         }
-//         updateAndNotify(updated);
-//     };
-
-//     const addOption = (qIndex: number) => {
-//         const updated = [...questions];
-//         if (!updated[qIndex].options) updated[qIndex].options = [];
-//         updated[qIndex].options.push({ option_text: '', is_correct: false });
-//         updateAndNotify(updated);
-//     };
-
-//     const removeOption = (qIndex: number, oIndex: number) => {
-//         const updated = [...questions];
-//         updated[qIndex].options = updated[qIndex].options.filter((_: any, i: number) => i !== oIndex);
-//         updateAndNotify(updated);
-//     };
-
-//     const updateQuestionText = (index: number, text: string) => {
-//         const updated = [...questions];
-//         updated[index].question_text = text;
-//         updateAndNotify(updated);
-//     };
-
-//     const updateQuestionType = (index: number, type: string) => {
-//         const updated = [...questions];
-//         updated[index].question_type = type;
-//         updateAndNotify(updated);
-//     };
-
-//     const updateMarks = (index: number, val: number) => {
-//         const updated = [...questions];
-//         updated[index].marks = val;
-//         updateAndNotify(updated);
-//     };
-
-//     const updateOptionText = (qIndex: number, oIndex: number, text: string) => {
-//         const updated = [...questions];
-//         updated[qIndex].options[oIndex].option_text = text;
-//         updateAndNotify(updated);
-//     };
-
-//     return (
-//         <div className={`md:col-span-2 space-y-6 bg-app-bg p-8 border-2 transition-all ${error ? 'border-red-500/50 shadow-lg shadow-red-500/5' : 'border-border-subtle'}`}>
-//             <div className="flex justify-between items-center px-2">
-//                 <div>
-//                     <h3 className="text-sm font-black uppercase text-text-muted tracking-widest">Quiz Designer</h3>
-//                     {error && <p className="text-[10px] font-bold text-red-500 uppercase mt-1 tracking-wider italic">{error}</p>}
-//                 </div>
-//                 <button
-//                     type="button"
-//                     onClick={addQuestion}
-//                     className="flex items-center gap-2 px-6 py-2.5 bg-accent-blue text-white rounded-2xl text-[10px] font-black uppercase hover:bg-hover-blue transition-all shadow-lg active:scale-95"
-//                 >
-//                     <Plus size={14} strokeWidth={3} /> Add Question
-//                 </button>
-//             </div>
-
-//             {questions.map((q, qIndex) => (
-//                 <div key={qIndex} className="bg-card-bg p-8 rounded-[2rem] border border-border-subtle shadow-sm space-y-6 animate-in slide-in-from-top-4 duration-300">
-//                     <div className="flex justify-between gap-4">
-//                         <input
-//                             placeholder="Enter Question Text..."
-//                             className="flex-1 text-sm font-bold bg-transparent outline-none border-b-2 border-border-subtle focus:border-accent-blue py-2 transition-all text-text-main"
-//                             value={q.question_text || ''}
-//                             onChange={(e) => updateQuestionText(qIndex, e.target.value)}
-//                         />
-//                         <button type="button" onClick={() => removeQuestion(qIndex)} className="text-text-muted hover:text-red-500 p-2 transition-colors">
-//                             <Trash2 size={18} />
-//                         </button>
-//                     </div>
-
-//                     <div className="grid grid-cols-2 gap-6">
-//                         <select
-//                             className="w-full p-3 bg-app-bg text-text-main rounded-xl text-xs font-bold outline-none border border-border-subtle focus:border-accent-blue transition-all"
-//                             value={q.question_type}
-//                             onChange={(e) => updateQuestionType(qIndex, e.target.value)}
-//                         >
-//                             <option value="MCQ">MCQ (Single Choice)</option>
-//                             <option value="BCQ">BCQ (Multiple Choice)</option>
-//                             <option value="SHORT">Short Answer</option>
-//                         </select>
-//                         <input
-//                             type="number"
-//                             className="w-full p-3 bg-app-bg text-text-main rounded-xl text-xs font-bold outline-none border border-border-subtle focus:border-accent-blue transition-all"
-//                             placeholder="Marks"
-//                             value={q.marks || 0}
-//                             onChange={(e) => updateMarks(qIndex, Number(e.target.value))}
-//                         />
-//                     </div>
-
-//                     {q.question_type !== 'SHORT' && (
-//                         <div className="space-y-3 pl-4 border-l-2 border-border-subtle">
-//                             {q.options?.map((opt: any, oIndex: number) => (
-//                                 <div key={oIndex} className="flex items-center gap-4 bg-app-bg p-2 rounded-2xl shadow-sm border border-border-subtle">
-//                                     <input
-//                                         placeholder="Option Text..."
-//                                         className="flex-1 text-xs font-medium bg-transparent px-3 outline-none text-text-main"
-//                                         value={opt.option_text || ''}
-//                                         onChange={(e) => updateOptionText(qIndex, oIndex, e.target.value)}
-//                                     />
-//                                     <div className="flex gap-2">
-//                                         <button
-//                                             type="button"
-//                                             onClick={() => toggleCorrectOption(qIndex, oIndex)}
-//                                             className={`p-1.5 rounded-lg transition-all ${opt.is_correct ? 'bg-emerald-500 text-white shadow-lg' : 'bg-card-bg text-text-muted border border-border-subtle'}`}
-//                                         >
-//                                             <CheckCircle2 size={14} />
-//                                         </button>
-//                                         <button type="button" onClick={() => removeOption(qIndex, oIndex)} className="p-1.5 text-text-muted hover:text-red-500 transition-colors">
-//                                             <Trash2 size={14} />
-//                                         </button>
-//                                     </div>
-//                                 </div>
-//                             ))}
-//                             <button type="button" onClick={() => addOption(qIndex)} className="text-[10px] font-black text-accent-blue uppercase hover:opacity-80 transition-all ml-1">+ Add Option</button>
-//                         </div>
-//                     )}
-//                 </div>
-//             ))}
-//         </div>
-//     );
-// };
-
-// // ==========================================
-// // 2. MAIN MODAL COMPONENT
-// // ==========================================
 // const GenericFormModal: React.FC<GenericFormModalProps> = ({
 //     isOpen,
 //     onClose,
@@ -216,13 +45,28 @@
 //     submitText
 // }) => {
 //     const [formValues, setFormValues] = useState<Record<string, any>>({});
-//     const [errors, setErrors] = useState<Record<string, string>>({}); // Validation Errors state
+//     const [errors, setErrors] = useState<Record<string, string>>({});
 
-//     const getMinDateTime = () => {
-//         const now = new Date();
-//         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-//         return now.toISOString().slice(0, 16);
+//     // 👉 STATE FOR PHONE NUMBER DROPDOWN
+//     const [selectedDialCode, setSelectedDialCode] = useState<string>("+92");
+
+//     // Convert JSON country data to CustomDropdown format
+//     const countryOptions = countryCodesData.map((country: any) => ({
+//         label: `${country.emoji} ${country.dial_code}`,
+//         value: country.dial_code
+//     }));
+
+//     // Get max allowed length for currently selected country
+//     const getMaxPhoneLength = () => {
+//         const country: any = countryCodesData.find((c: any) => c.dial_code === selectedDialCode);
+//         if (country && country.phoneLength) {
+//             return Math.max(...country.phoneLength);
+//         }
+//         return 15;
 //     };
+
+//     // Calculate current datetime to prevent past selection
+//     const minDate = new Date();
 
 //     useEffect(() => {
 //         if (isOpen && initialData) {
@@ -231,54 +75,69 @@
 //             const endTime = initialData.end_time || initialData.endTime;
 //             const totalMarks = initialData.total_marks || initialData.totalMarks;
 
-//             if (startTime) formattedData.start_time = new Date(startTime).toISOString().slice(0, 16);
-//             if (endTime) formattedData.end_time = new Date(endTime).toISOString().slice(0, 16);
+//             // Using Date objects for react-datepicker instead of ISO strings
+//             if (startTime) formattedData.start_time = new Date(startTime);
+//             if (endTime) formattedData.end_time = new Date(endTime);
 //             if (totalMarks) formattedData.total_marks = totalMarks;
+
+//             if (initialData.contactNumber) {
+//                 const numStr = String(initialData.contactNumber);
+//                 const sortedCodes = [...countryCodesData].sort((a: any, b: any) => b.dial_code.length - a.dial_code.length);
+//                 const matchedCountry = sortedCodes.find((c: any) => numStr.startsWith(c.dial_code));
+
+//                 if (matchedCountry) {
+//                     setSelectedDialCode(matchedCountry.dial_code);
+//                     formattedData.contactNumber = numStr.replace(matchedCountry.dial_code, '').trim();
+//                 }
+//             }
 
 //             setFormValues(formattedData);
 //         } else {
 //             setFormValues({});
 //             setErrors({});
+//             setSelectedDialCode("+92");
 //         }
 //     }, [isOpen, initialData]);
 
-//     // --- PROFESSIONAL VALIDATION LOGIC ---
 //     const validate = () => {
 //         const newErrors: Record<string, string> = {};
 //         const nameRegex = /^[A-Za-z\s'-]+$/;
 //         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-//         const phoneRegex = /^\+?[0-9]{11,13}$/;
 
 //         fields.forEach((field) => {
 //             const val = formValues[field.name];
 
-//             // 1. Required Check
 //             if (field.required && (!val || (Array.isArray(val) && val.length === 0))) {
-//                 newErrors[field.name] = `${field.label} is strictly required.`;
+//                 newErrors[field.name] = `${field.label} is required.`;
 //             }
 
-//             // 2. CreateStudentDto Logic Implementation
 //             if (val) {
 //                 if (field.name === 'firstName' || field.name === 'lastName') {
-//                     if (val.length < 3 || val.length > 50) newErrors[field.name] = "Node must be 3-50 characters.";
+//                     if (val.length < 3 || val.length > 50) newErrors[field.name] = "Must be 3-50 characters.";
 //                     else if (!nameRegex.test(val)) newErrors[field.name] = "Only letters, spaces, hyphens allowed.";
 //                 }
 
 //                 if (field.name === 'email') {
-//                     if (!emailRegex.test(val)) newErrors[field.name] = "Enter a valid registry email.";
+//                     if (!emailRegex.test(val)) newErrors[field.name] = "Enter a valid email address.";
 //                     else if (val.length < 5 || val.length > 100) newErrors[field.name] = "Email volume out of range.";
 //                 }
 
-//                 if (field.name === 'contactNumber' && !phoneRegex.test(val)) {
-//                     newErrors[field.name] = "Invalid contact format (e.g. +923001234567).";
+//                 if (field.type === 'phone' || field.name === 'contactNumber') {
+//                     const cleanNum = val.replace(/\D/g, '');
+//                     const selectedCountry: any = countryCodesData.find((c: any) => c.dial_code === selectedDialCode);
+
+//                     if (!/^\d+$/.test(val)) {
+//                         newErrors[field.name] = "Only numbers are allowed.";
+//                     } else if (selectedCountry && !selectedCountry.phoneLength.includes(cleanNum.length)) {
+//                         newErrors[field.name] = `Invalid length for ${selectedCountry.name} (${selectedCountry.phoneLength.join(' or ')} digits).`;
+//                     }
 //                 }
 
 //                 if (field.name === 'password' && val.length < 6) {
-//                     newErrors[field.name] = "Security Key must be min 6 characters.";
+//                     newErrors[field.name] = "Password must be min 6 characters.";
 //                 }
 //             }
 
-//             // 3. Quiz Builder Deep Audit
 //             if (field.type === 'quiz-builder' && val) {
 //                 const quiz = val as any[];
 //                 quiz.forEach((q, idx) => {
@@ -309,16 +168,31 @@
 //     const handleSubmit = async (e: React.FormEvent) => {
 //         e.preventDefault();
 
-//         // Validation Guard
 //         if (!validate()) return;
 
 //         const formData = new FormData();
 //         fields.forEach((field) => {
-//             const value = formValues[field.name];
+//             let value = formValues[field.name];
+
 //             if (field.type === 'files') {
 //                 if (value instanceof File) formData.append(field.name, value);
 //             } else if (field.type === 'quiz-builder') {
 //                 formData.append(field.name, JSON.stringify(value || []));
+//             }
+//             else if (field.type === 'phone' || field.name === 'contactNumber') {
+//                 if (value) {
+//                     const cleanNum = String(value).replace(/\D/g, '');
+//                     formData.append(field.name, `${selectedDialCode}${cleanNum}`);
+//                 }
+//             }
+//             // 👉 FORMATTING DATE FOR API SUBMISSION
+//             else if (field.type === 'date' || field.type === 'datetime-local') {
+//                 if (value) {
+//                     formData.append(field.name, new Date(value).toISOString());
+//                 }
+//             }
+//             else if (field.type === 'number' && value !== null && value !== undefined && value !== "") {
+//                 formData.append(field.name, value.toString());
 //             } else if (value !== null && value !== undefined && value !== "") {
 //                 formData.append(field.name, value.toString());
 //             }
@@ -334,58 +208,102 @@
 //     if (!isOpen) return null;
 
 //     return (
-//         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-//             <div className="bg-card-bg w-full max-w-4xl rounded-[1rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-border-subtle transition-all duration-300">
+//         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+//             <div className="bg-card-bg w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-border-subtle">
 
-//                 {/* HEADER */}
-//                 <div className="flex justify-between items-center px-10 py-8 form-modal-header transition-colors">
-//                     <div className="space-y-1">
-//                         <h2 className="text-3xl font-black tracking-tight uppercase italic">{title}</h2>
-//                         <div className="h-1.5 w-16 bg-accent-blue rounded-full"></div>
+//                 <div className="flex justify-between items-center px-8 py-6 border-b border-border-subtle bg-app-bg/50">
+//                     <div>
+//                         <h2 className="text-xl font-bold tracking-tight text-text-main">{title}</h2>
+//                         <p className="text-xs text-text-muted mt-1 font-medium">Please fill in the details below.</p>
 //                     </div>
-//                     <button onClick={onClose} className="p-3 hover:bg-white/10 rounded-2xl transition-all"><X size={24} /></button>
+//                     <button onClick={onClose} className="p-2 text-text-muted hover:text-text-main hover:bg-border-subtle rounded-lg transition-colors">
+//                         <X size={20} />
+//                     </button>
 //                 </div>
 
-//                 {/* FORM BODY */}
-//                 <form onSubmit={handleSubmit} className="overflow-y-auto no-scrollbar bg-card-bg flex-1">
-//                     <div className="px-10 py-10 space-y-10">
-//                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+//                 <form onSubmit={handleSubmit} className="overflow-y-visible bg-card-bg flex-1">
+//                     <div className="px-8 py-6 space-y-6 max-h-[60vh] overflow-y-auto no-scrollbar">
+//                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
 //                             {fields.map((field) => (
 //                                 <div key={field.name} className={(field.type === 'textarea' || field.type === 'quiz-builder') ? 'md:col-span-2' : ''}>
-//                                     <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-text-muted mb-4 ml-1">
-//                                         {field.label} {field.required && <span className="text-accent-blue">*</span>}
+//                                     <label className="block text-xs font-semibold text-text-main mb-2">
+//                                         {field.label} {field.required && <span className="text-red-500 ml-0.5">*</span>}
 //                                     </label>
 
 //                                     {field.type === 'quiz-builder' ? (
-//                                         <QuestionBuilder
+//                                         <QuizBuilderField
 //                                             initialData={formValues[field.name]}
 //                                             onChange={(data) => handleInputChange(field.name, data)}
 //                                             error={errors[field.name]}
 //                                         />
 //                                     ) : (
-//                                         <div className="space-y-2">
+//                                         <div className="space-y-1 relative">
 //                                             {field.type === 'select' ? (
-//                                                 <div className="relative">
-//                                                     <select
+//                                                 <CustomDropdown
+//                                                     options={field.options || []}
+//                                                     value={formValues[field.name] || ''}
+//                                                     onChange={(val) => handleInputChange(field.name, val)}
+//                                                     placeholder={`Select ${field.label}`}
+//                                                     className={errors[field.name] ? 'border-red-500 bg-red-500/10 focus:ring-red-500/20' : 'bg-app-bg'}
+//                                                 />
+//                                             ) : field.type === 'phone' || field.name === 'contactNumber' ? (
+
+//                                                 <div className={`flex items-stretch h-[46px] rounded-xl border transition-all ${errors[field.name] ? 'border-red-500 bg-red-500/5 focus-within:ring-1 focus-within:ring-red-500/50' : 'border-border-subtle focus-within:border-accent-blue focus-within:ring-1 focus-within:ring-accent-blue bg-app-bg'}`}>
+//                                                     <div className="w-[140px] shrink-0 border-r border-border-subtle h-full">
+//                                                         <CustomDropdown
+//                                                             options={countryOptions}
+//                                                             value={selectedDialCode}
+//                                                             onChange={(val) => {
+//                                                                 setSelectedDialCode(String(val));
+//                                                                 handleInputChange(field.name, '');
+//                                                             }}
+//                                                             placeholder="Code"
+//                                                             className="border-0 shadow-none hover:bg-transparent rounded-r-none h-full bg-transparent px-3"
+//                                                         />
+//                                                     </div>
+
+//                                                     <input
+//                                                         type="text"
+//                                                         placeholder={field.placeholder || "Enter phone number"}
 //                                                         value={formValues[field.name] || ''}
-//                                                         onChange={(e) => handleInputChange(field.name, e.target.value)}
-//                                                         className={`w-full px-8 py-5 rounded-[1.5rem] border-2 bg-app-bg text-sm font-bold text-text-main appearance-none cursor-pointer transition-all outline-none ${errors[field.name] ? 'border-red-500 bg-red-500/5 shadow-inner' : 'border-border-subtle focus:border-accent-blue'}`}
-//                                                     >
-//                                                         <option value="" disabled>Choose {field.label}...</option>
-//                                                         {field.options?.map((opt) => (
-//                                                             <option key={opt.value} value={opt.value}>{opt.label}</option>
-//                                                         ))}
-//                                                     </select>
-//                                                     <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-accent-blue pointer-events-none" size={22} strokeWidth={3} />
+//                                                         maxLength={getMaxPhoneLength()}
+//                                                         onChange={(e) => {
+//                                                             const max = getMaxPhoneLength();
+//                                                             let clean = e.target.value.replace(/\D/g, '');
+//                                                             if (clean.length > max) clean = clean.slice(0, max);
+//                                                             handleInputChange(field.name, clean);
+//                                                         }}
+//                                                         className="w-full h-full px-4 bg-transparent text-text-main text-sm font-medium outline-none rounded-r-xl"
+//                                                     />
 //                                                 </div>
+
+//                                             ) : field.type === 'date' || field.type === 'datetime-local' ? (
+
+//                                                 // 👉 MODERN CALENDAR WITH REACT-DATEPICKER
+//                                                 <div className={`relative flex items-center rounded-xl border transition-all h-[46px] bg-app-bg overflow-visible ${errors[field.name] ? 'border-red-500 bg-red-500/5 focus-within:ring-1 focus-within:ring-red-500/50' : 'border-border-subtle focus-within:border-accent-blue focus-within:ring-1 focus-within:ring-accent-blue'}`}>
+//                                                     <DatePicker
+//                                                         selected={formValues[field.name] ? new Date(formValues[field.name]) : null}
+//                                                         onChange={(date: Date | null) => handleInputChange(field.name, date)} // 👉 Type yahan fix ki gayi hai
+//                                                         minDate={minDate}
+//                                                         showTimeSelect={field.type === 'datetime-local'}
+//                                                         timeFormat="HH:mm"
+//                                                         timeIntervals={15}
+//                                                         timeCaption="time"
+//                                                         dateFormat={field.type === 'datetime-local' ? "MMMM d, yyyy h:mm aa" : "MMMM d, yyyy"}
+//                                                         placeholderText={field.placeholder || "Select a date"}
+//                                                         className="w-full h-[46px] px-4 bg-transparent text-text-main text-sm font-medium outline-none rounded-xl cursor-pointer"
+//                                                         wrapperClassName="w-full"
+//                                                         popperPlacement="bottom-start"
+//                                                         popperProps={{
+//                                                             strategy: 'fixed'
+//                                                         }}
+//                                                     />
+//                                                     <div className="absolute right-4 pointer-events-none text-text-muted">
+//                                                         <CalendarDays size={18} />
+//                                                     </div>
+//                                                 </div>
+
 //                                             ) : (
-//                                                 // <input
-//                                                 //     type={field.type === 'textarea' ? 'text' : field.type}
-//                                                 //     placeholder={field.placeholder}
-//                                                 //     value={formValues[field.name] || ''}
-//                                                 //     onChange={(e) => handleInputChange(field.name, e.target.value)}
-//                                                 //     className={`w-full px-8 py-5 rounded-[1.5rem] border-2 bg-app-bg text-text-main text-sm font-bold transition-all outline-none ${errors[field.name] ? 'border-red-500 bg-red-500/5 shadow-inner' : 'border-border-subtle focus:border-accent-blue'}`}
-//                                                 // />
 //                                                 <input
 //                                                     type={field.type === 'files' ? 'file' : (field.type === 'textarea' ? 'text' : field.type)}
 //                                                     placeholder={field.placeholder}
@@ -398,15 +316,14 @@
 //                                                             handleInputChange(field.name, e.target.value);
 //                                                         }
 //                                                     }}
-//                                                     className={`w-full px-8 py-5 rounded-[1.5rem] border-2 bg-app-bg text-text-main text-sm font-bold transition-all outline-none ${errors[field.name] ? 'border-red-500 bg-red-500/5 shadow-inner' : 'border-border-subtle focus:border-accent-blue'} ${field.type === 'files' ? 'file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-accent-blue file:text-white hover:file:bg-hover-blue cursor-pointer' : ''}`}
+//                                                     className={`w-full h-[46px] px-4 rounded-xl border bg-app-bg text-text-main text-sm font-medium transition-all outline-none focus:ring-1 focus:ring-accent-blue ${errors[field.name] ? 'border-red-500 bg-red-500/5 focus:ring-red-500/50 focus:border-red-500' : 'border-border-subtle focus:border-accent-blue'} ${field.type === 'files' ? 'file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-accent-blue/10 file:text-accent-blue hover:file:bg-accent-blue/20 cursor-pointer text-text-muted' : ''}`}
 //                                                 />
 //                                             )}
 
-//                                             {/* ERROR FEEDBACK UI */}
 //                                             {errors[field.name] && (
-//                                                 <div className="flex items-center gap-2 mt-2 ml-4 text-red-500 animate-in fade-in slide-in-from-top-1">
-//                                                     <AlertCircle size={12} />
-//                                                     <span className="text-[10px] font-black uppercase tracking-widest">{errors[field.name]}</span>
+//                                                 <div className="flex items-center gap-1.5 mt-1 text-red-500">
+//                                                     <AlertCircle size={14} />
+//                                                     <span className="text-xs font-medium">{errors[field.name]}</span>
 //                                                 </div>
 //                                             )}
 //                                         </div>
@@ -416,22 +333,91 @@
 //                         </div>
 //                     </div>
 
-//                     {/* FOOTER */}
-//                     <div className="px-10 py-12 bg-app-bg flex flex-col sm:flex-row justify-end gap-6 border-t border-border-subtle mt-auto">
-//                         <button type="button" onClick={onClose} className="px-10 py-5 text-[11px] font-black uppercase tracking-[0.25em] text-text-muted hover:text-text-main transition-all">Discard</button>
+//                     <div className="px-8 py-5 bg-app-bg/90 flex justify-end gap-3 border-t border-border-subtle z-10 backdrop-blur-md">
 //                         <button
-//                             disabled={loading}
-//                             className="px-14 py-5 bg-accent-blue text-white rounded-[1.75rem] font-black text-[11px] uppercase tracking-[0.3em] hover:bg-hover-blue disabled:opacity-50 flex items-center justify-center gap-4 transition-all active:scale-95 shadow-xl shadow-accent-blue/20"
+//                             type="button"
+//                             onClick={onClose}
+//                             className="px-6 py-2.5 text-sm font-semibold text-text-muted hover:text-text-main hover:bg-border-subtle rounded-xl transition-colors"
 //                         >
-//                             {loading ? <Loader2 size={20} className="animate-spin" /> : (submitText || 'Apply Changes')}
+//                             Cancel
+//                         </button>
+//                         <button
+//                             type="submit"
+//                             disabled={loading}
+//                             className="px-6 py-2.5 bg-accent-blue text-white rounded-xl font-semibold text-sm hover:bg-hover-blue disabled:opacity-60 flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
+//                         >
+//                             {loading && <Loader2 size={16} className="animate-spin" />}
+//                             {submitText || 'Save Changes'}
 //                         </button>
 //                     </div>
 //                 </form>
 //             </div>
-//             <style jsx>{`
-//                 .custom-blue-calendar::-webkit-calendar-picker-indicator {
-//                     filter: invert(0.5) sepia(1) saturate(5) hue-rotate(200deg);
-//                     cursor: pointer;
+
+//            {/* OVERRIDING REACT-DATEPICKER DEFAULT STYLES FOR THEME CONSISTENCY */}
+//             <style jsx global>{`
+//                 .react-datepicker-wrapper {
+//                     width: 100%;
+//                 }
+//                 .react-datepicker-popper {
+//                     z-index: 999999 !important;
+//                 }
+//                 .react-datepicker {
+//                     font-family: inherit;
+//                     background-color: var(--card-bg, #1a1b1e);
+//                     border: 1px solid var(--border-subtle, #2d3748);
+//                     border-radius: 12px;
+//                     color: var(--text-main, #e5e7eb);
+//                     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+//                     overflow: hidden;
+//                 }
+//                 .react-datepicker__header {
+//                     background-color: var(--app-bg, #111827);
+//                     border-bottom: 1px solid var(--border-subtle, #2d3748);
+//                     padding-top: 12px;
+//                 }
+//                 .react-datepicker__current-month, .react-datepicker-time__header, .react-datepicker-year-header {
+//                     color: var(--text-main, #e5e7eb);
+//                     font-weight: 700;
+//                     font-size: 0.875rem;
+//                 }
+//                 .react-datepicker__day-name, .react-datepicker__day, .react-datepicker__time-name {
+//                     color: var(--text-main, #e5e7eb);
+//                 }
+//                 .react-datepicker__day:hover, .react-datepicker__month-text:hover, .react-datepicker__quarter-text:hover, .react-datepicker__year-text:hover {
+//                     background-color: var(--border-subtle, #374151);
+//                     border-radius: 6px;
+//                 }
+//                 .react-datepicker__day--selected, .react-datepicker__day--in-selecting-range, .react-datepicker__day--in-range, .react-datepicker__month-text--selected, .react-datepicker__month-text--in-selecting-range, .react-datepicker__month-text--in-range, .react-datepicker__quarter-text--selected, .react-datepicker__quarter-text--in-selecting-range, .react-datepicker__quarter-text--in-range, .react-datepicker__year-text--selected, .react-datepicker__year-text--in-selecting-range, .react-datepicker__year-text--in-range {
+//                     background-color: #3b82f6; /* accent-blue */
+//                     color: white;
+//                     border-radius: 6px;
+//                     font-weight: bold;
+//                 }
+//                 .react-datepicker__day--disabled, .react-datepicker__month-text--disabled, .react-datepicker__quarter-text--disabled, .react-datepicker__year-text--disabled {
+//                     color: var(--text-muted, #9ca3af);
+//                     opacity: 0.3;
+//                 }
+                
+//                 /* 👉 FIXED FOR BOTH LIGHT AND DARK MODES */
+//                 .react-datepicker__time-container {
+//                     border-left: 1px solid var(--border-subtle, #2d3748);
+//                     background-color: var(--card-bg, #1a1b1e); 
+//                 }
+//                 .react-datepicker__time-container .react-datepicker__time {
+//                     background-color: var(--card-bg, #1a1b1e) !important; 
+//                 }
+//                 .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item {
+//                     padding: 8px 12px;
+//                     color: var(--text-main, #e5e7eb); 
+//                 }
+//                 .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item:hover {
+//                     background-color: var(--border-subtle, #374151) !important;
+//                     color: var(--text-main) !important; /* 👉 FORCED WHITE HATA DIYA HAI */
+//                 }
+//                 .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--selected {
+//                     background-color: #3b82f6 !important;
+//                     color: white !important;
+//                     font-weight: bold;
 //                 }
 //             `}</style>
 //         </div>
@@ -440,23 +426,27 @@
 
 // export default GenericFormModal;
 
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
     X,
     Loader2,
-    ChevronDown,
-    Plus,
-    Trash2,
-    CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    CalendarDays
 } from 'lucide-react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import QuizBuilderField from './QuizBuilderField';
+import CustomDropdown from './CustomDropdown';
+
+import countryCodesData from '@/lib/countryCodesData.json';
 
 export interface FormField {
     name: string;
     label: string;
-    type: 'text' | 'number' | 'textarea' | 'select' | 'files' | 'checkbox-group' | 'date' | 'time' | 'datetime-local' | 'quiz-builder';
+    type: 'text' | 'number' | 'textarea' | 'select' | 'files' | 'checkbox-group' | 'date' | 'time' | 'datetime-local' | 'quiz-builder' | 'phone';
     placeholder?: string;
     required?: boolean;
     options?: { label: string; value: string | number }[];
@@ -473,183 +463,6 @@ interface GenericFormModalProps {
     submitText?: string;
 }
 
-// ==========================================
-// 1. QUESTION BUILDER COMPONENT
-// ==========================================
-const QuestionBuilder = ({
-    onChange,
-    initialData,
-    error 
-}: {
-    onChange: (data: any) => void;
-    initialData?: any[];
-    error?: string;
-}) => {
-    const [questions, setQuestions] = useState<any[]>([]);
-
-    useEffect(() => {
-        if (initialData && initialData.length > 0) {
-            setQuestions(initialData);
-        }
-    }, [initialData]);
-
-    const updateAndNotify = (updated: any[]) => {
-        setQuestions(updated);
-        onChange(updated);
-    };
-
-    const addQuestion = () => {
-        const newQuestions = [
-            ...questions,
-            { question_text: '', question_type: 'MCQ', marks: 5, options: [] }
-        ];
-        updateAndNotify(newQuestions);
-    };
-
-    const removeQuestion = (index: number) => {
-        const updated = questions.filter((_, i) => i !== index);
-        updateAndNotify(updated);
-    };
-
-    const toggleCorrectOption = (qIndex: number, oIndex: number) => {
-        const updated = [...questions];
-        const currentQ = updated[qIndex];
-
-        if (currentQ.question_type === 'MCQ') {
-            currentQ.options.forEach((opt: any, i: number) => {
-                opt.is_correct = i === oIndex;
-            });
-        } else {
-            currentQ.options[oIndex].is_correct = !currentQ.options[oIndex].is_correct;
-        }
-        updateAndNotify(updated);
-    };
-
-    const addOption = (qIndex: number) => {
-        const updated = [...questions];
-        if (!updated[qIndex].options) updated[qIndex].options = [];
-        updated[qIndex].options.push({ option_text: '', is_correct: false });
-        updateAndNotify(updated);
-    };
-
-    const removeOption = (qIndex: number, oIndex: number) => {
-        const updated = [...questions];
-        updated[qIndex].options = updated[qIndex].options.filter((_: any, i: number) => i !== oIndex);
-        updateAndNotify(updated);
-    };
-
-    const updateQuestionText = (index: number, text: string) => {
-        const updated = [...questions];
-        updated[index].question_text = text;
-        updateAndNotify(updated);
-    };
-
-    const updateQuestionType = (index: number, type: string) => {
-        const updated = [...questions];
-        updated[index].question_type = type;
-        updateAndNotify(updated);
-    };
-
-    const updateMarks = (index: number, val: number) => {
-        const updated = [...questions];
-        updated[index].marks = val;
-        updateAndNotify(updated);
-    };
-
-    const updateOptionText = (qIndex: number, oIndex: number, text: string) => {
-        const updated = [...questions];
-        updated[qIndex].options[oIndex].option_text = text;
-        updateAndNotify(updated);
-    };
-
-    return (
-        <div className={`md:col-span-2 space-y-4 bg-app-bg p-6 rounded-xl border transition-all ${error ? 'border-red-500/50 bg-red-50/50' : 'border-border-subtle'}`}>
-            <div className="flex justify-between items-center mb-2">
-                <div>
-                    <h3 className="text-sm font-bold text-text-main">Quiz Designer</h3>
-                    {error && <p className="text-xs font-medium text-red-500 mt-1">{error}</p>}
-                </div>
-                <button
-                    type="button"
-                    onClick={addQuestion}
-                    className="flex items-center gap-2 px-4 py-2 bg-accent-blue text-white rounded-lg text-xs font-semibold hover:bg-hover-blue transition-colors shadow-sm active:scale-95"
-                >
-                    <Plus size={16} strokeWidth={2.5} /> Add Question
-                </button>
-            </div>
-
-            {questions.map((q, qIndex) => (
-                <div key={qIndex} className="bg-card-bg p-6 rounded-xl border border-border-subtle shadow-sm space-y-5 animate-in slide-in-from-top-2 duration-300">
-                    <div className="flex justify-between gap-4 items-end">
-                        <input
-                            placeholder="Enter Question Text..."
-                            className="flex-1 text-base font-semibold bg-transparent outline-none border-b border-border-subtle focus:border-accent-blue py-2 transition-colors text-text-main placeholder:font-normal"
-                            value={q.question_text || ''}
-                            onChange={(e) => updateQuestionText(qIndex, e.target.value)}
-                        />
-                        <button type="button" onClick={() => removeQuestion(qIndex)} className="text-text-muted hover:text-red-500 p-2 transition-colors rounded-lg hover:bg-red-50">
-                            <Trash2 size={18} />
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <select
-                            className="w-full p-2.5 bg-app-bg text-text-main rounded-lg text-sm font-medium outline-none border border-border-subtle focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/10 transition-all"
-                            value={q.question_type}
-                            onChange={(e) => updateQuestionType(qIndex, e.target.value)}
-                        >
-                            <option value="MCQ">MCQ (Single Choice)</option>
-                            <option value="BCQ">BCQ (Multiple Choice)</option>
-                            <option value="SHORT">Short Answer</option>
-                        </select>
-                        <input
-                            type="number"
-                            className="w-full p-2.5 bg-app-bg text-text-main rounded-lg text-sm font-medium outline-none border border-border-subtle focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/10 transition-all"
-                            placeholder="Marks"
-                            value={q.marks || 0}
-                            onChange={(e) => updateMarks(qIndex, Number(e.target.value))}
-                        />
-                    </div>
-
-                    {q.question_type !== 'SHORT' && (
-                        <div className="space-y-3 pl-2 border-l-2 border-border-subtle">
-                            {q.options?.map((opt: any, oIndex: number) => (
-                                <div key={oIndex} className="flex items-center gap-3 bg-app-bg p-2 rounded-lg border border-border-subtle">
-                                    <input
-                                        placeholder="Option Text..."
-                                        className="flex-1 text-sm font-medium bg-transparent px-3 outline-none text-text-main"
-                                        value={opt.option_text || ''}
-                                        onChange={(e) => updateOptionText(qIndex, oIndex, e.target.value)}
-                                    />
-                                    <div className="flex gap-1.5 pr-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleCorrectOption(qIndex, oIndex)}
-                                            title="Mark as correct"
-                                            className={`p-1.5 rounded-md transition-colors ${opt.is_correct ? 'bg-emerald-500 text-white' : 'bg-card-bg text-text-muted hover:bg-border-subtle border border-border-subtle'}`}
-                                        >
-                                            <CheckCircle2 size={16} />
-                                        </button>
-                                        <button type="button" onClick={() => removeOption(qIndex, oIndex)} className="p-1.5 text-text-muted hover:text-red-500 hover:bg-red-50 rounded-md transition-colors">
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                            <button type="button" onClick={() => addOption(qIndex)} className="text-xs font-semibold text-accent-blue hover:text-hover-blue transition-colors ml-2 mt-2 flex items-center gap-1">
-                                <Plus size={14} /> Add Option
-                            </button>
-                        </div>
-                    )}
-                </div>
-            ))}
-        </div>
-    );
-};
-
-// ==========================================
-// 2. MAIN MODAL COMPONENT
-// ==========================================
 const GenericFormModal: React.FC<GenericFormModalProps> = ({
     isOpen,
     onClose,
@@ -661,13 +474,28 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
     submitText
 }) => {
     const [formValues, setFormValues] = useState<Record<string, any>>({});
-    const [errors, setErrors] = useState<Record<string, string>>({}); 
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const getMinDateTime = () => {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        return now.toISOString().slice(0, 16);
+    // 👉 STATE FOR PHONE NUMBER DROPDOWN
+    const [selectedDialCode, setSelectedDialCode] = useState<string>("+92");
+
+    // Convert JSON country data to CustomDropdown format
+    const countryOptions = countryCodesData.map((country: any) => ({
+        label: `${country.emoji} ${country.dial_code}`,
+        value: country.dial_code
+    }));
+
+    // Get max allowed length for currently selected country
+    const getMaxPhoneLength = () => {
+        const country: any = countryCodesData.find((c: any) => c.dial_code === selectedDialCode);
+        if (country && country.phoneLength) {
+            return Math.max(...country.phoneLength);
+        }
+        return 15;
     };
+
+    // Calculate current datetime to prevent past selection
+    const minDate = new Date();
 
     useEffect(() => {
         if (isOpen && initialData) {
@@ -676,33 +504,61 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
             const endTime = initialData.end_time || initialData.endTime;
             const totalMarks = initialData.total_marks || initialData.totalMarks;
 
-            if (startTime) formattedData.start_time = new Date(startTime).toISOString().slice(0, 16);
-            if (endTime) formattedData.end_time = new Date(endTime).toISOString().slice(0, 16);
+            // Using Date objects for react-datepicker instead of ISO strings
+            if (startTime) formattedData.start_time = new Date(startTime);
+            if (endTime) formattedData.end_time = new Date(endTime);
             if (totalMarks) formattedData.total_marks = totalMarks;
+
+            if (initialData.contactNumber) {
+                const numStr = String(initialData.contactNumber);
+                const sortedCodes = [...countryCodesData].sort((a: any, b: any) => b.dial_code.length - a.dial_code.length);
+                const matchedCountry = sortedCodes.find((c: any) => numStr.startsWith(c.dial_code));
+
+                if (matchedCountry) {
+                    setSelectedDialCode(matchedCountry.dial_code);
+                    formattedData.contactNumber = numStr.replace(matchedCountry.dial_code, '').trim();
+                }
+            }
 
             setFormValues(formattedData);
         } else {
             setFormValues({});
             setErrors({});
+            setSelectedDialCode("+92");
         }
     }, [isOpen, initialData]);
 
-    // --- PROFESSIONAL VALIDATION LOGIC ---
     const validate = () => {
         const newErrors: Record<string, string> = {};
         const nameRegex = /^[A-Za-z\s'-]+$/;
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const phoneRegex = /^\+?[0-9]{11,13}$/;
+
+        // 👉 CHECKING FOR END TIME LOGIC BEFORE LOOPING
+        const hasStartTime = fields.some(f => f.name === 'start_time' || f.name === 'startTime');
+        const hasEndTime = fields.some(f => f.name === 'end_time' || f.name === 'endTime');
+
+        if (hasStartTime && hasEndTime) {
+            const startVal = formValues['start_time'] || formValues['startTime'];
+            const endVal = formValues['end_time'] || formValues['endTime'];
+
+            if (startVal && endVal) {
+                const start = new Date(startVal).getTime();
+                const end = new Date(endVal).getTime();
+
+                if (end <= start) {
+                    const endFieldName = formValues['end_time'] !== undefined ? 'end_time' : 'endTime';
+                    newErrors[endFieldName] = "End time must be after the start time.";
+                }
+            }
+        }
 
         fields.forEach((field) => {
             const val = formValues[field.name];
 
-            // 1. Required Check
             if (field.required && (!val || (Array.isArray(val) && val.length === 0))) {
                 newErrors[field.name] = `${field.label} is required.`;
             }
 
-            // 2. CreateStudentDto Logic Implementation
             if (val) {
                 if (field.name === 'firstName' || field.name === 'lastName') {
                     if (val.length < 3 || val.length > 50) newErrors[field.name] = "Must be 3-50 characters.";
@@ -714,8 +570,15 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                     else if (val.length < 5 || val.length > 100) newErrors[field.name] = "Email volume out of range.";
                 }
 
-                if (field.name === 'contactNumber' && !phoneRegex.test(val)) {
-                    newErrors[field.name] = "Invalid contact format (e.g. +923001234567).";
+                if (field.type === 'phone' || field.name === 'contactNumber') {
+                    const cleanNum = val.replace(/\D/g, '');
+                    const selectedCountry: any = countryCodesData.find((c: any) => c.dial_code === selectedDialCode);
+
+                    if (!/^\d+$/.test(val)) {
+                        newErrors[field.name] = "Only numbers are allowed.";
+                    } else if (selectedCountry && !selectedCountry.phoneLength.includes(cleanNum.length)) {
+                        newErrors[field.name] = `Invalid length for ${selectedCountry.name} (${selectedCountry.phoneLength.join(' or ')} digits).`;
+                    }
                 }
 
                 if (field.name === 'password' && val.length < 6) {
@@ -723,7 +586,6 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                 }
             }
 
-            // 3. Quiz Builder Deep Audit
             if (field.type === 'quiz-builder' && val) {
                 const quiz = val as any[];
                 quiz.forEach((q, idx) => {
@@ -754,16 +616,31 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validation Guard
         if (!validate()) return;
 
         const formData = new FormData();
         fields.forEach((field) => {
-            const value = formValues[field.name];
+            let value = formValues[field.name];
+
             if (field.type === 'files') {
                 if (value instanceof File) formData.append(field.name, value);
             } else if (field.type === 'quiz-builder') {
                 formData.append(field.name, JSON.stringify(value || []));
+            }
+            else if (field.type === 'phone' || field.name === 'contactNumber') {
+                if (value) {
+                    const cleanNum = String(value).replace(/\D/g, '');
+                    formData.append(field.name, `${selectedDialCode}${cleanNum}`);
+                }
+            }
+            // 👉 FORMATTING DATE FOR API SUBMISSION
+            else if (field.type === 'date' || field.type === 'datetime-local') {
+                if (value) {
+                    formData.append(field.name, new Date(value).toISOString());
+                }
+            }
+            else if (field.type === 'number' && value !== null && value !== undefined && value !== "") {
+                formData.append(field.name, value.toString());
             } else if (value !== null && value !== undefined && value !== "") {
                 formData.append(field.name, value.toString());
             }
@@ -782,7 +659,6 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-card-bg w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-border-subtle">
 
-                {/* HEADER */}
                 <div className="flex justify-between items-center px-8 py-6 border-b border-border-subtle bg-app-bg/50">
                     <div>
                         <h2 className="text-xl font-bold tracking-tight text-text-main">{title}</h2>
@@ -793,38 +669,98 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                     </button>
                 </div>
 
-                {/* FORM BODY */}
-                <form onSubmit={handleSubmit} className="overflow-y-auto no-scrollbar bg-card-bg flex-1">
-                    <div className="px-8 py-6 space-y-6">
+                <form onSubmit={handleSubmit} className="overflow-y-visible bg-card-bg flex-1">
+                    <div className="px-8 py-6 space-y-6 max-h-[60vh] overflow-y-auto no-scrollbar">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                            {fields.map((field) => (
+                            {fields.map((field) => {
+                                // Determine minDate for end_time based on start_time
+                                let dynamicMinDate = minDate;
+                                if (field.name === 'end_time' || field.name === 'endTime') {
+                                    const startVal = formValues['start_time'] || formValues['startTime'];
+                                    if (startVal) {
+                                        dynamicMinDate = new Date(startVal);
+                                    }
+                                }
+
+                                return (
                                 <div key={field.name} className={(field.type === 'textarea' || field.type === 'quiz-builder') ? 'md:col-span-2' : ''}>
                                     <label className="block text-xs font-semibold text-text-main mb-2">
                                         {field.label} {field.required && <span className="text-red-500 ml-0.5">*</span>}
                                     </label>
 
                                     {field.type === 'quiz-builder' ? (
-                                        <QuestionBuilder
+                                        <QuizBuilderField
                                             initialData={formValues[field.name]}
                                             onChange={(data) => handleInputChange(field.name, data)}
                                             error={errors[field.name]}
                                         />
                                     ) : (
-                                        <div className="space-y-1">
+                                        <div className="space-y-1 relative">
                                             {field.type === 'select' ? (
-                                                <div className="relative">
-                                                    <select
+                                                <CustomDropdown
+                                                    options={field.options || []}
+                                                    value={formValues[field.name] || ''}
+                                                    onChange={(val) => handleInputChange(field.name, val)}
+                                                    placeholder={`Select ${field.label}`}
+                                                    className={errors[field.name] ? 'border-red-500 bg-red-500/10 focus:ring-red-500/20' : 'bg-app-bg'}
+                                                />
+                                            ) : field.type === 'phone' || field.name === 'contactNumber' ? (
+
+                                                <div className={`flex items-stretch h-[46px] rounded-xl border transition-all ${errors[field.name] ? 'border-red-500 bg-red-500/5 focus-within:ring-1 focus-within:ring-red-500/50' : 'border-border-subtle focus-within:border-accent-blue focus-within:ring-1 focus-within:ring-accent-blue bg-app-bg'}`}>
+                                                    <div className="w-[140px] shrink-0 border-r border-border-subtle h-full">
+                                                        <CustomDropdown
+                                                            options={countryOptions}
+                                                            value={selectedDialCode}
+                                                            onChange={(val) => {
+                                                                setSelectedDialCode(String(val));
+                                                                handleInputChange(field.name, '');
+                                                            }}
+                                                            placeholder="Code"
+                                                            className="border-0 shadow-none hover:bg-transparent rounded-r-none h-full bg-transparent px-3"
+                                                        />
+                                                    </div>
+
+                                                    <input
+                                                        type="text"
+                                                        placeholder={field.placeholder || "Enter phone number"}
                                                         value={formValues[field.name] || ''}
-                                                        onChange={(e) => handleInputChange(field.name, e.target.value)}
-                                                        className={`w-full px-4 py-3 rounded-xl border bg-app-bg text-sm font-medium text-text-main appearance-none cursor-pointer transition-all outline-none focus:ring-2 focus:ring-accent-blue/20 ${errors[field.name] ? 'border-red-500 bg-red-50' : 'border-border-subtle focus:border-accent-blue'}`}
-                                                    >
-                                                        <option value="" disabled>Select {field.label}</option>
-                                                        {field.options?.map((opt) => (
-                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                        ))}
-                                                    </select>
-                                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={18} />
+                                                        maxLength={getMaxPhoneLength()}
+                                                        onChange={(e) => {
+                                                            const max = getMaxPhoneLength();
+                                                            let clean = e.target.value.replace(/[^0-9]/g, '');
+                                                            if (clean.length > max) clean = clean.slice(0, max);
+                                                            handleInputChange(field.name, clean);
+                                                        }}
+                                                        className="w-full h-full px-4 bg-transparent text-text-main text-sm font-medium outline-none rounded-r-xl"
+                                                    />
                                                 </div>
+
+                                            ) : field.type === 'date' || field.type === 'datetime-local' ? (
+
+                                                // 👉 MODERN CALENDAR WITH REACT-DATEPICKER
+                                                <div className={`relative flex items-center rounded-xl border transition-all h-[46px] bg-app-bg overflow-visible ${errors[field.name] ? 'border-red-500 bg-red-500/5 focus-within:ring-1 focus-within:ring-red-500/50' : 'border-border-subtle focus-within:border-accent-blue focus-within:ring-1 focus-within:ring-accent-blue'}`}>
+                                                    <DatePicker
+                                                        selected={formValues[field.name] ? new Date(formValues[field.name]) : null}
+                                                        onChange={(date: Date | null) => handleInputChange(field.name, date)}
+                                                        minDate={dynamicMinDate}
+                                                        showTimeSelect={field.type === 'datetime-local'}
+                                                        timeFormat="h:mm aa" // Changed to 12-hour format with AM/PM
+                                                        timeIntervals={15}
+                                                        timeCaption="time"
+                                                        dateFormat={field.type === 'datetime-local' ? "MMMM d, yyyy h:mm aa" : "MMMM d, yyyy"}
+                                                        placeholderText={field.placeholder || "Select a date"}
+                                                        className="w-full h-[46px] px-4 bg-transparent text-text-main text-sm font-medium outline-none rounded-xl cursor-pointer"
+                                                        wrapperClassName="w-full"
+                                                        popperPlacement="bottom-start"
+                                                        popperProps={{
+                                                            strategy: 'fixed'
+                                                        }}
+                                                    />
+                                                    <div className="absolute right-4 pointer-events-none text-text-muted">
+                                                        <CalendarDays size={18} />
+                                                    </div>
+                                                </div>
+
                                             ) : (
                                                 <input
                                                     type={field.type === 'files' ? 'file' : (field.type === 'textarea' ? 'text' : field.type)}
@@ -838,11 +774,10 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                                                             handleInputChange(field.name, e.target.value);
                                                         }
                                                     }}
-                                                    className={`w-full px-4 py-3 rounded-xl border bg-app-bg text-text-main text-sm font-medium transition-all outline-none focus:ring-2 focus:ring-accent-blue/20 ${errors[field.name] ? 'border-red-500 bg-red-50' : 'border-border-subtle focus:border-accent-blue'} ${field.type === 'files' ? 'file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-accent-blue/10 file:text-accent-blue hover:file:bg-accent-blue/20 cursor-pointer text-text-muted' : ''}`}
+                                                    className={`w-full h-[46px] px-4 rounded-xl border bg-app-bg text-text-main text-sm font-medium transition-all outline-none focus:ring-1 focus:ring-accent-blue ${errors[field.name] ? 'border-red-500 bg-red-500/5 focus:ring-red-500/50 focus:border-red-500' : 'border-border-subtle focus:border-accent-blue'} ${field.type === 'files' ? 'file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-accent-blue/10 file:text-accent-blue hover:file:bg-accent-blue/20 cursor-pointer text-text-muted' : ''}`}
                                                 />
                                             )}
 
-                                            {/* ERROR FEEDBACK UI */}
                                             {errors[field.name] && (
                                                 <div className="flex items-center gap-1.5 mt-1 text-red-500">
                                                     <AlertCircle size={14} />
@@ -852,15 +787,14 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                                         </div>
                                     )}
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     </div>
 
-                    {/* FOOTER */}
-                    <div className="px-8 py-5 bg-app-bg/80 flex justify-end gap-3 border-t border-border-subtle mt-auto sticky bottom-0">
-                        <button 
-                            type="button" 
-                            onClick={onClose} 
+                    <div className="px-8 py-5 bg-app-bg/90 flex justify-end gap-3 border-t border-border-subtle z-10 backdrop-blur-md">
+                        <button
+                            type="button"
+                            onClick={onClose}
                             className="px-6 py-2.5 text-sm font-semibold text-text-muted hover:text-text-main hover:bg-border-subtle rounded-xl transition-colors"
                         >
                             Cancel
@@ -876,10 +810,72 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                     </div>
                 </form>
             </div>
-            <style jsx>{`
-                .custom-blue-calendar::-webkit-calendar-picker-indicator {
-                    filter: invert(0.5) sepia(1) saturate(5) hue-rotate(200deg);
-                    cursor: pointer;
+
+            {/* OVERRIDING REACT-DATEPICKER DEFAULT STYLES FOR THEME CONSISTENCY */}
+            <style jsx global>{`
+                .react-datepicker-wrapper {
+                    width: 100%;
+                }
+                .react-datepicker-popper {
+                    z-index: 999999 !important;
+                }
+                .react-datepicker {
+                    font-family: inherit;
+                    background-color: var(--card-bg, #1a1b1e);
+                    border: 1px solid var(--border-subtle, #2d3748);
+                    border-radius: 12px;
+                    color: var(--text-main, #e5e7eb);
+                    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+                    overflow: hidden;
+                }
+                .react-datepicker__header {
+                    background-color: var(--app-bg, #111827);
+                    border-bottom: 1px solid var(--border-subtle, #2d3748);
+                    padding-top: 12px;
+                }
+                .react-datepicker__current-month, .react-datepicker-time__header, .react-datepicker-year-header {
+                    color: var(--text-main, #e5e7eb);
+                    font-weight: 700;
+                    font-size: 0.875rem;
+                }
+                .react-datepicker__day-name, .react-datepicker__day, .react-datepicker__time-name {
+                    color: var(--text-main, #e5e7eb);
+                }
+                .react-datepicker__day:hover, .react-datepicker__month-text:hover, .react-datepicker__quarter-text:hover, .react-datepicker__year-text:hover {
+                    background-color: var(--border-subtle, #374151);
+                    border-radius: 6px;
+                }
+                .react-datepicker__day--selected, .react-datepicker__day--in-selecting-range, .react-datepicker__day--in-range, .react-datepicker__month-text--selected, .react-datepicker__month-text--in-selecting-range, .react-datepicker__month-text--in-range, .react-datepicker__quarter-text--selected, .react-datepicker__quarter-text--in-selecting-range, .react-datepicker__quarter-text--in-range, .react-datepicker__year-text--selected, .react-datepicker__year-text--in-selecting-range, .react-datepicker__year-text--in-range {
+                    background-color: #3b82f6; /* accent-blue */
+                    color: white;
+                    border-radius: 6px;
+                    font-weight: bold;
+                }
+                .react-datepicker__day--disabled, .react-datepicker__month-text--disabled, .react-datepicker__quarter-text--disabled, .react-datepicker__year-text--disabled {
+                    color: var(--text-muted, #9ca3af);
+                    opacity: 0.3;
+                }
+                
+                /* 👉 FIXED FOR BOTH LIGHT AND DARK MODES */
+                .react-datepicker__time-container {
+                    border-left: 1px solid var(--border-subtle, #2d3748);
+                    background-color: var(--card-bg, #1a1b1e); 
+                }
+                .react-datepicker__time-container .react-datepicker__time {
+                    background-color: var(--card-bg, #1a1b1e) !important; 
+                }
+                .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item {
+                    padding: 8px 12px;
+                    color: var(--text-main, #e5e7eb); 
+                }
+                .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item:hover {
+                    background-color: var(--border-subtle, #374151) !important;
+                    color: var(--text-main) !important; /* 👉 FORCED WHITE HATA DIYA HAI */
+                }
+                .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--selected {
+                    background-color: #3b82f6 !important;
+                    color: white !important;
+                    font-weight: bold;
                 }
             `}</style>
         </div>

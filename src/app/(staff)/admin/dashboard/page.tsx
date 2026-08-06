@@ -23,7 +23,7 @@ export default function AdminDashboard() {
                     <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
                         <div className="space-y-4">
                             <span className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">System Superuser</span>
-                            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none text-text-main">Central Control Node</h1>
+                            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none text-text-main">Central Control Admin</h1>
                             <p className="text-text-muted text-sm font-medium uppercase tracking-widest">Monitor system-wide metrics, users, and financial logs.</p>
                         </div>
                         <div className="flex gap-4">

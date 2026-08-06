@@ -70,10 +70,10 @@ const TeacherManagement = () => {
             if (selectedUser) {
                 if (!data.password) delete data.password;
                 await updateTeachersAPI(selectedUser.id, data);
-                showToast("Faculty updated", "success");
+                showToast("Teacher Information updated", "success");
             } else {
                 await createTeachersAPI(data);
-                showToast("Faculty registered", "success");
+                showToast("Teacher registered", "success");
             }
             setModalOpen(false);
             dispatch(fetchAllTeachers({ page: 1, limit: 10 }));
@@ -104,7 +104,7 @@ const TeacherManagement = () => {
             </div>
 
             <DeleteConfirmationModal isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={async () => { await deleteTeachersAPI(deleteId!); dispatch(fetchAllTeachers({ page: 1, limit: 10 })); setDeleteId(null); }} title={deleteName} />
-            <GenericFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={selectedUser ? "Modify Teacher Information" : "Initialize Teacher Information"} fields={teacherFields} onSubmit={handleSubmit} loading={modalLoading} initialData={selectedUser} />
+            <GenericFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={selectedUser ? "Edit Teacher Information" : "Add New Teacher"} fields={teacherFields} onSubmit={handleSubmit} loading={modalLoading} initialData={selectedUser} />
         </div>
     );
 };

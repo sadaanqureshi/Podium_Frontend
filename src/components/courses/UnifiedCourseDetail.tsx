@@ -54,12 +54,12 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
                 { name: 'title', label: 'Session Title', type: 'text', required: true },
                 { name: 'description', label: 'Agenda', type: 'textarea' },
                 { name: 'liveStart', label: 'Start Date & Time', type: 'datetime-local', required: true },
-                { name: 'lectureOrder', label: 'Order', type: 'number', required: true }
+                // { name: 'lectureOrder', label: 'Order', type: 'number', required: true }
             ] : [
                 { name: 'title', label: 'Lecture Title', type: 'text', required: true },
                 { name: 'description', label: 'Description', type: 'textarea' },
-                { name: 'video', label: 'Video File', type: 'files', required: !itemToEdit },
-                { name: 'lectureOrder', label: 'Order', type: 'number', required: true }
+                { name: 'video', label: 'Video URL', type: 'text', required: !itemToEdit },
+                // { name: 'lectureOrder', label: 'Order', type: 'number', required: true }
             ],
             assignment: [
                 { name: 'title', label: 'Assignment Title', type: 'text', required: true },
@@ -93,6 +93,7 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
         setModalLoading(true);
         try {
             const rawData = Object.fromEntries(formData);
+            console.log(rawData)
             if (itemToEdit) {
                 if (modalType === 'quiz') await updateQuizAPI(itemToEdit.id, { ...rawData, questions: JSON.parse(rawData.questions as string), total_marks: Number(rawData.total_marks), is_Published: rawData.is_Published === 'true' });
                 else if (modalType === 'lecture') await updateLectureAPI(itemToEdit.id, courseId, formData);
@@ -111,9 +112,8 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
                 else if (modalType === 'lecture') {
                     if (activeLectureSubTab === 'online') await createLiveLectureAPI({ title: rawData.title, description: rawData.description, courseId: courseId, sectionId: selectedSectionId, liveStart: new Date(rawData.liveStart as string).toISOString(), lectureOrder: Number(rawData.lectureOrder) });
                     else {
-                        formData.append('courseId', courseId.toString());
-                        formData.append('sectionId', selectedSectionId!.toString());
-                        await createRecordedLectureAPI(formData);
+
+                        await createRecordedLectureAPI({ title: rawData.title, videoUrl: rawData.video, description: rawData.description, courseId: courseId, sectionId: selectedSectionId, lectureOrder: Number(rawData.lectureOrder) });
                     }
                 }
                 else if (modalType === 'resource') await createResourceAPI(courseId, selectedSectionId!, formData);
@@ -201,7 +201,7 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
                 </div>
 
                 {/* Content Box: Professional layout, subtle shadows, structured alignment */}
-                <div className="bg-card-bg rounded-xl border border-border-subtle p-5 md:p-8 min-h-[450px]">
+                <div className="bg-card-bg rounded-xl border border-border-subtle p-5 md:p-8 min-h-[350px]">
                     {activeTab === 'students' && role !== 'student' ? (
                         <StudentsTab
                             data={data?.enrollments || []}

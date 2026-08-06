@@ -49,14 +49,13 @@ const CourseList: React.FC<CourseListProps> = ({ courses, basePath, showProgress
         <Card
           key={course.id}
           id={course.id}
-          title={course.courseName}
-          author={course.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}` : 'Instructor'}
-          description={course.shortDescription}
-          rating={course.avgRating || 0}
-          imageUrl={course.coverImg}
-          // FIX: Progress aur totalLectures ko sahi pass karein
+          title={course.title || course.courseName || 'Untitled Course'} 
+          author={course.author}
+          description={course.description || course.shortDescription || 'No description available'}
+          rating={course.rating || course.avgRating || 0}
+          imageUrl={course.imageUrl || course.coverImg || '/blankcover.jpg'}
           progress={course.progress || 0}
-          totalLessons={course.totalLectures || 0}
+          totalLessons={course.totalLessons || course.totalLectures || 0}
           basePath={basePath}
           showProgress={showProgress}
         />

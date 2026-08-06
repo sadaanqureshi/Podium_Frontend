@@ -1,3 +1,141 @@
+// 'use client';
+
+// import React, { useEffect, use, useMemo } from 'react';
+// import { Loader2, ArrowLeft, AlertCircle, FileText, Download } from 'lucide-react';
+// import Link from 'next/link';
+// import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+
+// // Redux Action
+// import { fetchCourseContent } from '@/lib/store/features/courseSlice';
+
+// const ResourceDetailPage = ({ params }: { params: Promise<any> }) => {
+//     const resolvedParams = use(params);
+//     const { courseId, sectionId, resourceId } = resolvedParams;
+//     const dispatch = useAppDispatch();
+
+//     // # 1. REDUX STATE ACCESS
+//     const { courseContent, loading: reduxLoading } = useAppSelector((state) => state.course);
+//     const fullData = courseContent[Number(courseId)];
+
+//     // # 2. FIND RESOURCE FROM CACHE
+//     const resource = useMemo(() => {
+//         if (!fullData?.sections) return null;
+//         const section = fullData.sections.find((s: any) => s.id === Number(sectionId));
+//         return section?.resources?.find((r: any) => r.id === Number(resourceId));
+//     }, [fullData, sectionId, resourceId]);
+
+//     // # 3. HYDRATION
+//     useEffect(() => {
+//         if (!fullData && courseId) {
+//             dispatch(fetchCourseContent(Number(courseId)));
+//         }
+//     }, [courseId, fullData, dispatch]);
+
+//     const isPageLoading = reduxLoading.courseContent[Number(courseId)];
+
+//     if (!resource && isPageLoading) return (
+//         <div className="h-screen flex flex-col items-center justify-center bg-app-bg">
+//             <Loader2 className="animate-spin text-accent-blue mb-4" size={48} />
+//             <p className="text-text-muted font-black uppercase tracking-widest text-[10px]">Loading Resource...</p>
+//         </div>
+//     );
+
+//     if (!resource && !isPageLoading) return (
+//         <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-app-bg">
+//             <AlertCircle className="text-red-500 mb-4" size={48} />
+//             <h2 className="text-xl font-black text-text-main uppercase tracking-tight">Material Not Found</h2>
+//             <p className="text-text-muted mt-2 mb-6 max-w-md font-medium text-sm">Yeh content abhi available nahi hai ya link expire ho chuka hai.</p>
+//             <Link href={`/teacher/assigned-courses/${courseId}`} className="px-8 py-3 bg-accent-blue text-white rounded-2xl font-black text-xs uppercase shadow-xl shadow-accent-blue/20 hover:bg-hover-blue transition-all">Back to Course</Link>
+//         </div>
+//     );
+
+//     return (
+//         <div className="p-6 md:p-12 max-w-5xl mx-auto space-y-8 animate-in fade-in pb-20 bg-app-bg min-h-screen text-text-main">
+
+//             {/* Navigation Header */}
+//             <div className="flex items-center justify-between">
+//                 <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-xs uppercase tracking-widest transition-all group">
+//                     <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Course Details
+//                 </Link>
+//             </div>
+
+//             {/* Main Resource Card: bg-card-bg logic */}
+//             <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle shadow-2xl overflow-hidden animate-in zoom-in-95">
+
+//                 {/* Header: Now using the hero-registry-card for Light Blue / Navy switch */}
+//                 <div className="hero-registry-card p-10 relative overflow-hidden">
+//                     <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+
+//                     <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
+//                         <div className="w-24 h-24 bg-card-bg/10 backdrop-blur-md rounded-3xl flex items-center justify-center border border-card-bg/20 shadow-inner">
+//                             <FileText size={48} className="text-accent-blue" />
+//                         </div>
+//                         <div>
+//                             <span className="px-3 py-1 bg-accent-blue/20 text-accent-blue rounded-full text-[9px] font-black uppercase tracking-[0.2em] border border-accent-blue/30">Material Details</span>
+//                             <h1 className="text-3xl md:text-4xl font-black mt-3 tracking-tight leading-tight uppercase leading-none">{resource.title}</h1>
+//                             <p className="text-text-muted/70 text-sm mt-2 font-medium tracking-wide uppercase">{resource.resourceType || 'PDF File'}</p>
+//                         </div>
+//                     </div>
+//                 </div>
+
+//                 <div className="p-8 md:p-12 space-y-12">
+//                     {/* File Info Section */}
+//                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+//                         <div className="space-y-6">
+//                             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-blue border-b-2 border-border-subtle pb-2 w-fit">Overview</h3>
+//                             <p className="text-text-muted font-medium leading-relaxed text-lg">
+//                                 {resource.description || "Is resource ke liye koi description available nahi hai."}
+//                             </p>
+//                         </div>
+
+//                         {/* Metadata Box: Using bg-app-bg for layered depth */}
+//                         <div className="bg-app-bg rounded-3xl p-8 border border-border-subtle space-y-6">
+//                             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">File Info</h3>
+//                             <div className="space-y-4">
+//                                 <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+//                                     <span className="text-xs text-text-muted font-bold uppercase tracking-tighter">Filename</span>
+//                                     <span className="text-xs text-text-main font-black truncate max-w-[200px]">{resource.fileName || 'Material_Asset'}</span>
+//                                 </div>
+//                                 <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+//                                     <span className="text-xs text-text-muted font-bold uppercase tracking-tighter">Format</span>
+//                                     <span className="text-xs text-accent-blue font-black uppercase">{resource.resourceType || 'PDF'}</span>
+//                                 </div>
+//                                 <div className="flex items-center justify-between">
+//                                     <span className="text-xs text-text-muted font-bold uppercase tracking-tighter">Size</span>
+//                                     <span className="text-xs text-text-main font-black">
+//                                         {resource.fileSize ? `${(resource.fileSize / 1048576).toFixed(2)} MB` : 'Secure Storage'}
+//                                     </span>
+//                                 </div>
+//                             </div>
+//                         </div>
+//                     </div>
+
+//                     {/* Download Action Section */}
+//                     <div className="pt-8 border-t border-border-subtle flex flex-col items-center space-y-4">
+//                         <a
+//                             href={resource.fileUrl}
+//                             target="_blank"
+//                             rel="noopener noreferrer"
+//                             className="group relative inline-flex items-center gap-4 px-16 py-6 bg-accent-blue text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-hover-blue transition-all shadow-xl shadow-accent-blue/20 active:scale-95"
+//                         >
+//                             <Download size={24} className="group-hover:translate-y-1 transition-transform" />
+//                             <span>Retrieve File</span>
+//                             <div className="absolute inset-0 rounded-3xl bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+//                         </a>
+//                         <p className="text-[9px] text-text-muted font-bold uppercase tracking-[0.2em]">
+//                             Secure Connection Active
+//                         </p>
+//                     </div>
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// };
+
+// export default ResourceDetailPage;
+
+
+
 'use client';
 
 import React, { useEffect, use, useMemo } from 'react';
@@ -34,98 +172,95 @@ const ResourceDetailPage = ({ params }: { params: Promise<any> }) => {
     const isPageLoading = reduxLoading.courseContent[Number(courseId)];
 
     if (!resource && isPageLoading) return (
-        <div className="h-screen flex flex-col items-center justify-center bg-app-bg">
-            <Loader2 className="animate-spin text-accent-blue mb-4" size={48} />
-            <p className="text-text-muted font-black uppercase tracking-widest text-[10px]">Loading Resource...</p>
+        <div className="h-full min-h-[80vh] flex flex-col items-center justify-center bg-app-bg">
+            <Loader2 className="animate-spin text-accent-blue mb-4" size={40} />
+            <p className="text-text-muted font-bold uppercase tracking-widest text-[10px]">Loading Resource...</p>
         </div>
     );
 
     if (!resource && !isPageLoading) return (
-        <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-app-bg">
+        <div className="h-full min-h-[80vh] flex flex-col items-center justify-center p-6 text-center bg-app-bg">
             <AlertCircle className="text-red-500 mb-4" size={48} />
-            <h2 className="text-xl font-black text-text-main uppercase tracking-tight">Material Not Found</h2>
-            <p className="text-text-muted mt-2 mb-6 max-w-md font-medium text-sm">Yeh content abhi available nahi hai ya link expire ho chuka hai.</p>
-            <Link href={`/teacher/assigned-courses/${courseId}`} className="px-8 py-3 bg-accent-blue text-white rounded-2xl font-black text-xs uppercase shadow-xl shadow-accent-blue/20 hover:bg-hover-blue transition-all">Back to Course</Link>
+            <h2 className="text-xl font-extrabold text-text-main tracking-tight mb-2">Material Not Found</h2>
+            <p className="text-text-muted text-sm mb-6 max-w-md">This content is currently unavailable or the link has expired.</p>
+            <Link href={`/teacher/assigned-courses/${courseId}`} className="text-accent-blue font-bold text-sm hover:underline transition-all">Return to Course</Link>
         </div>
     );
 
     return (
-        <div className="p-6 md:p-12 max-w-5xl mx-auto space-y-8 animate-in fade-in pb-20 bg-app-bg min-h-screen text-text-main">
+        <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-top-4 pb-20 bg-app-bg h-full text-text-main">
 
             {/* Navigation Header */}
-            <div className="flex items-center justify-between">
-                <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-xs uppercase tracking-widest transition-all group">
-                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Course Details
-                </Link>
-            </div>
+            <Link href={`/teacher/assigned-courses/${courseId}`} className="inline-flex items-center gap-2 text-text-muted hover:text-accent-blue font-bold text-xs uppercase tracking-wider transition-colors mb-2">
+                <ArrowLeft size={16} /> Back to Course
+            </Link>
 
-            {/* Main Resource Card: bg-card-bg logic */}
-            <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle shadow-2xl overflow-hidden animate-in zoom-in-95">
-
-                {/* Header: Now using the hero-registry-card for Light Blue / Navy switch */}
-                <div className="hero-registry-card p-10 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
-
-                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
-                        <div className="w-24 h-24 bg-card-bg/10 backdrop-blur-md rounded-3xl flex items-center justify-center border border-card-bg/20 shadow-inner">
-                            <FileText size={48} className="text-accent-blue" />
-                        </div>
-                        <div>
-                            <span className="px-3 py-1 bg-accent-blue/20 text-accent-blue rounded-full text-[9px] font-black uppercase tracking-[0.2em] border border-accent-blue/30">Material Details</span>
-                            <h1 className="text-3xl md:text-4xl font-black mt-3 tracking-tight leading-tight uppercase leading-none">{resource.title}</h1>
-                            <p className="text-text-muted/70 text-sm mt-2 font-medium tracking-wide uppercase">{resource.resourceType || 'PDF File'}</p>
-                        </div>
+            {/* Main Resource Card: Clean & Minimal */}
+            <div className="bg-card-bg rounded-2xl border border-border-subtle shadow-sm overflow-hidden flex flex-col md:flex-row">
+                
+                {/* Left Side: Icon & Actions (replaces the top hero) */}
+                <div className="md:w-1/3 bg-app-bg p-8 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-border-subtle text-center relative overflow-hidden">
+                    {/* Subtle glow */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-accent-blue/5 rounded-full blur-[40px] pointer-events-none"></div>
+                    
+                    <div className="w-20 h-20 bg-card-bg rounded-2xl flex items-center justify-center border border-border-subtle shadow-sm mb-6 relative z-10">
+                        <FileText size={36} className="text-accent-blue" />
                     </div>
+                    
+                    <h2 className="text-xl font-extrabold tracking-tight text-text-main mb-2 leading-tight">
+                        {resource.title}
+                    </h2>
+                    <span className="px-3 py-1 bg-card-bg border border-border-subtle text-text-muted rounded-md text-[10px] font-bold uppercase tracking-widest mb-8">
+                        {resource.resourceType || 'Document'}
+                    </span>
+
+                    <a
+                        href={resource.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-3.5 bg-accent-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md shadow-accent-blue/20 hover:bg-hover-blue transition-colors flex items-center justify-center gap-2 relative z-10"
+                    >
+                        <Download size={18} /> Download File
+                    </a>
                 </div>
 
-                <div className="p-8 md:p-12 space-y-12">
-                    {/* File Info Section */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                        <div className="space-y-6">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-blue border-b-2 border-border-subtle pb-2 w-fit">Overview</h3>
-                            <p className="text-text-muted font-medium leading-relaxed text-lg">
-                                {resource.description || "Is resource ke liye koi description available nahi hai."}
-                            </p>
-                        </div>
+                {/* Right Side: Details & Metadata */}
+                <div className="md:w-2/3 p-8 space-y-8 flex flex-col justify-center">
+                    
+                    {/* Overview Section */}
+                    <div>
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-text-main mb-3 flex items-center gap-2 border-b border-border-subtle pb-3">
+                            <span className="w-1.5 h-1.5 rounded-full bg-accent-blue"></span> Overview
+                        </h3>
+                        <p className="text-text-muted font-medium text-sm leading-relaxed whitespace-pre-wrap">
+                            {resource.description || "No detailed description provided for this resource."}
+                        </p>
+                    </div>
 
-                        {/* Metadata Box: Using bg-app-bg for layered depth */}
-                        <div className="bg-app-bg rounded-3xl p-8 border border-border-subtle space-y-6">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">File Info</h3>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-                                    <span className="text-xs text-text-muted font-bold uppercase tracking-tighter">Filename</span>
-                                    <span className="text-xs text-text-main font-black truncate max-w-[200px]">{resource.fileName || 'Material_Asset'}</span>
-                                </div>
-                                <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-                                    <span className="text-xs text-text-muted font-bold uppercase tracking-tighter">Format</span>
-                                    <span className="text-xs text-accent-blue font-black uppercase">{resource.resourceType || 'PDF'}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs text-text-muted font-bold uppercase tracking-tighter">Size</span>
-                                    <span className="text-xs text-text-main font-black">
-                                        {resource.fileSize ? `${(resource.fileSize / 1048576).toFixed(2)} MB` : 'Secure Storage'}
-                                    </span>
-                                </div>
+                    {/* Metadata Section */}
+                    <div>
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-text-main mb-4 flex items-center gap-2 border-b border-border-subtle pb-3">
+                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span> File Details
+                        </h3>
+                        
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center py-1">
+                                <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Filename</span>
+                                <span className="text-sm font-bold text-text-main truncate max-w-[200px] sm:max-w-xs">{resource.fileName || 'Material_Asset'}</span>
+                            </div>
+                            <div className="flex justify-between items-center py-1">
+                                <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Format</span>
+                                <span className="text-sm font-bold text-accent-blue uppercase">{resource.resourceType || 'PDF'}</span>
+                            </div>
+                            <div className="flex justify-between items-center py-1">
+                                <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Size</span>
+                                <span className="text-sm font-bold text-text-main">
+                                    {resource.fileSize ? `${(resource.fileSize / 1048576).toFixed(2)} MB` : 'Unknown'}
+                                </span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Download Action Section */}
-                    <div className="pt-8 border-t border-border-subtle flex flex-col items-center space-y-4">
-                        <a
-                            href={resource.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group relative inline-flex items-center gap-4 px-16 py-6 bg-accent-blue text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-hover-blue transition-all shadow-xl shadow-accent-blue/20 active:scale-95"
-                        >
-                            <Download size={24} className="group-hover:translate-y-1 transition-transform" />
-                            <span>Retrieve File</span>
-                            <div className="absolute inset-0 rounded-3xl bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        </a>
-                        <p className="text-[9px] text-text-muted font-bold uppercase tracking-[0.2em]">
-                            Secure Connection Active
-                        </p>
-                    </div>
                 </div>
             </div>
         </div>
