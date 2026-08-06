@@ -284,12 +284,15 @@ export const createSectionAPI = async (courseId: number, data: { title: string; 
     return await response.json();
 };
 
-export const createRecordedLectureAPI = async (formData: FormData) => {
+export const createRecordedLectureAPI = async (data: any) => {
     const token = getToken();
     const response = await fetch(`${API_URL}/lectures/recorded`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData,
+        headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error('Recorded lecture upload fail ho gaya');
     return await response.json();
@@ -336,6 +339,29 @@ export const createAssignmentAPI = async (formData: FormData) => {
     });
     if (!response.ok) throw new Error('Assignment upload fail ho gaya');
     return await response.json();
+};
+
+// lib/api/apiService.ts
+
+export const getAssignmentDetailsAPI = async (assignmentId: number) => {
+    const token = getToken()
+    try {
+        const response = await fetch(`http://localhost:3006/assignments/${assignmentId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // Agar token required ho tou uncomment kar lein
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch assignment details");
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Assignment Fetch API Error:", error);
+        throw error;
+    }
 };
 
 // # ASSIGNMENT DELETE API
@@ -1004,4 +1030,27 @@ export const updateTransactionStatusAPI = async (transactionId: number | string,
 
     if (!response.ok) throw new Error('Failed to update transaction status');
     return await response.json();
+};
+
+export const markLectureCompleteAPI = async (lectureId: number) => {
+    const token = getToken();
+    try {
+        // Agar aap custom axios instance use kar rahay hain toh axios.post use kar lein
+        // e.g., await axiosInstance.post(`/lectures/${lectureId}/complete`);
+        const response = await fetch(`http://localhost:3006/lectures/${lectureId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // Zaroorat parne par token zaroor bhejein
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to mark lecture as complete");
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Complete API Error:", error);
+        throw error;
+    }
 };

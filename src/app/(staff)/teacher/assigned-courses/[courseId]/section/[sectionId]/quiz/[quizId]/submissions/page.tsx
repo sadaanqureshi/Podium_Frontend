@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, use } from 'react';
-import { Loader2, ArrowLeft, CheckCircle2, UserCheck, AlertCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, UserCheck, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { getQuizSubmissionsAPI } from '@/lib/api/apiService';
 import UserManagementTable from '@/components/ui/UserManagementTable';
@@ -29,21 +29,29 @@ const QuizSubmissionsPage = ({ params }: { params: Promise<any> }) => {
         {
             header: 'Student Profile', key: 'studentName',
             render: (item: any) => (
-                <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-2xl bg-accent-blue/10 text-accent-blue flex items-center justify-center font-black text-xs border border-accent-blue/20 uppercase">{item.studentName?.[0]}</div>
-                    <p className="font-black text-sm text-text-main uppercase tracking-tight">{item.studentName}</p>
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-accent-blue/10 text-accent-blue flex items-center justify-center font-bold text-xs border border-accent-blue/20 uppercase shrink-0">
+                        {item.studentName?.[0] || 'S'}
+                    </div>
+                    <p className="font-bold text-sm text-text-main capitalize tracking-tight">{item.studentName}</p>
                 </div>
             )
         },
         {
             header: 'Timestamp', key: 'submittedAt',
-            render: (item: any) => <span className="text-[11px] font-black text-text-muted">{new Date(item.submittedAt).toLocaleString('en-GB')}</span>
+            render: (item: any) => (
+                <span className="text-xs font-bold text-text-muted">
+                    {new Date(item.submittedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </span>
+            )
         },
         {
             header: 'Score', key: 'totalMarks', align: 'center' as const,
             render: (item: any) => (
-                <div className={`px-4 py-1 rounded-full text-[10px] font-black border uppercase tracking-widest ${item.isGraded ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-amber-500/10 border-amber-500/20 text-amber-500'}`}>
-                    {item.isGraded ? `${item.totalMarks} Marks` : 'Pending Review'}
+                <div className="flex justify-center">
+                    <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide ${item.isGraded ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>
+                        {item.isGraded ? `${item.totalMarks} Marks` : 'Pending Review'}
+                    </span>
                 </div>
             )
         },
@@ -52,30 +60,59 @@ const QuizSubmissionsPage = ({ params }: { params: Promise<any> }) => {
             render: (item: any) => (
                 <Link 
                     href={`/teacher/assigned-courses/${courseId}/section/${resolvedParams.sectionId}/quiz/${quizId}/submissions/${item.id || item.attemptId}`}
-                    className="px-6 py-2.5 bg-text-main text-card-bg rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all hover:scale-105 active:scale-95"
+                    className={`inline-block px-4 py-2 rounded-lg text-[11px] font-bold tracking-wide transition-colors ${
+                        item.isGraded 
+                        ? 'bg-card-bg text-text-main border border-border-subtle hover:border-accent-blue' 
+                        : 'bg-accent-blue text-white hover:bg-accent-blue/90'
+                    }`}
                 >
-                    {item.isGraded ? 'Review Grade' : 'Initialize Audit'}
+                    {item.isGraded ? 'Review Grade' : 'Grade Audit'}
                 </Link>
             )
         }
     ];
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 bg-app-bg min-h-screen">
-            <Link href={`/teacher/assigned-courses/${courseId}/section/${resolvedParams.sectionId}/quiz/${quizId}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-xs uppercase tracking-widest transition-all">
-                <ArrowLeft size={16} /> Exit Registry
+        <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 bg-app-bg min-h-screen text-text-main animate-in fade-in slide-in-from-top-4">
+            
+            {/* Back Navigation */}
+            <Link href={`/teacher/assigned-courses/${courseId}/section/${resolvedParams.sectionId}/quiz/${quizId}`} className="inline-flex items-center gap-2 text-text-muted hover:text-accent-blue font-bold text-xs uppercase tracking-wider transition-colors mb-2">
+                <ArrowLeft size={16} /> Back to Quiz
             </Link>
 
-            <div className="hero-registry-card rounded-[2.5rem] p-8 shadow-xl border border-border-subtle">
-                <h1 className="text-3xl font-black uppercase tracking-tighter text-text-main flex items-center gap-4">
-                    <UserCheck className="text-accent-blue" size={32} /> Submission Ledger
-                </h1>
-                <p className="text-text-muted text-[10px] font-bold uppercase tracking-widest mt-2">Manage and evaluate student performance registry.</p>
+            {/* Clean Hero Header */}
+            <div className="bg-card-bg rounded-2xl p-6 md:p-8 shadow-sm border border-border-subtle relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                
+                {/* Subtle Glow */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none"></div>
+                
+                <div className="relative z-10 flex items-center gap-4">
+                    <div className="w-12 h-12 bg-app-bg rounded-xl flex items-center justify-center border border-border-subtle shrink-0 shadow-sm">
+                        <UserCheck className="text-accent-blue" size={24} />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-extrabold tracking-tight text-text-main capitalize">
+                            Submissions
+                        </h1>
+                        <p className="text-text-muted text-xs font-medium mt-1">
+                            Review and evaluate student quiz attempts.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="relative z-10 bg-app-bg border border-border-subtle px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span className="text-xs font-bold text-text-main uppercase tracking-wider">
+                        {submissions.length} Total
+                    </span>
+                </div>
             </div>
 
-            <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle shadow-2xl p-4 overflow-hidden">
+            {/* Table Container */}
+            <div className="bg-card-bg rounded-2xl border border-border-subtle shadow-sm p-4 md:p-6 overflow-hidden">
                 <UserManagementTable data={submissions} loading={loading} columnConfig={columnConfig} type="Attempt" />
             </div>
+            
         </div>
     );
 };

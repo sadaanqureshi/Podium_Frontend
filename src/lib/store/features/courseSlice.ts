@@ -107,7 +107,7 @@ export const fetchAdminMetadata = createAsyncThunk(
 );
 
 // Shared: Fetch Specific Course Content (With Cache Check)
-export const fetchCourseContent = createAsyncThunk(
+export const fetchCourseContent = createAsyncThunk( 
     'course/fetchCourseContent',
     async (courseId: number, { getState, rejectWithValue }) => {
         try {
@@ -193,7 +193,7 @@ export const courseSlice = createSlice({
                     section.resources = section.resources.filter((r: any) => r.id !== action.payload.resourceId);
                 }
             }
-        }
+        } 
     },
     extraReducers: (builder) => {
         builder

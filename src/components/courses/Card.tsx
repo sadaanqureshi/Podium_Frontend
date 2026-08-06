@@ -81,11 +81,91 @@
 
 // export default Card;
 
+// 'use client';
+// import React from 'react';
+// import Image from 'next/image';
+// import Link from 'next/link';
+// import { Star } from 'lucide-react';
+
+// interface CourseCardProps {
+//   id: number;
+//   title: string;
+//   author: string;
+//   description: string;
+//   rating: number;
+//   progress?: number;
+//   totalLessons: number;
+//   imageUrl: string;
+//   basePath: string;
+//   showProgress?: boolean;
+// }
+
+// const Card: React.FC<CourseCardProps> = ({
+//   id, title, author, description, rating, progress = 0,
+//   imageUrl, basePath, showProgress = true
+// }) => {
+//   return (
+//     <Link href={`${basePath}/${id}`} className="block h-full">
+//       <div className="w-full h-full rounded-[1.75rem] overflow-hidden shadow-sm hover:shadow-2xl border border-border-subtle bg-card-bg group transition-all duration-300">
+        
+//         {/* FIX: Image height reduced from h-48 (12rem) to h-36 (9rem) to save vertical space */}
+//         <div className="relative w-full h-38">
+//           <Image 
+//             src={imageUrl || '/blankcover.jpg'} 
+//             alt={title || "Academy Course Material"} 
+//             fill 
+//             className="object-cover group-hover:scale-105 transition-transform duration-500" 
+//             unoptimized 
+//           />
+//           {/* <div className="absolute top-2 left-2 bg-card-bg/90 backdrop-blur-md px-2.5 py-1 rounded-xl flex items-center gap-1 shadow-xl border border-border-subtle">
+//             <Star size={12} className="text-yellow-500 fill-yellow-500" />
+//             <span className="text-[11px] font-black text-text-main">{rating || 0}</span>
+//           </div> */}
+//         </div>
+
+//         {/* FIX: Content container padding changed to p-5, height calculated dynamically matching the 9rem image height */}
+//         <div className="mt-2 px-4 py-2 flex flex-col h-[calc(100%-9rem)] justify-between">
+//           <div>
+//             <p className="text-accent-blue text-[9px] font-black uppercase tracking-[0.2em] mb-1 py-1">{author}</p>
+            
+//             {/* Title size optimized to text-base and height to h-12 */}
+//             <h3 className="text-base font-black text-text-main line-clamp-2 py-1 mb-1 group-hover:text-accent-blue uppercase tracking-tight leading-tight">
+//               {title || "Untitled Course"}
+//             </h3>
+            
+//             {/* FIX: Description size increased from text-[11px] to text-xs as requested */}
+//             <p className="text-text-muted text-sm line-clamp-2 py-2 mb-4 font-medium leading-relaxed">
+//               {description}
+//             </p>
+//           </div>
+
+//           {/* Progress Section margins compacted */}
+//           {showProgress && (
+//             <div className="mt-auto">
+//               <div className="flex justify-between text-[9px] font-black text-text-muted uppercase tracking-widest mb-3">
+//                 <span>Progress Status</span>
+//                 <span className="text-accent-blue">{progress}%</span>
+//               </div>
+//               <div className="w-full bg-app-bg border border-border-subtle rounded-full h-1.5 shadow-inner">
+//                 <div 
+//                   className="bg-accent-blue h-full rounded-full transition-all duration-700 shadow-lg shadow-accent-blue/30" 
+//                   style={{ width: `${progress}%` }} 
+//                 />
+//               </div>
+//             </div>
+//           )}
+//         </div>
+//       </div>
+//     </Link>
+//   );
+// };
+
+// export default Card;
+
 'use client';
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Star } from 'lucide-react';
 
 interface CourseCardProps {
   id: number;
@@ -105,55 +185,57 @@ const Card: React.FC<CourseCardProps> = ({
   imageUrl, basePath, showProgress = true
 }) => {
   return (
-    <Link href={`${basePath}/${id}`} className="block h-full">
-      <div className="w-full h-full rounded-[1.75rem] overflow-hidden shadow-sm hover:shadow-2xl border border-border-subtle bg-card-bg group transition-all duration-300">
+    <Link href={`${basePath}/${id}`} className="block h-full outline-none">
+      {/* Reduced roundness to xl, cleaner shadow, flexbox for perfect alignment */}
+      <div className="w-full h-full flex flex-col rounded-xl overflow-hidden shadow-sm hover:shadow-lg border border-border-subtle bg-card-bg group transition-all duration-300">
         
-        {/* FIX: Image height reduced from h-48 (12rem) to h-36 (9rem) to save vertical space */}
-        <div className="relative w-full h-38">
+        {/* Image Section: Fixed elegant height */}
+        <div className="relative w-full h-40 shrink-0 border-b border-border-subtle/50">
           <Image 
             src={imageUrl || '/blankcover.jpg'} 
-            alt={title || "Academy Course Material"} 
+            alt={title || "Course Material"} 
             fill 
-            className="object-cover group-hover:scale-105 transition-transform duration-500" 
+            className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out" 
             unoptimized 
           />
-          {/* <div className="absolute top-2 left-2 bg-card-bg/90 backdrop-blur-md px-2.5 py-1 rounded-xl flex items-center gap-1 shadow-xl border border-border-subtle">
-            <Star size={12} className="text-yellow-500 fill-yellow-500" />
-            <span className="text-[11px] font-black text-text-main">{rating || 0}</span>
-          </div> */}
         </div>
 
-        {/* FIX: Content container padding changed to p-5, height calculated dynamically matching the 9rem image height */}
-        <div className="mt-2 px-4 py-2 flex flex-col h-[calc(100%-9rem)] justify-between">
-          <div>
-            <p className="text-accent-blue text-[9px] font-black uppercase tracking-[0.2em] mb-1 py-1">{author}</p>
+        {/* Content Section: Tightened spacing and dynamic growth */}
+        <div className="p-5 flex flex-col flex-grow">
+          
+          <div className="mb-4">
+            {/* Author */}
+            <p className="text-accent-blue text-[10px] font-bold uppercase tracking-wider mb-1.5">
+              {author || "Expert Faculty"}
+            </p>
             
-            {/* Title size optimized to text-base and height to h-12 */}
-            <h3 className="text-base font-black text-text-main line-clamp-2 py-1 mb-1 group-hover:text-accent-blue uppercase tracking-tight leading-tight">
+            {/* Title */}
+            <h3 className="text-lg font-bold text-text-main line-clamp-2 mb-1.5 group-hover:text-accent-blue transition-colors leading-snug">
               {title || "Untitled Course"}
             </h3>
             
-            {/* FIX: Description size increased from text-[11px] to text-xs as requested */}
-            <p className="text-text-muted text-sm line-clamp-2 py-2 mb-4 font-medium leading-relaxed">
+            {/* Description */}
+            <p className="text-text-muted text-xs line-clamp-2 font-medium leading-relaxed">
               {description}
             </p>
           </div>
 
-          {/* Progress Section margins compacted */}
+          {/* Progress Section (Always stays at the bottom nicely) */}
           {showProgress && (
-            <div className="mt-auto">
-              <div className="flex justify-between text-[9px] font-black text-text-muted uppercase tracking-widest mb-3">
-                <span>Progress Status</span>
-                <span className="text-accent-blue">{progress}%</span>
+            <div className="mt-auto pt-2">
+              <div className="flex justify-between items-end text-[10px] font-bold mb-2">
+                <span className="text-text-muted uppercase tracking-wider">Progress</span>
+                <span className="text-text-main">{progress}%</span>
               </div>
-              <div className="w-full bg-app-bg border border-border-subtle rounded-full h-1.5 shadow-inner">
+              <div className="w-full bg-app-bg border border-border-subtle rounded-full h-1.5 overflow-hidden">
                 <div 
-                  className="bg-accent-blue h-full rounded-full transition-all duration-700 shadow-lg shadow-accent-blue/30" 
+                  className="bg-accent-blue h-full rounded-full transition-all duration-700 ease-in-out" 
                   style={{ width: `${progress}%` }} 
                 />
               </div>
             </div>
           )}
+          
         </div>
       </div>
     </Link>

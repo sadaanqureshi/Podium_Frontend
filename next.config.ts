@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Yahaan aapke doosre config ho sakte hain...
-  
+
   // YEH HISSA ADD KAREIN:
   images: {
     remotePatterns: [
@@ -39,7 +39,13 @@ const nextConfig: NextConfig = {
         hostname: 'source.unsplash.com',
         port: '',
         pathname: '/**',
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 
@@ -49,7 +55,7 @@ const nextConfig: NextConfig = {
         // Jab bhi request /api/ se shuru ho
         source: '/backend-proxy/:path*',
         // Usay is AWS IP par forward kar do (Yahan apna IP confirm kar lein)
-        destination: 'http://13.232.235.218:3006/:path*', 
+        destination: 'http://13.232.235.218:3006/:path*',
       },
     ]
   },

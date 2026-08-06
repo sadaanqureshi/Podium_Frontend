@@ -90,8 +90,220 @@
 
 // export default ContentCard;
 
+// 'use client';
+// import { Edit, Trash2, PlayCircle, FileText, BookOpen, Download, ArrowRight } from 'lucide-react';
+// import Link from 'next/link';
+// import { useParams } from 'next/navigation';
+
+// interface ContentCardProps {
+//     id: number;
+//     title: string;
+//     subtitle?: string;
+//     type: 'quiz' | 'assignment' | 'resource' | 'lecture';
+//     role: 'admin' | 'teacher' | 'student';
+//     onEdit?: () => void;
+//     onDelete?: () => void;
+//     sectionId?: number;
+// }
+
+// // Icons se boxy background hata kar clean rakha hai, color hover par pop hoga
+// const iconMap = {
+//     quiz: <FileText size={18} className="text-text-muted group-hover:text-amber-500 transition-colors" />,
+//     assignment: <BookOpen size={18} className="text-text-muted group-hover:text-purple-500 transition-colors" />,
+//     resource: <Download size={18} className="text-text-muted group-hover:text-accent-blue transition-colors" />,
+//     lecture: <PlayCircle size={18} className="text-text-muted group-hover:text-emerald-500 transition-colors" />
+// };
+
+// const ContentCard = ({ id, title, subtitle, type, role, onEdit, onDelete, sectionId }: ContentCardProps) => {
+//     const params = useParams();
+    
+//     // Course ID extraction
+//     const courseId = params.courseId || params.id || params.courseid;
+
+//     // DYNAMIC PATHING
+//     const basePath = role === 'student' 
+//         ? '/student/enrolled-courses' 
+//         : role === 'admin' 
+//             ? '/admin/courses' 
+//             : '/teacher/assigned-courses';
+
+//     const detailUrl = `${basePath}/${courseId}/section/${sectionId}/${type}/${id}`;
+
+//     return (
+//         // Boxy design removed. Using subtle border-bottom and hover background
+//         <div className="group flex items-center justify-between py-3 px-3 -mx-3 border-b border-border-subtle/40 last:border-0 hover:bg-border-subtle/20 rounded-xl transition-colors cursor-pointer">
+            
+//             {/* Main Content Area */}
+//             <Link href={detailUrl} className="flex items-center gap-3.5 flex-1 min-w-0 pr-4">
+//                 <div className="flex-shrink-0 mt-0.5">
+//                     {iconMap[type]}
+//                 </div>
+//                 <div className="flex flex-col truncate">
+//                     <h4 className="font-bold text-[13px] text-text-main group-hover:text-accent-blue truncate transition-colors">
+//                         {title}
+//                     </h4>
+//                     {subtitle && (
+//                         <p className="text-[10px] text-text-muted font-medium truncate mt-0.5">
+//                             {subtitle}
+//                         </p>
+//                     )}
+//                 </div>
+//             </Link>
+
+//             {/* Actions Area */}
+//             <div className="flex items-center gap-4 flex-shrink-0">
+                
+//                 {/* Edit & Delete: Clean icons that appear smoothly on hover (desktop) or stay subtle (mobile) */}
+//                 {(role === 'admin' || role === 'teacher') && (
+//                     <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+//                         <button 
+//                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit?.(); }} 
+//                             className="p-1.5 text-text-muted hover:text-text-main transition-colors"
+//                         >
+//                             <Edit size={14} />
+//                         </button>
+//                         <button 
+//                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete?.(); }} 
+//                             className="p-1.5 text-text-muted hover:text-red-500 transition-colors"
+//                         >
+//                             <Trash2 size={14} />
+//                         </button>
+//                     </div>
+//                 )}
+
+//                 {/* Shared View Link: Minimalist text and arrow instead of a bulky button */}
+//                 <Link 
+//                     href={detailUrl} 
+//                     className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-text-muted group-hover:text-accent-blue transition-colors"
+//                 >
+//                     <span className="hidden sm:inline-block">
+//                         {role === 'student' ? 'Access' : 'View'}
+//                     </span>
+//                     <ArrowRight size={14} className="transform group-hover:translate-x-0.5 transition-transform" />
+//                 </Link>
+//             </div>
+//         </div>
+//     );
+// };
+
+// export default ContentCard;
+
+
+
+
+
+// 'use client';
+// import { Edit, Trash2, PlayCircle, FileText, BookOpen, Download, ArrowRight, CheckCircle2 } from 'lucide-react';
+// import Link from 'next/link';
+// import { useParams } from 'next/navigation';
+
+// interface ContentCardProps {
+//     id: number;
+//     title: string;
+//     subtitle?: string;
+//     type: 'quiz' | 'assignment' | 'resource' | 'lecture';
+//     role: 'admin' | 'teacher' | 'student';
+//     // 👉 ADDED PROP HERE
+//     isCompleted?: boolean; 
+//     onEdit?: () => void;
+//     onDelete?: () => void;
+//     sectionId?: number;
+// }
+
+// // Icons se boxy background hata kar clean rakha hai, color hover par pop hoga
+// const iconMap = {
+//     quiz: <FileText size={18} className="text-text-muted group-hover:text-amber-500 transition-colors" />,
+//     assignment: <BookOpen size={18} className="text-text-muted group-hover:text-purple-500 transition-colors" />,
+//     resource: <Download size={18} className="text-text-muted group-hover:text-accent-blue transition-colors" />,
+//     lecture: <PlayCircle size={18} className="text-text-muted group-hover:text-emerald-500 transition-colors" />
+// };
+
+// const ContentCard = ({ id, title, subtitle, type, role, isCompleted, onEdit, onDelete, sectionId }: ContentCardProps) => {
+//     const params = useParams();
+    
+//     // Course ID extraction
+//     const courseId = params.courseId || params.id || params.courseid;
+
+//     // DYNAMIC PATHING
+//     const basePath = role === 'student' 
+//         ? '/student/enrolled-courses' 
+//         : role === 'admin' 
+//             ? '/admin/courses' 
+//             : '/teacher/assigned-courses';
+
+//     const detailUrl = `${basePath}/${courseId}/section/${sectionId}/${type}/${id}`;
+
+//     return (
+//         // Boxy design removed. Using subtle border-bottom and hover background
+//         <div className="group flex items-center justify-between py-3 px-3 -mx-3 border-b border-border-subtle/40 last:border-0 hover:bg-border-subtle/20 rounded-xl transition-colors cursor-pointer">
+            
+//             {/* Main Content Area */}
+//             <Link href={detailUrl} className="flex items-center gap-3.5 flex-1 min-w-0 pr-4">
+//                 <div className="flex-shrink-0 mt-0.5">
+//                     {iconMap[type]}
+//                 </div>
+//                 <div className="flex flex-col truncate w-full">
+//                     {/* 👉 THE INDICATOR LOGIC ADDED HERE */}
+//                     <div className="flex items-center gap-2">
+//                         <h4 className="font-bold text-[13px] text-text-main group-hover:text-accent-blue truncate transition-colors">
+//                             {title}
+//                         </h4>
+//                         {isCompleted && (
+//                             <span className="flex-shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[8px] font-black tracking-widest uppercase">
+//                                 <CheckCircle2 size={10} /> Done
+//                             </span>
+//                         )}
+//                     </div>
+//                     {subtitle && (
+//                         <p className="text-[10px] text-text-muted font-medium truncate mt-0.5">
+//                             {subtitle}
+//                         </p>
+//                     )}
+//                 </div>
+//             </Link>
+
+//             {/* Actions Area */}
+//             <div className="flex items-center gap-4 flex-shrink-0">
+                
+//                 {/* Edit & Delete: Clean icons that appear smoothly on hover (desktop) or stay subtle (mobile) */}
+//                 {(role === 'admin' || role === 'teacher') && (
+//                     <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+//                         <button 
+//                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit?.(); }} 
+//                             className="p-1.5 text-text-muted hover:text-text-main transition-colors"
+//                         >
+//                             <Edit size={14} />
+//                         </button>
+//                         <button 
+//                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete?.(); }} 
+//                             className="p-1.5 text-text-muted hover:text-red-500 transition-colors"
+//                         >
+//                             <Trash2 size={14} />
+//                         </button>
+//                     </div>
+//                 )}
+
+//                 {/* Shared View Link: Minimalist text and arrow instead of a bulky button */}
+//                 <Link 
+//                     href={detailUrl} 
+//                     className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-text-muted group-hover:text-accent-blue transition-colors"
+//                 >
+//                     <span className="hidden sm:inline-block">
+//                         {role === 'student' ? 'Access' : 'View'}
+//                     </span>
+//                     <ArrowRight size={14} className="transform group-hover:translate-x-0.5 transition-transform" />
+//                 </Link>
+//             </div>
+//         </div>
+//     );
+// };
+
+// export default ContentCard;
+
+
+
 'use client';
-import { Edit, Trash2, PlayCircle, FileText, BookOpen, Download, ArrowRight } from 'lucide-react';
+import { Edit, Trash2, PlayCircle, FileText, BookOpen, Download, ArrowRight, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
@@ -101,20 +313,20 @@ interface ContentCardProps {
     subtitle?: string;
     type: 'quiz' | 'assignment' | 'resource' | 'lecture';
     role: 'admin' | 'teacher' | 'student';
+    isCompleted?: boolean; 
     onEdit?: () => void;
     onDelete?: () => void;
     sectionId?: number;
 }
 
-// Icons se boxy background hata kar clean rakha hai, color hover par pop hoga
 const iconMap = {
-    quiz: <FileText size={18} className="text-text-muted group-hover:text-amber-500 transition-colors" />,
-    assignment: <BookOpen size={18} className="text-text-muted group-hover:text-purple-500 transition-colors" />,
-    resource: <Download size={18} className="text-text-muted group-hover:text-accent-blue transition-colors" />,
-    lecture: <PlayCircle size={18} className="text-text-muted group-hover:text-emerald-500 transition-colors" />
+    quiz: <FileText size={16} className="text-text-muted group-hover:text-amber-500 transition-colors" />,
+    assignment: <BookOpen size={16} className="text-text-muted group-hover:text-purple-500 transition-colors" />,
+    resource: <Download size={16} className="text-text-muted group-hover:text-accent-blue transition-colors" />,
+    lecture: <PlayCircle size={16} className="text-text-muted group-hover:text-emerald-500 transition-colors" />
 };
 
-const ContentCard = ({ id, title, subtitle, type, role, onEdit, onDelete, sectionId }: ContentCardProps) => {
+const ContentCard = ({ id, title, subtitle, type, role, isCompleted, onEdit, onDelete, sectionId }: ContentCardProps) => {
     const params = useParams();
     
     // Course ID extraction
@@ -130,18 +342,26 @@ const ContentCard = ({ id, title, subtitle, type, role, onEdit, onDelete, sectio
     const detailUrl = `${basePath}/${courseId}/section/${sectionId}/${type}/${id}`;
 
     return (
-        // Boxy design removed. Using subtle border-bottom and hover background
-        <div className="group flex items-center justify-between py-3 px-3 -mx-3 border-b border-border-subtle/40 last:border-0 hover:bg-border-subtle/20 rounded-xl transition-colors cursor-pointer">
+        // Very minimal row styling, tight padding
+        <div className="group flex items-center justify-between py-2 px-3 border-b border-border-subtle/30 last:border-0 hover:bg-border-subtle/10 rounded-lg transition-colors cursor-pointer">
             
             {/* Main Content Area */}
-            <Link href={detailUrl} className="flex items-center gap-3.5 flex-1 min-w-0 pr-4">
+            <Link href={detailUrl} className="flex items-center gap-3 flex-1 min-w-0 pr-4">
                 <div className="flex-shrink-0 mt-0.5">
                     {iconMap[type]}
                 </div>
-                <div className="flex flex-col truncate">
-                    <h4 className="font-bold text-[13px] text-text-main group-hover:text-accent-blue truncate transition-colors">
-                        {title}
-                    </h4>
+                <div className="flex flex-col truncate w-full">
+                    {/* Minimalistic Indicator Logic */}
+                    <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-[13px] text-text-main group-hover:text-accent-blue truncate transition-colors">
+                            {title}
+                        </h4>
+                        {isCompleted && (
+                            <span className="flex-shrink-0 flex items-center gap-1 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
+                                <Check size={12} strokeWidth={3} /> Completed
+                            </span>
+                        )}
+                    </div>
                     {subtitle && (
                         <p className="text-[10px] text-text-muted font-medium truncate mt-0.5">
                             {subtitle}
@@ -151,30 +371,30 @@ const ContentCard = ({ id, title, subtitle, type, role, onEdit, onDelete, sectio
             </Link>
 
             {/* Actions Area */}
-            <div className="flex items-center gap-4 flex-shrink-0">
+            <div className="flex items-center gap-3 flex-shrink-0">
                 
-                {/* Edit & Delete: Clean icons that appear smoothly on hover (desktop) or stay subtle (mobile) */}
+                {/* Edit & Delete */}
                 {(role === 'admin' || role === 'teacher') && (
-                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit?.(); }} 
-                            className="p-1.5 text-text-muted hover:text-text-main transition-colors"
+                            className="p-1.5 text-text-muted hover:text-text-main transition-colors rounded-md hover:bg-app-bg"
                         >
                             <Edit size={14} />
                         </button>
                         <button 
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete?.(); }} 
-                            className="p-1.5 text-text-muted hover:text-red-500 transition-colors"
+                            className="p-1.5 text-text-muted hover:text-red-500 transition-colors rounded-md hover:bg-red-500/10"
                         >
                             <Trash2 size={14} />
                         </button>
                     </div>
                 )}
 
-                {/* Shared View Link: Minimalist text and arrow instead of a bulky button */}
+                {/* Shared View Link */}
                 <Link 
                     href={detailUrl} 
-                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-text-muted group-hover:text-accent-blue transition-colors"
+                    className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-text-muted group-hover:text-accent-blue transition-colors"
                 >
                     <span className="hidden sm:inline-block">
                         {role === 'student' ? 'Access' : 'View'}

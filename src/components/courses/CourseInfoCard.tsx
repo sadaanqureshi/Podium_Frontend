@@ -4,49 +4,53 @@ import Image from 'next/image';
 import { Star } from 'lucide-react';
 
 export const CourseInfoCard = ({ data }: { data: any }) => (
-    // Container: bg-card-bg aur border-border-subtle automatic theme sync handle karenge
-    <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle shadow-sm md:p-8 p-6 mb-8 flex flex-col md:flex-row justify-between items-start gap-8 animate-in fade-in slide-in-from-top-4">
+    // Container: Reduced rounding to 2xl, subtle border and shadow for a minimal look
+    <div className="bg-card-bg rounded-2xl border border-border-subtle shadow-sm p-6 md:p-8 mb-8 flex flex-col md:flex-row justify-between items-start gap-8 animate-in fade-in slide-in-from-top-4">
         
-        <div className="flex-1 space-y-5">
-            {/* Rating Section: Using text-text-main aur text-text-muted */}
-            <div className="flex items-center gap-1.5 text-sm font-black uppercase tracking-widest">
-                <Star size={18} className="text-yellow-400 fill-yellow-400" />
-                <span className="text-text-main">{data?.averageRating || "4.7"}</span>
-                <span className="text-text-muted opacity-60">({data?.ratingCount || "2,345"} Registry)</span>
-            </div>
-
-            <div>
-                {/* Course Name: text-text-main for high contrast */}
-                <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-text-main mb-2 uppercase leading-tight">
-                    {data?.courseName || "Loading Asset..."}
-                </h1>
-                <p className="text-xs text-text-muted font-bold uppercase tracking-wider">
-                    Lead Instructor: <span className="text-accent-blue cursor-pointer hover:underline underline-offset-4 decoration-accent-blue/30">
+        <div className="flex-1 space-y-6">
+            {/* Header Section: Rating & Instructor */}
+            <div className="flex flex-wrap items-center gap-4 text-xs font-bold">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-400/10 text-yellow-500 rounded-md">
+                    <Star size={14} className="fill-yellow-500" />
+                    <span>{data?.averageRating || "4.7"}</span>
+                </div>
+                
+                <p className="text-text-muted tracking-wide">
+                    Lead Instructor: <span className="text-accent-blue font-extrabold cursor-pointer hover:underline underline-offset-4 decoration-accent-blue/30 ml-1">
                         {data?.teacher ? `${data.teacher.firstName} ${data.teacher.lastName}` : "Expert Agent"}
                     </span>
                 </p>
             </div>
 
-            {/* Introduction Section */}
-            <div className="pt-2 border-l-4 border-accent-blue/20 pl-6">
-                <h3 className="text-sm font-black text-text-main uppercase tracking-[0.2em] mb-2">Description</h3>
+            <div>
+                {/* Course Name: Clean and bold typography */}
+                <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight text-text-main leading-snug">
+                    {data?.courseName || "Loading Asset..."}
+                </h1>
+            </div>
+
+            {/* Introduction Section: Minimalist without heavy borders */}
+            <div className="pt-2">
+                <h3 className="text-[11px] font-black text-text-muted uppercase tracking-widest mb-3">
+                    Course Description
+                </h3>
                 <p className="text-text-muted text-sm leading-relaxed max-w-2xl font-medium">
                     {data?.shortDescription || "Analyzing core fundamentals with expert-led curriculum and hands-on simulation projects."}
                 </p>
             </div>
         </div>
 
-        {/* Cover Image Container: border-card-bg taaki dark mode mein border background se match kare */}
-        <div className="relative w-full md:w-72 h-48 rounded-[2rem] overflow-hidden shadow-2xl flex-shrink-0 border-[6px] border-app-bg bg-app-bg group ">
+        {/* Cover Image Container: Standard rounding (xl) with a clean subtle border */}
+        <div className="relative w-full md:w-[320px] aspect-video md:h-48 rounded-xl overflow-hidden shadow-sm border border-border-subtle group flex-shrink-0 bg-app-bg">
             <Image 
                 src={data?.coverImg || "/blankcover.jpg"} 
                 alt="Course Visual" 
                 fill 
-                className="object-cover group-hover:scale-110 transition-transform duration-700" 
+                className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out" 
                 unoptimized 
             />
-            {/* Overlay for subtle depth in dark mode */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+            {/* Very subtle gradient overlay for depth */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none"></div>
         </div>
     </div>
 );

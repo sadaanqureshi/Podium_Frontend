@@ -186,7 +186,7 @@ const ResourceDetailPage = ({ params }: { params: Promise<any> }) => {
     );
 
     return (
-        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 animate-in fade-in pb-20 bg-app-bg min-h-screen text-text-main">
+        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 animate-in fade-in pb-20 bg-app-bg h-full text-text-main">
 
             <Link href={`/student/enrolled-courses/${courseId}`} className="inline-flex items-center gap-2 text-text-muted hover:text-text-main font-bold text-xs uppercase tracking-wider transition-colors mb-2">
                 <ArrowLeft size={16} /> Back to Course

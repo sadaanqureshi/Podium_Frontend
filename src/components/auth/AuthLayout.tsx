@@ -64,7 +64,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
         </div>
         
         <div className="relative z-10 mt-16 space-y-4">
-          <h2 className="text-3xl font-black text-text-main uppercase tracking-tighter">Knowledge Registry</h2>
+          <h2 className="text-3xl font-black text-text-main uppercase tracking-tighter">PODIUM PROFESSIONAL</h2>
           <p className="text-text-muted max-w-sm mx-auto text-sm font-medium leading-relaxed uppercase tracking-wider">
             Regardless of who you are, mastering even just one more skill results in learning gains.
           </p>
@@ -73,25 +73,25 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
       <main className="w-full lg:w-1/2 bg-app-bg flex flex-col items-center justify-center p-8 md:p-12 relative">
         <div className="w-full max-w-md space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="flex flex-col items-center lg:items-start gap-4">
+          {/* <div className="flex flex-col items-center lg:items-start gap-4">
             <div className="flex items-center gap-3">
               <span className="text-2xl font-black tracking-tighter uppercase text-text-main">
                 PODIUM <span className="text-accent-blue">PROFESSIONAL</span>
               </span>
             </div>
             <div className="h-1 w-12 bg-accent-blue rounded-full"></div>
-          </div>
+          </div> */}
 
-          <div className="bg-card-bg border border-border-subtle rounded-[2.5rem] p-8 md:p-10 shadow-2xl relative overflow-hidden">
+          <div className="bg-card-bg border border-border-subtle rounded-[0.5rem] p-8 md:p-8 shadow-2xl relative overflow-hidden">
              <div className="absolute top-0 right-0 w-32 h-32 bg-accent-blue/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
              <div className="relative z-10">
                 {children}
              </div>
           </div>
           
-          <p className="text-center text-[9px] font-black text-text-muted uppercase tracking-[0.3em] opacity-50">
+          {/* <p className="text-center text-[9px] font-black text-text-muted uppercase tracking-[0.3em] opacity-50">
             Secure Enrollment Registry System &copy; 2026
-          </p>
+          </p> */}
         </div>
       </main>
     </div>

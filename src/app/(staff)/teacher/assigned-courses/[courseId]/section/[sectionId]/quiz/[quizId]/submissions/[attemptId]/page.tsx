@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, use } from 'react';
-import { Loader2, ArrowLeft, CheckCircle2, XCircle, Info, Send, Award } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, XCircle, Send, Award, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { getQuizAttemptDetailAPI, gradeQuizAttemptAPI } from '@/lib/api/apiService';
 import { useToast } from '@/context/ToastContext';
@@ -53,6 +53,20 @@ const GradingDetailPage = ({ params }: { params: Promise<any> }) => {
         showToast("Auto-Grade completed for MCQs/BCQs", "success");
     };
 
+    // 👉 MARKS VALIDATION HANDLER
+    const handleScoreChange = (questionId: number, maxMarks: number, value: string) => {
+        const numValue = Number(value);
+        if (numValue < 0) {
+            setManualGrades(prev => ({ ...prev, [questionId]: 0 }));
+            showToast("Marks cannot be less than 0", "error");
+        } else if (numValue > maxMarks) {
+            setManualGrades(prev => ({ ...prev, [questionId]: maxMarks }));
+            showToast(`Maximum marks for this question is ${maxMarks}`, "error");
+        } else {
+            setManualGrades(prev => ({ ...prev, [questionId]: numValue }));
+        }
+    };
+
     const handleFinalSubmit = async () => {
         setSubmitting(true);
         try {
@@ -72,10 +86,8 @@ const GradingDetailPage = ({ params }: { params: Promise<any> }) => {
                 questions: questionsPayload 
             };
     
-            console.log("🚀 Deploying Payload:", payload);
-    
             await gradeQuizAttemptAPI(attemptId, payload);
-            showToast("Grade successful: Grade deployed to registry", "success");
+            showToast("Grade successfully uploaded", "success");
             
         } catch (err: any) { 
             showToast(err.message || "Deployment failed", "error"); 
@@ -83,61 +95,104 @@ const GradingDetailPage = ({ params }: { params: Promise<any> }) => {
             setSubmitting(false); 
         }
     };
-    if (loading) return <div className="h-screen flex items-center justify-center bg-app-bg"><Loader2 className="animate-spin text-accent-blue" size={48} /></div>;
+
+    if (loading) return <div className="h-screen flex items-center justify-center bg-app-bg"><Loader2 className="animate-spin text-accent-blue" size={40} /></div>;
+
+    const totalCalculatedScore = Object.values(manualGrades).reduce((a, b) => a + b, 0);
 
     return (
-        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 bg-app-bg min-h-screen text-text-main pb-20">
-            <div className="flex justify-between items-center">
-                <Link href={`/teacher/assigned-courses/${resolvedParams.courseId}/section/${resolvedParams.sectionId}/quiz/${resolvedParams.quizId}/submissions`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-xs uppercase tracking-widest">
-                    <ArrowLeft size={16} /> Back to Ledger
+        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 bg-app-bg min-h-screen text-text-main pb-20 animate-in fade-in slide-in-from-top-4">
+            
+            {/* Header Navigation & Auto-Grade */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <Link href={`/teacher/assigned-courses/${resolvedParams.courseId}/section/${resolvedParams.sectionId}/quiz/${resolvedParams.quizId}/submissions`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-bold text-xs uppercase tracking-wider transition-colors">
+                    <ArrowLeft size={16} /> Back to Submissions
                 </Link>
-                <button onClick={handleAutoGrade} className="px-6 py-2.5 bg-emerald-500 text-white rounded-xl font-black text-[10px] uppercase shadow-lg shadow-emerald-500/20 active:scale-95">Run Auto-Grade</button>
+                <button onClick={handleAutoGrade} className="px-5 py-2.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm hover:bg-emerald-500/20 transition-all flex items-center gap-2">
+                    <Zap size={16} /> Auto-Grade Selection
+                </button>
             </div>
 
-            <div className="hero-registry-card rounded-[2.5rem] p-8 shadow-xl border border-border-subtle flex justify-between items-center">
-                <div>
-                    <span className="text-[9px] font-black uppercase text-accent-blue tracking-widest">Manual Evaluation</span>
-                    <h1 className="text-3xl font-black uppercase tracking-tighter mt-1">{data.studentName}</h1>
+            {/* Hero / Summary Card */}
+            <div className="bg-card-bg rounded-2xl p-6 md:p-8 shadow-sm border border-border-subtle flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-accent-blue/5 rounded-full blur-[60px] pointer-events-none"></div>
+                
+                <div className="relative z-10">
+                    <span className="text-[10px] font-bold uppercase text-accent-blue tracking-widest bg-accent-blue/10 px-2.5 py-1 rounded-md mb-2 inline-block">
+                        Manual Evaluation
+                    </span>
+                    <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight capitalize text-text-main mt-1">
+                        {data.studentName}
+                    </h1>
                 </div>
-                <div className="text-right">
-                    <p className="text-[10px] font-black text-text-muted uppercase">Cumulative Grade Score</p>
-                    <p className="text-3xl font-black text-accent-blue">{Object.values(manualGrades).reduce((a, b) => a + b, 0)} Pts</p>
+                
+                <div className="relative z-10 text-left md:text-right bg-app-bg p-4 rounded-xl border border-border-subtle w-full md:w-auto flex items-center justify-between md:block">
+                    <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Calculated Score</p>
+                    <div className="flex items-center gap-2 text-2xl font-extrabold text-accent-blue">
+                        <Award size={24} className="text-accent-blue/50 hidden md:block" /> {totalCalculatedScore} <span className="text-sm text-text-muted font-bold ml-1">Pts</span>
+                    </div>
                 </div>
             </div>
 
-            <div className="space-y-6">
-                {data.answers.map((ans: any) => (
-                    <div key={ans.questionId} className="p-8 bg-card-bg border border-border-subtle rounded-[2.5rem] shadow-sm">
-                        <div className="flex justify-between items-start mb-6">
-                            <h3 className="font-black text-lg uppercase tracking-tight max-w-2xl">{ans.questionText}</h3>
-                            <div className="flex items-center gap-3">
-                                <span className="text-[10px] font-black text-text-muted uppercase px-3 py-1 bg-app-bg rounded-lg">Weight: {ans.marksAllocated}</span>
+            {/* Questions Grading Area */}
+            <div className="space-y-6 pt-2">
+                {data.answers.map((ans: any, index: number) => (
+                    <div key={ans.questionId} className="p-6 md:p-8 bg-card-bg border border-border-subtle rounded-2xl shadow-sm">
+                        
+                        {/* Question Header & Score Input */}
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-border-subtle/50">
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-bold text-accent-blue uppercase tracking-widest">Question {index + 1}</p>
+                                <h3 className="font-extrabold text-lg text-text-main leading-snug">{ans.questionText}</h3>
+                            </div>
+                            
+                            <div className="flex items-center gap-3 bg-app-bg border border-border-subtle p-2 rounded-xl shrink-0">
+                                <span className="text-[10px] font-bold text-text-muted uppercase px-2">Weight: {ans.marksAllocated}</span>
+                                <div className="h-6 w-px bg-border-subtle"></div>
+                                {/* 👉 REPLACED onChange with HandleScoreChange */}
                                 <input 
                                     type="number" 
-                                    value={manualGrades[ans.questionId]} 
-                                    onChange={(e) => setManualGrades({...manualGrades, [ans.questionId]: Number(e.target.value)})}
-                                    className="w-16 p-2 bg-app-bg border border-accent-blue/30 rounded-xl text-center text-xs font-black outline-none focus:border-accent-blue" 
+                                    value={manualGrades[ans.questionId] !== undefined ? manualGrades[ans.questionId] : ''} 
+                                    onChange={(e) => handleScoreChange(ans.questionId, ans.marksAllocated, e.target.value)}
+                                    className="w-16 p-1.5 bg-card-bg border border-border-subtle rounded-lg text-center text-xs font-bold outline-none focus:border-accent-blue transition-colors" 
                                 />
                             </div>
                         </div>
 
+                        {/* Question Options / Answer Area */}
                         {ans.questionType === 'SHORT' ? (
-                            <div className="p-5 bg-app-bg rounded-2xl border border-border-subtle italic text-sm text-text-muted">
-                                "{ans.studentAnswerText || 'No response protocol recorded.'}"
+                            <div className="p-4 bg-app-bg rounded-xl border border-border-subtle text-sm text-text-main font-medium leading-relaxed whitespace-pre-wrap">
+                                {ans.studentAnswerText || <span className="text-text-muted italic">No response provided.</span>}
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {ans.allOptions.map((opt: any) => {
                                     const isSelected = ans.studentSelectedOptions?.includes(opt.id);
+                                    
+                                    // Determine styling based on correctness & selection
+                                    let optionStyle = "bg-app-bg border-border-subtle text-text-muted";
+                                    let icon = <div className="w-4 h-4 rounded-full border-2 border-border-subtle shrink-0"></div>;
+
+                                    if (isSelected) {
+                                        if (opt.isCorrect) {
+                                            optionStyle = "bg-emerald-500/10 border-emerald-500/30 text-emerald-600";
+                                            icon = <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />;
+                                        } else {
+                                            optionStyle = "bg-red-500/10 border-red-500/30 text-red-500";
+                                            icon = <XCircle size={18} className="text-red-500 shrink-0" />;
+                                        }
+                                    } else if (opt.isCorrect) {
+                                        optionStyle = "bg-transparent border-emerald-500/30 text-emerald-500/60 border-dashed";
+                                        icon = <CheckCircle2 size={18} className="text-emerald-500/50 shrink-0" />;
+                                    }
+
                                     return (
-                                        <div key={opt.id} className={`p-4 rounded-2xl border-2 flex items-center justify-between text-[11px] font-black uppercase tracking-widest ${
-                                            isSelected ? (opt.isCorrect ? 'border-emerald-500/40 bg-emerald-500/5 text-emerald-500' : 'border-red-500/40 bg-red-500/5 text-red-500') : (opt.isCorrect ? 'border-emerald-500/20 bg-transparent text-emerald-500/50' : 'border-border-subtle bg-app-bg text-text-muted/40')
-                                        }`}>
+                                        <div key={opt.id} className={`p-3.5 rounded-xl border-2 flex items-center justify-between text-xs font-bold transition-colors ${optionStyle}`}>
                                             <div className="flex items-center gap-3">
-                                                {opt.isCorrect ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
-                                                {opt.text}
+                                                {icon}
+                                                <span className="leading-snug">{opt.text}</span>
                                             </div>
-                                            {isSelected && <span className="text-[8px] px-2 py-0.5 bg-current/10 rounded">STUDENT CHOICE</span>}
+                                            {isSelected && <span className="text-[9px] px-2 py-1 bg-current/10 rounded-md uppercase tracking-wider shrink-0 ml-2">Student</span>}
                                         </div>
                                     );
                                 })}
@@ -147,22 +202,28 @@ const GradingDetailPage = ({ params }: { params: Promise<any> }) => {
                 ))}
             </div>
 
-            <div className="bg-card-bg p-8 rounded-[2.5rem] border border-border-subtle space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-widest text-text-muted ml-2">Grade Comments / Feedback</label>
-                <textarea 
-                    value={comments} 
-                    onChange={(e) => setComments(e.target.value)} 
-                    rows={4} 
-                    className="w-full bg-app-bg p-6 rounded-3xl border border-border-subtle outline-none focus:border-accent-blue font-medium text-sm transition-all" 
-                    placeholder="Type mission debriefing..."
-                />
-                <button 
-                    onClick={handleFinalSubmit}
-                    disabled={submitting}
-                    className="w-full py-5 bg-accent-blue text-white rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-accent-blue/20 flex items-center justify-center gap-3 transition-all active:scale-95"
-                >
-                    {submitting ? <Loader2 className="animate-spin" /> : <><Send size={18} /> Deploy Grade to Registry</>}
-                </button>
+            {/* Final Feedback & Submit Section */}
+            <div className="bg-card-bg p-6 md:p-8 rounded-2xl border border-border-subtle shadow-sm space-y-4">
+                <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-widest text-text-main mb-2 ml-1">Feedback Comments</label>
+                    <textarea 
+                        value={comments} 
+                        onChange={(e) => setComments(e.target.value)} 
+                        rows={3} 
+                        className="w-full bg-app-bg p-4 rounded-xl border border-border-subtle outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/20 font-medium text-sm transition-all resize-none" 
+                        placeholder="Add constructive feedback for the student..."
+                    />
+                </div>
+                
+                <div className="flex justify-end pt-2">
+                    <button 
+                        onClick={handleFinalSubmit}
+                        disabled={submitting}
+                        className="w-full sm:w-auto px-10 py-3.5 bg-accent-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 transition-all hover:bg-accent-blue/90 active:scale-95 disabled:opacity-50"
+                    >
+                        {submitting ? <Loader2 className="animate-spin" size={18} /> : <><Send size={16} /> Submit Evaluation</>}
+                    </button>
+                </div>
             </div>
         </div>
     );

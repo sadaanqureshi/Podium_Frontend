@@ -206,6 +206,7 @@
 import React, { useEffect, use, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { fetchCourseContent } from '@/lib/store/features/courseSlice';
+import AvailableCourseHero from '@/components/courses/AvailableCourseHero'; 
 import { 
     Loader2, BookOpen, Clock, User, ArrowLeft, 
     ChevronRight, CheckCircle, Star, Info, ChevronDown
@@ -226,7 +227,6 @@ const AvailableCourseDetailPage = ({ params }: { params: Promise<any> }) => {
     const course = fullData?.course || fullData; 
     const sections = fullData?.sections || [];
 
-    // Collapsible Sections State (Pehla section by default open rakha hai)
     const [openSections, setOpenSections] = useState<number[]>([0]);
 
     const toggleSection = (index: number) => {
@@ -242,7 +242,7 @@ const AvailableCourseDetailPage = ({ params }: { params: Promise<any> }) => {
     }, [courseId, dispatch]);
 
     // Page Loading State
-    if (!course || loading.adminCourses) return (
+    if (!course || loading.courseContent[courseId]) return (
         <div className="h-full min-h-[80vh] flex flex-col items-center justify-center bg-app-bg">
             <Loader2 className="animate-spin text-accent-blue mb-4" size={40} />
             <p className="text-text-muted font-bold uppercase tracking-widest text-[10px]">Loading Course...</p>
@@ -251,92 +251,27 @@ const AvailableCourseDetailPage = ({ params }: { params: Promise<any> }) => {
 
     return (
         <div className="h-full bg-app-bg text-text-main pb-16">
-            {/* Header Navigation - Compact spacing */}
-            <div className="max-w-6xl mx-auto px-4 md:px-6 pt-6">
+            
+            <div className="max-w-6xl mx-auto px-4 md:px-6 pt-6 mb-6">
                 <Link href="/student/available-courses" className="inline-flex items-center gap-2 text-text-muted hover:text-accent-blue font-bold text-xs uppercase tracking-wider transition-all">
-                    <ArrowLeft size={16} /> Back to Courses
+                    <ArrowLeft size={16} /> Back to Catalog
                 </Link>
             </div>
 
-            {/* Hero Section: Compact & Humanized */}
-            <div className="max-w-6xl mx-auto px-4 md:px-6 mt-6">
-                <div className="bg-card-bg rounded-3xl p-6 md:p-10 border border-border-subtle relative overflow-hidden shadow-xl">
-                    <div className="absolute top-0 right-0 w-72 h-72 bg-accent-blue/5 rounded-full blur-[100px] -mr-32 -mt-32"></div>
-                    
-                    <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                        
-                        <div className="lg:col-span-8 space-y-6">
-                            <div className="flex flex-wrap items-center gap-3">
-                                {/* <span className="px-3 py-1 bg-accent-blue/10 text-accent-blue rounded-lg text-[10px] font-black uppercase tracking-widest border border-accent-blue/20">
-                                    Course ID: {course.id}
-                                </span> */}
-                                {/* <div className="h-1 w-1 bg-text-muted rounded-full"></div> */}
-                                <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
-                                    {course.languages || 'English'}
-                                </span>
-                            </div>
-
-                            <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tight leading-tight">
-                                {course.courseName}
-                            </h1>
-
-                            <p className="text-text-muted text-sm font-medium leading-relaxed max-w-2xl">
-                                {course.shortDescription}
-                            </p>
-
-                            <div className="flex flex-wrap gap-5 pt-2">
-                                <div className="flex items-center gap-2 text-text-main">
-                                    <User size={16} className="text-accent-blue" />
-                                    <span className="text-xs font-bold uppercase tracking-wider">
-                                        Instructor: {course.teacher?.firstName} {course.teacher?.lastName}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-text-main">
-                                    <Clock size={16} className="text-accent-blue" />
-                                    <span className="text-xs font-bold uppercase tracking-wider">
-                                        Lifetime Access
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* ENROLL BUTTON - Compact */}
-                            <div className="pt-4 flex flex-col sm:flex-row items-center sm:items-center gap-4">
-                                <Link 
-                                    href={`/student/available-courses/${courseId}/payment`}
-                                    className="px-8 py-3.5 bg-accent-blue text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-accent-blue/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 w-full sm:w-fit"
-                                >
-                                    Enroll Now <ChevronRight size={16} />
-                                </Link>
-                                <span className="text-sm text-text-main font-black uppercase tracking-widest">
-                                    ${course.price}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Visual Node - Size Reduced */}
-                        <div className="hidden lg:flex lg:col-span-4 justify-end">
-                            <div className="relative w-56 h-56 bg-app-bg rounded-3xl border border-border-subtle shadow-inner flex items-center justify-center group overflow-hidden">
-                                {course.coverImg ? (
-                                    <img src={course.coverImg} alt="Course" className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500" />
-                                ) : (
-                                    <BookOpen size={60} className="text-accent-blue opacity-20" />
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-card-bg to-transparent opacity-40"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div className="max-w-6xl mx-auto px-4 md:px-6">
+                {/* 👉 NAYA HERO COMPONENT CALL */}
+                <AvailableCourseHero course={course} />
             </div>
 
             {/* Detailed Info & Curriculum */}
-            <div className="max-w-6xl mx-auto px-4 md:px-6 mt-10 grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div className="max-w-6xl mx-auto px-4 md:px-6 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-10">
                 
                 {/* Left: About & Content */}
-                <div className="lg:col-span-2 space-y-12">
+                <div className="lg:col-span-2 space-y-10">
                     {/* About Section */}
-                    <section>
+                    <section className="bg-card-bg rounded-2xl p-6 md:p-8 border border-border-subtle shadow-sm">
                         <h3 className="text-xs font-black uppercase tracking-widest text-text-main mb-4 flex items-center gap-2 border-b border-border-subtle pb-3">
-                            <Info size={16} className="text-accent-blue"/> About This Course
+                            <Info size={16} className="text-accent-blue"/> Detailed Description
                         </h3>
                         <div className="prose prose-invert max-w-none">
                             <p className="text-text-muted text-sm font-medium leading-relaxed whitespace-pre-wrap">
@@ -347,7 +282,7 @@ const AvailableCourseDetailPage = ({ params }: { params: Promise<any> }) => {
 
                     {/* Curriculum Section - Collapsible */}
                     <section>
-                        <h3 className="text-xs font-black uppercase tracking-widest text-text-main mb-4 flex items-center gap-2 border-b border-border-subtle pb-3">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-text-main mb-4 flex items-center gap-2 border-b border-border-subtle pb-3 px-2">
                             <BookOpen size={16} className="text-accent-blue"/> Course Content ({sections.length} Sections)
                         </h3>
                         
@@ -406,25 +341,20 @@ const AvailableCourseDetailPage = ({ params }: { params: Promise<any> }) => {
                     </section>
                 </div>
 
-                {/* Right: Meta Stats */}
+                {/* Right: Meta Stats & Enrollment */}
                 <div className="space-y-6">
-                    <div className="bg-card-bg border border-border-subtle rounded-3xl p-6 md:p-8 shadow-xl sticky top-24">
+                    <div className="bg-card-bg border border-border-subtle rounded-2xl p-6 md:p-8 shadow-sm sticky top-8">
                         <h4 className="text-xs font-black uppercase tracking-widest text-text-main mb-6 border-b border-border-subtle pb-3">
-                            Course Details
+                            Enrollment Details
                         </h4>
                         
                         <div className="space-y-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2.5 bg-app-bg rounded-xl border border-border-subtle shrink-0">
-                                    <Star className="text-yellow-500" size={18} />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Average Rating</p>
-                                    <p className="text-sm font-black text-text-main">{course.avgRating || 0} / 5.0</p>
-                                </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Course Fee</span>
+                                <span className="text-xl font-black text-text-main">${course.price}</span>
                             </div>
 
-                            <div className="flex items-center gap-4">
+                            {/* <div className="flex items-center gap-4">
                                 <div className="p-2.5 bg-app-bg rounded-xl border border-border-subtle shrink-0">
                                     <Clock className="text-accent-blue" size={18} />
                                 </div>
@@ -432,15 +362,18 @@ const AvailableCourseDetailPage = ({ params }: { params: Promise<any> }) => {
                                     <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Total Content</p>
                                     <p className="text-sm font-black text-text-main">{course.totalLectures || 'N/A'} Lectures</p>
                                 </div>
-                            </div>
+                            </div> */}
 
-                            <div className="pt-4 mt-4 border-t border-border-subtle">
+                            <div className="pt-4 mt-2 border-t border-border-subtle">
                                 <Link 
                                     href={`/student/available-courses/${courseId}/payment`}
-                                    className="block w-full py-3.5 bg-text-main text-card-bg text-center rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:opacity-90 transition-opacity"
+                                    className="block w-full py-3.5 bg-accent-blue text-white text-center rounded-xl font-bold text-xs uppercase tracking-widest hover:opacity-90 transition-opacity shadow-md shadow-accent-blue/20"
                                 >
                                     Enroll Now
                                 </Link>
+                                <p className="text-[9px] text-text-muted font-bold text-center mt-3 uppercase tracking-wider">
+                                    Instant Lifetime Access
+                                </p>
                             </div>
                         </div>
                     </div>

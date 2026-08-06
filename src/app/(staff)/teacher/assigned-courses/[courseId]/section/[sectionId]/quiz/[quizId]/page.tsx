@@ -57,52 +57,70 @@ const QuizDetailPage = ({ params }: { params: Promise<any> }) => {
         finally { setModalLoading(false); }
     };
 
-    if (isInitialLoading) return <div className="h-screen flex flex-col items-center justify-center bg-app-bg"><Loader2 className="animate-spin text-accent-blue mb-4" size={48} /><p className="text-text-muted font-black uppercase tracking-widest text-[10px]">Loading Data...</p></div>;
+    if (isInitialLoading) return <div className="h-screen flex flex-col items-center justify-center bg-app-bg"><Loader2 className="animate-spin text-accent-blue mb-4" size={40} /><p className="text-text-muted font-bold uppercase tracking-widest text-[10px]">Loading Data...</p></div>;
 
-    if (!displayQuiz) return <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-app-bg"><AlertCircle className="text-red-500 mb-4" size={48} /><h2 className="text-xl font-black uppercase tracking-tight">Quiz Not Found</h2><Link href={`/teacher/assigned-courses/${courseId}`} className="mt-4 text-accent-blue font-black uppercase text-xs underline decoration-accent-blue/30 underline-offset-8">Return to Course</Link></div>;
+    if (!displayQuiz) return <div className="h-screen flex flex-col items-center justify-center p-6 text-center bg-app-bg"><AlertCircle className="text-red-500 mb-4" size={48} /><h2 className="text-xl font-extrabold tracking-tight text-text-main mb-2">Quiz Not Found</h2><Link href={`/teacher/assigned-courses/${courseId}`} className="text-accent-blue font-bold text-sm hover:underline">Return to Course</Link></div>;
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-20 bg-app-bg min-h-screen text-text-main">
-            <div className="flex justify-between items-center">
-                <Link href={`/teacher/assigned-courses/${courseId}`} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-black text-xs uppercase tracking-widest transition-all">
+        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 pb-20 bg-app-bg h-full text-text-main animate-in fade-in slide-in-from-top-4">
+            
+            {/* Header / Navigation */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <Link href={`/teacher/assigned-courses/${courseId}`} className="inline-flex items-center gap-2 text-text-muted hover:text-accent-blue font-bold text-xs uppercase tracking-wider transition-colors">
                     <ArrowLeft size={16} /> Back to Course
                 </Link>
-                <div className="flex gap-4">
-                    {/* NEW: Link to Submissions Page */}
-                    <Link href={`/teacher/assigned-courses/${courseId}/section/${resolvedParams.sectionId}/quiz/${quizId}/submissions`} className="px-6 py-2.5 bg-accent-blue text-white rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-accent-blue/20 transition-all active:scale-95">Submissions</Link>
-                    <button onClick={() => setIsEditModalOpen(true)} className="px-6 py-2.5 bg-text-main text-card-bg rounded-2xl font-black text-[10px] uppercase shadow-xl flex items-center gap-2">
-                        <Settings2 size={14} /> Structure
+                <div className="flex flex-wrap gap-3">
+                    <Link href={`/teacher/assigned-courses/${courseId}/section/${resolvedParams.sectionId}/quiz/${quizId}/submissions`} className="px-5 py-2.5 bg-accent-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm hover:bg-accent-blue/90 transition-all active:scale-95">
+                        Submissions
+                    </Link>
+                    <button onClick={() => setIsEditModalOpen(true)} className="px-5 py-2.5 bg-card-bg border border-border-subtle text-text-main rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm flex items-center gap-2 hover:border-accent-blue transition-colors">
+                        <Settings2 size={16} /> Structure
                     </button>
                 </div>
             </div>
 
-            <div className="hero-registry-card rounded-[2.5rem] p-8 md:p-12 shadow-xl border border-border-subtle relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
-                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-                    <div className="w-20 h-20 bg-accent-blue/20 rounded-3xl flex items-center justify-center border border-accent-blue/30"><ClipboardList size={40} className="text-accent-blue" /></div>
-                    <div>
-                        <span className="px-3 py-1 bg-accent-blue/20 text-accent-blue rounded-full text-[9px] font-black uppercase tracking-widest border border-accent-blue/20">Quiz Node</span>
-                        <h1 className="text-3xl md:text-5xl font-black mt-2 uppercase tracking-tighter">{displayQuiz.title}</h1>
-                        <p className="text-text-muted mt-2 max-w-xl font-medium uppercase text-[10px] tracking-wide">{displayQuiz.description}</p>
-                    </div>
+            {/* Hero Card - Minimalized */}
+            <div className="bg-card-bg rounded-2xl p-6 md:p-10 shadow-sm border border-border-subtle relative overflow-hidden flex flex-col md:flex-row items-start md:items-center gap-6">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none"></div>
+                
+                <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center border border-border-subtle shadow-sm relative z-10 shrink-0">
+                    <ClipboardList size={32} className="text-accent-blue" />
+                </div>
+                
+                <div className="relative z-10 space-y-2">
+                    <span className="inline-block px-2.5 py-1 bg-accent-blue/10 text-accent-blue rounded-md text-[10px] font-bold uppercase tracking-widest">
+                        Assessment Node
+                    </span>
+                    <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-main leading-tight capitalize">
+                        {displayQuiz.title}
+                    </h1>
+                    <p className="text-text-muted text-sm font-medium leading-relaxed max-w-2xl">
+                        {displayQuiz.description}
+                    </p>
                 </div>
             </div>
 
-            <div className="space-y-6">
+            {/* Questions List */}
+            <div className="space-y-6 pt-4">
+                <h3 className="text-sm font-extrabold uppercase tracking-widest text-text-main border-b border-border-subtle pb-3">Questions Configuration</h3>
+                
                 {displayQuiz.questions?.map((q: any, index: number) => (
-                    <div key={index} className="p-8 bg-card-bg border border-border-subtle rounded-[2.5rem] group">
-                        <div className="flex justify-between items-start mb-8 gap-4">
+                    <div key={index} className="p-6 md:p-8 bg-card-bg border border-border-subtle rounded-2xl shadow-sm">
+                        <div className="flex justify-between items-start mb-6 gap-4 border-b border-border-subtle/50 pb-4">
                             <div>
-                                <p className="text-[10px] font-black text-accent-blue uppercase tracking-widest">Question {index + 1}</p>
-                                <p className="font-black text-xl text-text-main uppercase tracking-tight">{q.question_text}</p>
+                                <p className="text-[10px] font-bold text-accent-blue uppercase tracking-widest mb-2">Question {index + 1}</p>
+                                <p className="font-extrabold text-lg text-text-main leading-snug">{q.question_text}</p>
                             </div>
-                            <span className="px-5 py-2 bg-app-bg text-text-muted rounded-2xl text-[10px] font-black border border-border-subtle uppercase tracking-widest">{q.marks} PTS</span>
+                            <span className="px-3 py-1 bg-app-bg text-text-muted rounded-lg text-[10px] font-bold border border-border-subtle uppercase tracking-widest shrink-0">
+                                {q.marks} PTS
+                            </span>
                         </div>
+                        
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {q.options?.map((opt: any, i: number) => (
-                                <div key={i} className={`p-5 rounded-3xl border-2 text-[11px] font-black uppercase tracking-widest flex items-center gap-4 ${opt.is_correct ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500' : 'bg-app-bg border-border-subtle text-text-muted'}`}>
-                                    <div className={`w-2.5 h-2.5 rounded-full ${opt.is_correct ? 'bg-emerald-500' : 'bg-text-muted/20'}`}></div>
-                                    {opt.option_text}
+                                <div key={i} className={`p-4 rounded-xl border text-[13px] font-bold flex items-center gap-3 transition-colors ${opt.is_correct ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-app-bg border-border-subtle text-text-muted'}`}>
+                                    <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${opt.is_correct ? 'bg-emerald-500' : 'bg-border-subtle'}`}></div>
+                                    <span className="leading-snug">{opt.option_text}</span>
                                 </div>
                             ))}
                         </div>
@@ -110,13 +128,14 @@ const QuizDetailPage = ({ params }: { params: Promise<any> }) => {
                 ))}
             </div>
 
+            {/* Edit Modal (Untouched Logic) */}
             <GenericFormModal
                 isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}
                 title="Modify Assessment"
                 fields={[
                     { name: 'title', label: 'Quiz Title', type: 'text', required: true },
                     { name: 'description', label: 'Quiz Description', type: 'textarea' },
-                    { name: 'total_marks', label: 'Point Volume', type: 'number', required: true },
+                    { name: 'total_marks', label: 'Total Points', type: 'number', required: true },
                     { name: 'start_time', label: 'Start Time', type: 'datetime-local' },
                     { name: 'end_time', label: 'End Time', type: 'datetime-local' },
                     { name: 'is_Published', label: 'Availability', type: 'select', options: [{ label: 'Live', value: 'true' }, { label: 'Draft', value: 'false' }] },
