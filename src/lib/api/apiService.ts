@@ -346,7 +346,7 @@ export const createAssignmentAPI = async (formData: FormData) => {
 export const getAssignmentDetailsAPI = async (assignmentId: number) => {
     const token = getToken()
     try {
-        const response = await fetch(`http://localhost:3006/assignments/${assignmentId}`, {
+        const response = await fetch(`${API_URL}/assignments/${assignmentId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -1037,7 +1037,7 @@ export const markLectureCompleteAPI = async (lectureId: number) => {
     try {
         // Agar aap custom axios instance use kar rahay hain toh axios.post use kar lein
         // e.g., await axiosInstance.post(`/lectures/${lectureId}/complete`);
-        const response = await fetch(`http://localhost:3006/lectures/${lectureId}/complete`, {
+        const response = await fetch(`${API_URL}/lectures/${lectureId}/complete`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
