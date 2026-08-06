@@ -146,16 +146,16 @@ const WebSidebar: React.FC<WebSidebarProps> = ({ onLinkClick }) => {
             </AnimatePresence>
           </li>
 
-          {/* Baaki ke Navigation Links */}
+          {/* Quizzes live inside course content (with-content) — no standalone catalog */}
           <li className="mb-2">
             <Link
-              href="/quizzes"
-              onClick={onLinkClick} // <-- 'onClick' prop add karein
-              className={`${baseNavItemClasses} ${pathname.startsWith('/quizzes') ? 'bg-[#0F172A] text-white' : ''
+              href="/student/enrolled-courses"
+              onClick={onLinkClick}
+              className={`${baseNavItemClasses} ${pathname.startsWith('/student/enrolled-courses') ? 'bg-[#0F172A] text-white' : ''
                 }`}
             >
               <NotepadText size={20} />
-              <span>Quizzes/Assessments</span>
+              <span>Quizzes in Courses</span>
             </Link>
           </li>
 

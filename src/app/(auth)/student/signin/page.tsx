@@ -179,6 +179,9 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch } from '@/lib/store/hooks';
 import { logout, setAuth } from '@/lib/store/features/authSlice';
 import { loginUser, logoutLocal } from '@/lib/api/apiService';
+import { getErrorMessage } from '@/lib/api/errorMessage';
+import { useToast } from '@/context/ToastContext';
+import { withGoogleConnectedFlag } from '@/lib/googleCalendar';
 import AuthLayout from '@/components/auth/AuthLayout';
 import AuthForm, { AuthFormField } from '@/components/auth/AuthForm'; // 👉 Importing Generic AuthForm
 import Cookies from 'js-cookie';
@@ -186,6 +189,7 @@ import Cookies from 'js-cookie';
 const SignInPage = () => {
     const router = useRouter();
     const dispatch = useAppDispatch();
+    const { showToast } = useToast();
 
     const [isLoading, setIsLoading] = useState(false);
     const [generalError, setGeneralError] = useState('');
@@ -225,21 +229,26 @@ const SignInPage = () => {
                 Cookies.set('userRole', response.user.role.roleName, { path: '/', sameSite: 'lax' });
 
                 dispatch(setAuth({
-                    user: response.user,
+                    user: withGoogleConnectedFlag(response.user, response),
                     token: response.access_token,
                     role: response.user.role.roleName,
                     sidebar: response.sidebar
                 }));
                 localStorage.removeItem('last_active_time');
                 localStorage.removeItem('access_token');
+                showToast('Signed in successfully', 'success');
                 router.replace('/student/dashboard');
             } else {
                 logoutLocal();
                 dispatch(logout());
-                setGeneralError('Unauthorized: Admins/Teachers must use their respective portals.');
+                const msg = 'Unauthorized: Admins/Teachers must use their respective portals.';
+                setGeneralError(msg);
+                showToast(msg, 'error');
             }
         } catch (err: any) {
-            setGeneralError(err.message || 'Incorrect email or password.');
+            const msg = getErrorMessage(err, 'Incorrect email or password.');
+            setGeneralError(msg);
+            showToast(msg, 'error');
         } finally {
             setIsLoading(false);
         }

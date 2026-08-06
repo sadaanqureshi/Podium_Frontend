@@ -1,7 +1,7 @@
 // src/lib/navigationConfig.ts
 import {
   LayoutDashboard, BookOpen, NotepadText, Users, Settings,
-  History, Bell, Moon, CreditCard, Megaphone, NotebookPen, BookCopy, CalendarCheck, ClipboardList, Sparkles
+  History, Bell, Moon, CreditCard, Megaphone, NotebookPen, BookCopy, CalendarCheck, ClipboardList, Sparkles, Inbox
 } from 'lucide-react';
 
 export const ICON_MAPPING: Record<string, any> = {
@@ -11,6 +11,9 @@ export const ICON_MAPPING: Record<string, any> = {
   "quizzes": NotepadText,
   "assignments": NotebookPen,
   "assignment": NotebookPen,
+  "course assignments": Inbox,
+  "course assignment": Inbox,
+  "assign courses": Inbox,
   "resources": BookCopy,
   "resource": BookCopy,
   "audit logs": History,
@@ -94,6 +97,17 @@ export const getNavLabel = (itemName: string, role?: string): string => {
 
   if (lower.includes('attendance')) return 'Attendance';
 
+  // Teacher inbox for admin-assigned courses (API may send "Course Updates")
+  if (
+    r === 'teacher' &&
+    (lower.includes('course assignment') ||
+      lower.includes('assign course') ||
+      lower.includes('course update') ||
+      (lower === 'updates' && !lower.includes('assignment')))
+  ) {
+    return 'Course Assignments';
+  }
+
   if (
     r === 'student' &&
     (lower.includes('course update') || lower === 'updates' || lower.includes('material update'))
@@ -107,6 +121,14 @@ export const getNavLabel = (itemName: string, role?: string): string => {
     !lower.includes('enrolled courses')
   ) {
     return 'Enrollment Requests';
+  }
+
+  if (r === 'teacher' && lower === 'courses management') {
+    return 'My Courses';
+  }
+
+  if (r === 'teacher' && lower === 'assigned courses') {
+    return 'My Courses';
   }
 
   return itemName;
@@ -133,6 +155,19 @@ export const getRolePath = (roleInput: any, itemName: string): string => {
     if (role === 'teacher') return '/teacher/attendance';
     if (role === 'admin') return '/admin/attendance';
     return '/student/attendance';
+  }
+
+  // --- TEACHER: course assignment inbox (before generic "assignment" folder) ---
+  // Login sidebar may send "Course Updates" / "Course Assignments" / "Assign Courses"
+  if (
+    role === 'teacher' &&
+    (name.includes('course assignment') ||
+      name.includes('assign course') ||
+      name.includes('assignment request') ||
+      name.includes('course update') ||
+      name === 'updates')
+  ) {
+    return '/teacher/course-assignments';
   }
 
   // --- STUDENT COURSE LISTS ---
@@ -165,9 +200,16 @@ export const getRolePath = (roleInput: any, itemName: string): string => {
   }
 
   // --- DYNAMIC FOLDERS ---
+  // Skip generic "assignment" when the item is the teacher course-assignment inbox
+  const isTeacherCourseAssignmentInbox =
+    role === 'teacher' &&
+    (name.includes('course assignment') ||
+      name.includes('assign course') ||
+      name.includes('course update'));
+
   const dynamicFolders = ['quiz', 'assignment', 'resource', 'profile', 'fees'];
   const matched = dynamicFolders.find((folder) => name.includes(folder));
-  if (matched) {
+  if (matched && !(matched === 'assignment' && isTeacherCourseAssignmentInbox)) {
     let folderName = matched;
     if (matched === 'quiz') folderName = 'quizzes';
     return rolePrefix ? `${rolePrefix}/${folderName}` : `/${folderName}`;
@@ -182,6 +224,7 @@ export const getRolePath = (roleInput: any, itemName: string): string => {
     'student management': '/admin/student',
     'teacher management': '/admin/teacher',
     'assigned courses': '/teacher/assigned-courses',
+    'course assignments': '/teacher/course-assignments',
     'annoucement management': role === 'admin' ? '/admin/announcements' : '/announcements',
   };
 

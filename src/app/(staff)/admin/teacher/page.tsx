@@ -8,6 +8,7 @@ import GenericFormModal, { FormField } from '@/components/ui/GenericFormModal';
 import UserManagementTable from '@/components/ui/UserManagementTable';
 import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 import { useToast } from '@/context/ToastContext';
+import { getErrorMessage } from '@/lib/api/errorMessage';
 
 const TeacherManagement = () => {
     const dispatch = useAppDispatch();
@@ -77,7 +78,7 @@ const TeacherManagement = () => {
             }
             setModalOpen(false);
             dispatch(fetchAllTeachers({ page: 1, limit: 10 }));
-        } catch (err: any) { showToast(err.message, "error"); }
+        } catch (err: any) { showToast(getErrorMessage(err, 'Failed to save teacher'), "error"); }
         finally { setModalLoading(false); }
     };
 

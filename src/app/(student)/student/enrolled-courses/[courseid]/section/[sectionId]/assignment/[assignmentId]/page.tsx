@@ -8,6 +8,7 @@ import {
 import Link from 'next/link';
 import { useAppDispatch } from '@/lib/store/hooks';
 import { useToast } from '@/context/ToastContext';
+import { getErrorMessage } from '@/lib/api/errorMessage';
 
 // Redux Actions & APIs
 import { submitAssignment } from '@/lib/store/features/assignmentSlice';
@@ -41,7 +42,7 @@ const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
                 setAssignmentData(data);
             } catch (error) {
                 console.error("Error fetching assignment:", error);
-                showToast("Failed to load assignment details.", "error");
+                showToast(getErrorMessage(error, 'Failed to load assignment details.'), 'error');
             } finally {
                 setIsLoading(false);
             }
@@ -61,7 +62,7 @@ const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
             const updatedData = await getAssignmentDetailsAPI(assignmentId);
             setAssignmentData(updatedData);
         } catch (err: any) {
-            showToast(err || "Failed to upload submission.", "error");
+            showToast(getErrorMessage(err, 'Failed to upload submission.'), 'error');
         } finally {
             setIsSubmitting(false);
         }

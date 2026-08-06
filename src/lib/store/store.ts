@@ -7,6 +7,8 @@ import userReducer from './features/userSlice'; // # New
 import academicReducer from './features/academicSlice'; // # New
 import financeReducer from './features/financeSlice'; // # New
 import studentDashboardReducer from './features/studentDashboardSlice';
+import teacherDashboardReducer from './features/teacherDashboardSlice';
+import { toastMiddleware } from './toastMiddleware';
 
 const loadingMiddleware: Middleware = (storeAPI) => (next) => (action: any) => {
   if (isPending(action)) storeAPI.dispatch(startLoading());
@@ -25,9 +27,13 @@ export const makeStore = () => {
       academic: academicReducer,
       finance: financeReducer,
       studentDashboard: studentDashboardReducer,
+      teacherDashboard: teacherDashboardReducer,
     },
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({ serializableCheck: false }).concat(loadingMiddleware),
+      getDefaultMiddleware({ serializableCheck: false }).concat(
+        loadingMiddleware,
+        toastMiddleware
+      ),
   });
 };
 

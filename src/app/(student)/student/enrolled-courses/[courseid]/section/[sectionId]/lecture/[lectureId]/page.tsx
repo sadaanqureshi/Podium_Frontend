@@ -175,7 +175,7 @@
 'use client';
 
 import React, { useEffect, use, useMemo, useState } from 'react';
-import { Loader2, PlayCircle, ArrowLeft, AlertCircle, Info, Globe, Calendar, Clock, Video, CheckCircle2 } from 'lucide-react';
+import { Loader2, PlayCircle, ArrowLeft, AlertCircle, Info, Globe, Calendar, Clock, Video, CheckCircle2, VideoOff } from 'lucide-react';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 
@@ -343,6 +343,18 @@ const LectureDetailPage = ({ params }: { params: Promise<any> }) => {
                             Your browser does not support the video tag.
                         </video>
                     )
+                ) : lecture.lectureType === 'recorded' ? (
+                    <div className="text-center space-y-3 flex flex-col items-center justify-center h-full w-full bg-app-bg px-6">
+                        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                            <VideoOff size={28} />
+                        </div>
+                        <h3 className="text-sm font-black uppercase tracking-widest text-text-main">
+                            Video not available
+                        </h3>
+                        <p className="text-text-muted text-xs font-medium max-w-sm leading-relaxed">
+                            This lecture has no video URL yet. Please check back later or contact your instructor.
+                        </p>
+                    </div>
                 ) : lecture.lectureType === 'online' ? (
                     // Live Session UI
                     <div className="text-center p-6 w-full h-full flex flex-col items-center justify-center relative bg-app-bg overflow-hidden">
@@ -365,19 +377,30 @@ const LectureDetailPage = ({ params }: { params: Promise<any> }) => {
                             </div>
                         </div>
 
-                        <a
-                            href={lecture.meetingLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-8 py-3.5 bg-accent-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-hover-blue transition-colors shadow-md relative z-10"
-                        >
-                            <Video size={18} /> Join Live Class
-                        </a>
+                        {lecture.meetingLink ? (
+                            <a
+                                href={lecture.meetingLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-8 py-3.5 bg-accent-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-hover-blue transition-colors shadow-md relative z-10"
+                            >
+                                <Video size={18} /> Join Live Class
+                            </a>
+                        ) : (
+                            <p className="text-text-muted text-xs font-medium relative z-10">
+                                Meeting link is not available yet.
+                            </p>
+                        )}
                     </div>
                 ) : (
-                    <div className="text-center space-y-3 flex flex-col items-center justify-center h-full w-full bg-app-bg">
-                        <Loader2 size={32} className="text-accent-blue mx-auto animate-spin" />
-                        <p className="text-text-muted font-bold tracking-widest uppercase text-[10px]">Processing Media...</p>
+                    <div className="text-center space-y-3 flex flex-col items-center justify-center h-full w-full bg-app-bg px-6">
+                        <AlertCircle size={32} className="text-amber-500 mx-auto" />
+                        <h3 className="text-sm font-black uppercase tracking-widest text-text-main">
+                            Content unavailable
+                        </h3>
+                        <p className="text-text-muted text-xs font-medium max-w-sm leading-relaxed">
+                            This lecture cannot be played right now.
+                        </p>
                     </div>
                 )}
             </div>

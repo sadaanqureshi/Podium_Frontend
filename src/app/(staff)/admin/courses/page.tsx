@@ -9,6 +9,7 @@ import UserManagementTable from '@/components/ui/UserManagementTable';
 import GenericFormModal, { FormField } from '@/components/ui/GenericFormModal';
 import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 import { useToast } from '@/context/ToastContext';
+import { getErrorMessage } from '@/lib/api/errorMessage';
 
 const AdminCoursesPage = () => {
     const dispatch = useAppDispatch();
@@ -100,7 +101,7 @@ const AdminCoursesPage = () => {
             }
             setIsModalOpen(false);
             dispatch(fetchAdminCourses({ page, limit: 10 }));
-        } catch (err: any) { showToast(err.message, "error"); }
+        } catch (err: any) { showToast(getErrorMessage(err, 'Failed to save course'), "error"); }
         finally { setActionLoading(false); }
     };
 

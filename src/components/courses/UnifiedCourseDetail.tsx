@@ -2,8 +2,10 @@
 import React, { useState, useMemo } from 'react';
 import { Users, FileText, Layers, ArrowLeft, Loader2, Video, ClipboardList } from 'lucide-react';
 import Link from 'next/link';
-import { useAppDispatch } from '@/lib/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { refreshCourseContent, fetchCourseContent, removeLectureLocal, removeResourceLocal } from '@/lib/store/features/courseSlice';
+import { useToast } from '@/context/ToastContext';
+import { getErrorMessage } from '@/lib/api/errorMessage';
 
 // UI Components
 import { CourseInfoCard } from '@/components/courses/CourseInfoCard';
@@ -21,10 +23,15 @@ import {
     dismissStudentAPI, deleteAssignmentAPI, deleteQuizAPI
 } from '@/lib/api/apiService';
 
+import { resolveGoogleConnected } from '@/lib/googleCalendar';
+
 const TAB_TO_TYPE_MAP: any = { students: 'student', lectures: 'lecture', quizzes: 'quiz', assignments: 'assignment', resources: 'resource' };
 
 const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudents, backUrl }: any) => {
     const dispatch = useAppDispatch();
+    const { showToast } = useToast();
+    const user = useAppSelector((state) => state.auth.user);
+    const isCalendarConnected = resolveGoogleConnected(user);
 
     const [activeTab, setActiveTab] = useState(role === 'student' ? 'lectures' : 'students');
     const [activeLectureSubTab, setActiveLectureSubTab] = useState<'recorded' | 'online'>('recorded');
@@ -36,6 +43,9 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
     const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
     const [itemToEdit, setItemToEdit] = useState<any>(null);
     const [itemToDelete, setItemToDelete] = useState<any>(null);
+
+    const formatModalTitle = (type: string) =>
+        type.charAt(0).toUpperCase() + type.slice(1);
 
     const activeTabData = useMemo(() => {
         if (!data?.sections) return [];
@@ -93,11 +103,27 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
         setModalLoading(true);
         try {
             const rawData = Object.fromEntries(formData);
-            console.log(rawData)
+
+            // Clear frontend message when teacher tries live lecture without Google linked
+            if (
+                !itemToEdit &&
+                modalType === 'lecture' &&
+                activeLectureSubTab === 'online' &&
+                role === 'teacher' &&
+                !isCalendarConnected
+            ) {
+                showToast(
+                    'Connect your Google account from Profile before creating an online lecture.',
+                    'error'
+                );
+                return;
+            }
+
             if (itemToEdit) {
                 if (modalType === 'quiz') await updateQuizAPI(itemToEdit.id, { ...rawData, questions: JSON.parse(rawData.questions as string), total_marks: Number(rawData.total_marks), is_Published: rawData.is_Published === 'true' });
                 else if (modalType === 'lecture') await updateLectureAPI(itemToEdit.id, courseId, formData);
                 else if (modalType === 'resource') await updateResourceAPI(courseId, selectedSectionId!, itemToEdit.id, formData);
+                showToast(`${formatModalTitle(modalType)} updated successfully`, 'success');
             } else {
                 if (modalType === 'section') await createSectionAPI(courseId, { title: rawData.title as string, description: rawData.description as string });
                 else if (modalType === 'assignment') {
@@ -110,19 +136,50 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
                 else if (modalType === 'student') await enrollStudentAPI({ courseId, studentId: Number(rawData.studentId) });
                 else if (modalType === 'quiz') await createQuizAPI({ ...rawData, course_id: courseId, section_id: selectedSectionId, total_marks: Number(rawData.total_marks), is_Published: rawData.is_Published === 'true', questions: JSON.parse(rawData.questions as string) });
                 else if (modalType === 'lecture') {
-                    if (activeLectureSubTab === 'online') await createLiveLectureAPI({ title: rawData.title, description: rawData.description, courseId: courseId, sectionId: selectedSectionId, liveStart: new Date(rawData.liveStart as string).toISOString(), lectureOrder: Number(rawData.lectureOrder) });
-                    else {
-
-                        await createRecordedLectureAPI({ title: rawData.title, videoUrl: rawData.video, description: rawData.description, courseId: courseId, sectionId: selectedSectionId, lectureOrder: Number(rawData.lectureOrder) });
+                    if (activeLectureSubTab === 'online') {
+                        await createLiveLectureAPI({
+                            title: rawData.title,
+                            description: rawData.description,
+                            courseId: courseId,
+                            sectionId: selectedSectionId,
+                            liveStart: new Date(rawData.liveStart as string).toISOString(),
+                            lectureOrder: Number(rawData.lectureOrder),
+                        });
+                    } else {
+                        await createRecordedLectureAPI({
+                            title: rawData.title,
+                            videoUrl: rawData.video,
+                            description: rawData.description,
+                            courseId: courseId,
+                            sectionId: selectedSectionId,
+                            lectureOrder: Number(rawData.lectureOrder),
+                        });
                     }
                 }
                 else if (modalType === 'resource') await createResourceAPI(courseId, selectedSectionId!, formData);
+                showToast(
+                    modalType === 'lecture' && activeLectureSubTab === 'online'
+                        ? 'Online lecture scheduled successfully'
+                        : `${formatModalTitle(modalType)} created successfully`,
+                    'success'
+                );
             }
             dispatch(refreshCourseContent(courseId));
             dispatch(fetchCourseContent(courseId));
             setIsModalOpen(false); setItemToEdit(null);
-        } catch (err: any) { console.log("ALERT: " + err.message); }
-        finally { setModalLoading(false); }
+        } catch (err: any) {
+            showToast(
+                getErrorMessage(
+                    err,
+                    modalType === 'lecture' && activeLectureSubTab === 'online'
+                        ? 'Could not create online lecture. Connect Google Calendar in Profile and try again.'
+                        : 'Action failed. Please try again.'
+                ),
+                'error'
+            );
+        } finally {
+            setModalLoading(false);
+        }
     };
 
     const handleDeleteConfirm = async () => {
@@ -143,8 +200,12 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
                 dispatch(refreshCourseContent(courseId)); dispatch(fetchCourseContent(courseId));
             }
             setIsDeleteModalOpen(false);
-        } catch (err: any) { console.log("ALERT: " + err.message); }
-        finally { setModalLoading(false); setItemToDelete(null); }
+            showToast('Deleted successfully', 'success');
+        } catch (err: any) {
+            showToast(getErrorMessage(err, 'Delete failed. Please try again.'), 'error');
+        } finally {
+            setModalLoading(false); setItemToDelete(null);
+        }
     };
 
     if (isLoading && !data) return (
@@ -162,8 +223,6 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
         { id: 'resources', label: 'Resources', icon: Layers }
     ];
     const tabs = role === 'student' ? allTabs.filter(t => t.id !== 'students') : allTabs;
-
-    const formatModalTitle = (type: string) => type.charAt(0).toUpperCase() + type.slice(1);
 
     return (
         <div className="w-full bg-app-bg min-h-screen font-sans text-text-main pb-16">

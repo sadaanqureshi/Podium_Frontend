@@ -1,37 +1,49 @@
 'use client';
 import React, { useState, useEffect, use } from 'react';
-import { Loader2, ArrowLeft, CheckCircle2, XCircle, Send, Award, Zap } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, XCircle, Send, Award, Zap, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { getQuizAttemptDetailAPI, gradeQuizAttemptAPI } from '@/lib/api/apiService';
 import { useToast } from '@/context/ToastContext';
+import { getErrorMessage } from '@/lib/api/errorMessage';
 
 const GradingDetailPage = ({ params }: { params: Promise<any> }) => {
     const resolvedParams = use(params);
     const attemptId = Number(resolvedParams.attemptId);
     const { showToast } = useToast();
+    const router = useRouter();
 
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [manualGrades, setManualGrades] = useState<Record<number, number>>({});
     const [comments, setComments] = useState('');
+    const [loadError, setLoadError] = useState<string | null>(null);
+
+    const submissionsHref = `/teacher/assigned-courses/${resolvedParams.courseId}/section/${resolvedParams.sectionId}/quiz/${resolvedParams.quizId}/submissions`;
 
     useEffect(() => {
         const load = async () => {
+            setLoadError(null);
             try {
                 const res = await getQuizAttemptDetailAPI(attemptId);
                 setData(res.data || res);
-                // Initialize manual grades with existing scores
-                const initialScores: any = {};
+                const initialScores: Record<number, number> = {};
                 (res.data?.answers || res.answers || []).forEach((a: any) => {
                     initialScores[a.questionId] = a.marksObtained || 0;
                 });
                 setManualGrades(initialScores);
                 setComments(res.data?.comments || res.comments || '');
-            } catch (err) { console.error(err); }
-            finally { setLoading(false); }
+            } catch (err) {
+                const msg = getErrorMessage(err, 'Failed to load attempt');
+                setLoadError(msg);
+                showToast(msg, 'error');
+            } finally {
+                setLoading(false);
+            }
         };
         load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [attemptId]);
 
     // AUTO-GRADE LOGIC
@@ -87,16 +99,37 @@ const GradingDetailPage = ({ params }: { params: Promise<any> }) => {
             };
     
             await gradeQuizAttemptAPI(attemptId, payload);
-            showToast("Grade successfully uploaded", "success");
-            
-        } catch (err: any) { 
-            showToast(err.message || "Deployment failed", "error"); 
-        } finally { 
-            setSubmitting(false); 
+            showToast('Grade successfully uploaded', 'success');
+            router.push(submissionsHref);
+        } catch (err: unknown) {
+            showToast(getErrorMessage(err, 'Grading failed'), 'error');
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    if (loading) return <div className="h-screen flex items-center justify-center bg-app-bg"><Loader2 className="animate-spin text-accent-blue" size={40} /></div>;
+    if (loading)
+        return (
+            <div className="h-screen flex items-center justify-center bg-app-bg">
+                <Loader2 className="animate-spin text-accent-blue" size={40} />
+            </div>
+        );
+
+    if (!data)
+        return (
+            <div className="h-screen flex flex-col items-center justify-center gap-4 bg-app-bg p-6 text-center">
+                <AlertCircle className="text-red-500" size={40} />
+                <p className="text-sm font-bold text-text-main">
+                    {loadError || 'Attempt not found'}
+                </p>
+                <Link
+                    href={submissionsHref}
+                    className="text-accent-blue text-xs font-bold uppercase tracking-wider hover:underline"
+                >
+                    Back to Submissions
+                </Link>
+            </div>
+        );
 
     const totalCalculatedScore = Object.values(manualGrades).reduce((a, b) => a + b, 0);
 

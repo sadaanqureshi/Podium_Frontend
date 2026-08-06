@@ -87,23 +87,45 @@ const AdminQuizDetailPage = ({ params }: { params: Promise<any> }) => {
     };
 
     const handleGradeSubmit = async () => {
-        if (!gradeData.marks) return;
+        if (gradeData.marks === '' || gradeData.marks == null) return;
         setGradeLoading(true);
         try {
-            // API requirements ke mutabiq payload structure sahi kiya gaya hai
-            await gradeQuizAttemptAPI(selectedAttempt.attemptId || selectedAttempt.id, { 
-                comments: gradeData.comments,
-                // TypeScript 'questions' maang raha hai, isliye attempt se questions pass kar diye
-                questions: selectedAttempt.questions || [] 
+            const answers = selectedAttempt.answers || [];
+            const targetTotal = Number(gradeData.marks) || 0;
+            const allocatedSum =
+                answers.reduce((s: number, a: any) => s + Number(a.marksAllocated || 0), 0) || 1;
+
+            // Match GradeQuizDto: per-question marks (distribute entered total by question weight)
+            let remaining = targetTotal;
+            const questions = answers.map((ans: any, index: number) => {
+                const weight = Number(ans.marksAllocated || 0);
+                const isLast = index === answers.length - 1;
+                const marks = isLast
+                    ? Math.max(0, remaining)
+                    : Math.min(
+                          weight,
+                          Math.round((targetTotal * weight) / allocatedSum)
+                      );
+                remaining -= marks;
+                return {
+                    question_id: Number(ans.questionId),
+                    marks_obtained: Number(marks),
+                    is_correct: marks > 0,
+                };
             });
-    
+
+            await gradeQuizAttemptAPI(selectedAttempt.attemptId || selectedAttempt.id, {
+                comments: gradeData.comments || 'Graded by admin',
+                questions,
+            });
+
             setSelectedAttempt(null);
             const res = await getQuizSubmissionsAPI(quizId);
             setSubmissions(res.data || res || []);
-        } catch (err) { 
-            console.error("Grading failed"); 
-        } finally { 
-            setGradeLoading(false); 
+        } catch (err) {
+            console.error('Grading failed', err);
+        } finally {
+            setGradeLoading(false);
         }
     };
 

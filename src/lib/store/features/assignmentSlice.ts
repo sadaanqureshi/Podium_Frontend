@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { getAssignmentSubmissionsAPI, gradeSubmissionAPI, submitAssignmentAPI } from '@/lib/api/apiService';
+import { getErrorMessage } from '@/lib/api/errorMessage';
 
 interface AssignmentState {
     submissionsCache: Record<number, any[]>;
@@ -21,7 +22,7 @@ export const fetchSubmissions = createAsyncThunk(
             const res = await getAssignmentSubmissionsAPI(assignmentId);
             return { assignmentId, data: res.data || res || [] };
         } catch (err: any) {
-            return rejectWithValue(err.message || 'Submissions load nahi ho sakeen');
+            return rejectWithValue(getErrorMessage(err, 'Submissions load nahi ho sakeen'));
         }
     }
 );
@@ -34,7 +35,7 @@ export const submitGrade = createAsyncThunk(
             const res = await gradeSubmissionAPI(assignmentId, studentId, gradeData);
             return { assignmentId, studentId, updatedData: res.data || res };
         } catch (err: any) {
-            return rejectWithValue(err.message || 'Grading fail ho gayi');
+            return rejectWithValue(getErrorMessage(err, 'Grading fail ho gayi'));
         }
     }
 );
@@ -45,7 +46,7 @@ export const submitAssignment = createAsyncThunk(
         try {
             return await submitAssignmentAPI(id, formData);
         } catch (err: any) {
-            return rejectWithValue(err.response?.data?.message || "Submission failed");
+            return rejectWithValue(getErrorMessage(err, 'Submission failed'));
         }
     }
 );

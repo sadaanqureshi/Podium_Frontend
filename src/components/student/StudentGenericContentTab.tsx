@@ -36,7 +36,9 @@ export const StudentGenericContentTab = ({
                 sectionId={sectionId}
                 subtitle={
                     type === 'quiz'
-                        ? `Total Marks: ${item.totalMarks}`
+                        ? `Total Marks: ${item.total_marks ?? item.totalMarks ?? '—'}${
+                              item.isCompleted ? ' · Completed' : ''
+                          }`
                         : (item.lectureType === 'online'
                             ? `Scheduled: ${item.liveStart ? new Date(item.liveStart).toLocaleString('en-GB') : 'TBD'}`
                             : 'Recorded Video')
