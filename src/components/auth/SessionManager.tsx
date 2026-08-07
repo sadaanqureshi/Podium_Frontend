@@ -21,6 +21,7 @@ import {
   setAuthCookies,
 } from '@/lib/api/apiService';
 import { clearPersistedAuthSession } from '@/lib/auth/authSession';
+import { withGoogleConnectedFlag } from '@/lib/googleCalendar';
 import Cookies from 'js-cookie';
 import { Loader2 } from 'lucide-react';
 import {
@@ -119,7 +120,7 @@ export const SessionManager = ({ children }: { children: React.ReactNode }) => {
 
       try {
         const profile = await fetchProfileAPI(token);
-        const apiUser = profile.user;
+        const apiUser = withGoogleConnectedFlag(profile.user, profile);
         const apiRole = apiUser?.role;
         const apiRoleName = apiRole?.roleName || apiRole?.name || '';
         const realPortal = roleFromProfileUser(apiUser);

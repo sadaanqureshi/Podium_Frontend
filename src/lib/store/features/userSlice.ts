@@ -3,6 +3,7 @@ import {
     getAllStudentsAPI, 
     getAllTeachersAPI 
 } from '@/lib/api/apiService';
+import { getErrorMessage } from '@/lib/api/errorMessage';
 
 // # THUNKS
 export const fetchAllStudents = createAsyncThunk(
@@ -11,7 +12,9 @@ export const fetchAllStudents = createAsyncThunk(
         try {
             const res = await getAllStudentsAPI(params?.page || 1, params?.limit || 10);
             return res.data || res;
-        } catch (err: any) { return rejectWithValue(err.message); }
+        } catch (err: any) {
+            return rejectWithValue(getErrorMessage(err, 'Failed to load students'));
+        }
     }
 );
 
@@ -21,7 +24,9 @@ export const fetchAllTeachers = createAsyncThunk(
         try {
             const res = await getAllTeachersAPI(params?.page || 1, params?.limit || 10);
             return res.data || res;
-        } catch (err: any) { return rejectWithValue(err.message); }
+        } catch (err: any) {
+            return rejectWithValue(getErrorMessage(err, 'Failed to load teachers'));
+        }
     }
 );
 

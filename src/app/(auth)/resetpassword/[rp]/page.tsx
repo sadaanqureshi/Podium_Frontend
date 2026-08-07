@@ -8,10 +8,13 @@ import { Loader2, Lock, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-rea
 // Relative paths preserved
 import AuthLayout from '../../../../components/auth/AuthLayout';
 import { resetPasswordAPI } from '../../../../lib/api/apiService';
+import { getErrorMessage } from '../../../../lib/api/errorMessage';
+import { useToast } from '@/context/ToastContext';
 
 const ResetPasswordPage = () => {
   const router = useRouter();
   const params = useParams();
+  const { showToast } = useToast();
 
   // URL se token nikalna
   const token = params.rp as string;
@@ -28,12 +31,16 @@ const ResetPasswordPage = () => {
     setError('');
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      const msg = 'Passwords do not match.';
+      setError(msg);
+      showToast(msg, 'error');
       return;
     }
 
     if (password.length < 6) {
-      setError("Length of password must be at least 6 characters.");
+      const msg = 'Length of password must be at least 6 characters.';
+      setError(msg);
+      showToast(msg, 'error');
       return;
     }
 
@@ -42,13 +49,16 @@ const ResetPasswordPage = () => {
     try {
       await resetPasswordAPI(token, password);
       setIsSuccess(true);
+      showToast('Password updated successfully', 'success');
 
       setTimeout(() => {
         router.push('/student/signin'); // Path updated to student login
       }, 3000);
 
     } catch (err: any) {
-      setError(err.message || 'Password update failed. Link might be expired.');
+      const msg = getErrorMessage(err, 'Password update failed. Link might be expired.');
+      setError(msg);
+      showToast(msg, 'error');
     } finally {
       setIsLoading(false);
     }

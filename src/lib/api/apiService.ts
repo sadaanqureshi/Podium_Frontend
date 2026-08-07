@@ -1,4 +1,5 @@
 import Cookies from 'js-cookie';
+import { throwIfNotOk, extractBackendMessage } from './errorMessage';
 
 // ==============================
 // BASE URL
@@ -25,10 +26,7 @@ export const loginUser = async (credentials: { email: string; password: string }
         body: JSON.stringify(credentials),
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
-    }
+    await throwIfNotOk(response, 'Login failed');
 
     return await response.json();
 };
@@ -50,6 +48,7 @@ export const fetchProfileAPI = async (token: string) => {
         const err: any = new Error('Unable to reach auth server');
         err.status = 0;
         err.isNetworkError = true;
+        err.skipErrorToast = true;
         throw err;
     }
 
@@ -57,12 +56,13 @@ export const fetchProfileAPI = async (token: string) => {
         let message = 'Session expired or invalid';
         try {
             const errorData = await response.json();
-            message = errorData.message || message;
+            message = extractBackendMessage(errorData) || message;
         } catch {
             /* ignore */
         }
         const err: any = new Error(message);
         err.status = response.status;
+        err.skipErrorToast = true; // SessionManager handles profile quietly
         throw err;
     }
 
@@ -79,11 +79,7 @@ export const registerStudentAPI = async (data: any) => {
         body: JSON.stringify(data),
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        // Backend se aane wala error message ya default error
-        throw new Error(errorData.message || 'Registration Protocol Failed');
-    }
+    await throwIfNotOk(response, 'Registration Protocol Failed');
 
     return await response.json();
 };
@@ -95,10 +91,7 @@ export const forgotPasswordAPI = async (email: string) => {
         body: JSON.stringify({ email }),
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send reset email');
-    }
+    await throwIfNotOk(response, 'Failed to send reset email');
 
     return await response.json();
 };
@@ -110,10 +103,7 @@ export const resetPasswordAPI = async (token: string, newPassword: any) => {
         body: JSON.stringify({ token, newPassword }),
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to reset password. Link might be expired.');
-    }
+    await throwIfNotOk(response, 'Failed to reset password. Link might be expired.');
 
     return await response.json();
 };
@@ -130,7 +120,7 @@ export const logoutUserAPI = async () => {
         },
     });
 
-    if (!response.ok) throw new Error('Backend logout failed');
+    await throwIfNotOk(response, 'Backend logout failed');
     return await response.json();
 };
 
@@ -170,10 +160,7 @@ export const updateUserProfileAPI = async (userId: number, data: any) => {
         body: JSON.stringify(data),
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Profile update fail ho gaya');
-    }
+    await throwIfNotOk(response, 'Profile update fail ho gaya');
     return await response.json();
 };
 
@@ -192,10 +179,7 @@ export const getAllCoursesAPI = async (page = 1, limit = 10) => {
         },
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch courses');
-    }
+    await throwIfNotOk(response, 'Failed to fetch courses');
 
     return await response.json();
 };
@@ -210,10 +194,7 @@ export const createCourseAPI = async (formData: FormData) => {
         body: formData,
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Course create karne mein masla hua');
-    }
+    await throwIfNotOk(response, 'Course create karne mein masla hua');
 
     return await response.json();
 };
@@ -224,7 +205,7 @@ export const getCourseCategoriesAPI = async () => {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error('Categories load nahi ho sakeen');
+    await throwIfNotOk(response, 'Categories load nahi ho sakeen');
     return await response.json();
 };
 
@@ -234,7 +215,7 @@ export const getCourseByIdAPI = async (id: number) => {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error('Course details load nahi ho sakeen');
+    await throwIfNotOk(response, 'Course details load nahi ho sakeen');
     return await response.json();
 };
 
@@ -250,10 +231,7 @@ export const getCourseWithContentAPI = async (courseId: number) => {
         },
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch course content');
-    }
+    await throwIfNotOk(response, 'Failed to fetch course content');
 
     return await response.json();
 };
@@ -270,10 +248,7 @@ export const getMyEnrolledCoursesAPI = async () => {
         },
     });
     
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch enrolled courses');
-    }
+    await throwIfNotOk(response, 'Failed to fetch enrolled courses');
     
     return await response.json();
 };
@@ -349,7 +324,7 @@ export const getMyCourseUpdatesAPI = async (params?: {
         let message = 'Failed to fetch course updates';
         try {
             const errorData = await response.json();
-            message = errorData.message || message;
+            message = extractBackendMessage(errorData) || message;
         } catch {
             /* ignore */
         }
@@ -444,7 +419,7 @@ export const getStudentDashboardAPI = async (): Promise<StudentDashboardResponse
         let message = 'Failed to load student dashboard';
         try {
             const errorData = await response.json();
-            message = errorData.message || message;
+            message = extractBackendMessage(errorData) || message;
         } catch {
             /* ignore */
         }
@@ -456,6 +431,107 @@ export const getStudentDashboardAPI = async (): Promise<StudentDashboardResponse
 
     return await response.json();
 };
+
+// ==============================
+// TEACHER DASHBOARD (aggregate home)
+// ==============================
+export type TeacherDashboardResponse = {
+    welcome: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        email: string;
+    };
+    metrics: {
+        acceptedCoursesCount: number;
+        pendingCourseAssignmentCount: number;
+        studentsEnrolledCount: number;
+        submissionsToGradeCount: number;
+        unmarkedAttendanceCount: number;
+        googleCalendarConnected: boolean;
+    };
+    recentCourses: Array<{
+        courseId: number;
+        courseName: string;
+        coverImg: string | null;
+        shortDescription: string | null;
+        teacherStatus: string;
+        enrolledStudentsCount: number;
+    }>;
+    pendingCourseAssignments: Array<{
+        courseId: number;
+        courseName: string;
+        coverImg: string | null;
+        shortDescription: string | null;
+        teacherStatus: string;
+        needsAction: boolean;
+        createdAt: string | null;
+        updatedAt: string | null;
+    }>;
+    gradingQueue: Array<{
+        assignmentId: number;
+        title: string;
+        courseId: number;
+        courseName: string;
+        dueDate: string | null;
+        pendingSubmissionCount: number;
+    }>;
+    recentAttendance: Array<{
+        attendanceId: number;
+        attendanceDate: string | null;
+        isMarked: boolean;
+        lectureTitle: string;
+        lectureId: number | null;
+        courseId: number | null;
+        courseName: string | null;
+    }>;
+    googleCalendar: {
+        connected: boolean;
+        googleEmail?: string | null;
+    };
+};
+
+/** GET /courses/my-dashboard — teacher home aggregate */
+export const getTeacherDashboard = async (): Promise<TeacherDashboardResponse> => {
+    const token = getToken();
+    if (!token) {
+        logoutLocal();
+        throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_URL}/courses/my-dashboard`, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+    });
+
+    if (response.status === 401) {
+        logoutLocal();
+        throw new Error('Unauthorized. Please sign in again.');
+    }
+
+    if (!response.ok) {
+        let message = 'Failed to load teacher dashboard';
+        try {
+            const errorData = await response.json();
+            message = extractBackendMessage(errorData) || message;
+        } catch {
+            /* ignore */
+        }
+        if (response.status === 403) {
+            throw new Error(message || 'Only teachers can view this dashboard.');
+        }
+        throw new Error(message);
+    }
+
+    const json = await response.json();
+    return (json?.data ?? json) as TeacherDashboardResponse;
+};
+
+export const getTeacherDashboardAPI = getTeacherDashboard;
 
 export type EnrollmentRequestStatus = 'pending' | 'enrolled' | 'rejected' | 'dismissed';
 export type TransactionStatus = 'pending' | 'paid' | 'free' | 'failed';
@@ -534,7 +610,7 @@ export const getMyEnrollmentRequestsAPI = async (params?: {
         let message = 'Failed to fetch enrollment requests';
         try {
             const errorData = await response.json();
-            message = errorData.message || message;
+            message = extractBackendMessage(errorData) || message;
         } catch {
             /* ignore */
         }
@@ -554,7 +630,7 @@ export const updateCourseAPI = async (id: number, formData: FormData) => {
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
     });
-    if (!response.ok) throw new Error('Course update nahi ho saka');
+    await throwIfNotOk(response, 'Course update nahi ho saka');
     return await response.json();
 };
 
@@ -581,7 +657,7 @@ export const createSectionAPI = async (courseId: number, data: { title: string; 
         body: JSON.stringify(data),
     });
 
-    if (!response.ok) throw new Error('Section create nahi ho saka');
+    await throwIfNotOk(response, 'Section create nahi ho saka');
     return await response.json();
 };
 
@@ -595,7 +671,7 @@ export const createRecordedLectureAPI = async (data: any) => {
         },
         body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Recorded lecture upload fail ho gaya');
+    await throwIfNotOk(response, 'Recorded lecture upload fail ho gaya');
     return await response.json();
 };
 
@@ -609,7 +685,7 @@ export const createLiveLectureAPI = async (data: any) => {
         },
         body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Live lecture schedule nahi ho saka');
+    await throwIfNotOk(response, 'Live lecture schedule nahi ho saka');
     return await response.json();
 };
 
@@ -624,7 +700,7 @@ export const createResourceAPI = async (courseId: number, sectionId: number, for
         body: formData,
     });
 
-    if (!response.ok) throw new Error('Resource upload nahi ho saka');
+    await throwIfNotOk(response, 'Resource upload nahi ho saka');
     return await response.json();
 };
 
@@ -638,7 +714,7 @@ export const createAssignmentAPI = async (formData: FormData) => {
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData,
     });
-    if (!response.ok) throw new Error('Assignment upload fail ho gaya');
+    await throwIfNotOk(response, 'Assignment upload fail ho gaya');
     return await response.json();
 };
 
@@ -655,9 +731,7 @@ export const getAssignmentDetailsAPI = async (assignmentId: number) => {
             }
         });
 
-        if (!response.ok) {
-            throw new Error("Failed to fetch assignment details");
-        }
+        await throwIfNotOk(response, 'Failed to fetch assignment details');
         return await response.json();
     } catch (error) {
         console.error("Assignment Fetch API Error:", error);
@@ -672,7 +746,7 @@ export const deleteAssignmentAPI = async (id: number) => {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error('Assignment delete fail ho gayi');
+    await throwIfNotOk(response, 'Assignment delete fail ho gayi');
     return await response.json();
 };
 // ==============================
@@ -699,12 +773,10 @@ export const submitAssignmentAPI = async (assignmentId: number, formData: FormDa
     });
 
     if (!response.ok) {
-        // Agar status 404 hai toh iska matlab backend par route nahi hai
         if (response.status === 404) {
             throw new Error(`Critical Alert: Route Not Found [404] at ${fullUrl}`);
         }
-        const errorData = await response.json().catch(() => ({ message: 'Submission Protocol Interrupted' }));
-        throw new Error(errorData.message || 'Submission failed');
+        await throwIfNotOk(response, 'Submission failed');
     }
 
     return await response.json();
@@ -718,7 +790,7 @@ export const submitAssignmentAPI = async (assignmentId: number, formData: FormDa
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
     });
-    if (!response.ok) throw new Error('Assignment update fail ho gaya');
+    await throwIfNotOk(response, 'Assignment update fail ho gaya');
     return await response.json();
 };
 */
@@ -729,7 +801,7 @@ export const getAssignmentDetailAPI = async (id: string | number) => {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error('Assignment detail load nahi ho saki');
+    await throwIfNotOk(response, 'Assignment detail load nahi ho saki');
     return await response.json();
 };
 
@@ -746,10 +818,7 @@ export const uploadAssignmentSubmissionAPI = async (assignmentId: string | numbe
         body: formData,
     });
     
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Submission upload failed');
-    }
+    await throwIfNotOk(response, 'Submission upload failed');
     return await response.json();
 };
 
@@ -759,7 +828,7 @@ export const getAssignmentSubmissionsAPI = async (id: string | number) => {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error('Submissions load nahi ho sakeen');
+    await throwIfNotOk(response, 'Submissions load nahi ho sakeen');
     return await response.json();
 };
 
@@ -777,7 +846,7 @@ export const gradeSubmissionAPI = async (
         },
         body: JSON.stringify(data)
     });
-    if (!response.ok) throw new Error('Grading fail ho gayi');
+    await throwIfNotOk(response, 'Grading fail ho gayi');
     return await response.json();
 };
 
@@ -796,10 +865,7 @@ export const enrollStudentAPI = async (payload: { courseId: number; studentId: n
         body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Enrollment fail ho gayi');
-    }
+    await throwIfNotOk(response, 'Enrollment fail ho gayi');
 
     return await response.json();
 };
@@ -823,7 +889,7 @@ export const createStudentsAPI = async (data: any) => {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Student create nahi ho saka');
+    await throwIfNotOk(res, 'Student create nahi ho saka');
     return await res.json();
 };
 
@@ -833,7 +899,7 @@ export const getAllStudentsAPI = async (page = 1, limit = 10) => {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!res.ok) throw new Error('Students load nahi ho sakay');
+    await throwIfNotOk(res, 'Students load nahi ho sakay');
     return await res.json();
 };
 
@@ -844,7 +910,7 @@ export const updateStudentsAPI = async (userId: number, data: any) => {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Student update nahi ho saka');
+    await throwIfNotOk(res, 'Student update nahi ho saka');
     return await res.json();
 };
 
@@ -854,7 +920,7 @@ export const deleteStudentsAPI = async (id: number) => {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!res.ok) throw new Error('Student delete nahi ho saka');
+    await throwIfNotOk(res, 'Student delete nahi ho saka');
     return true;
 };
 
@@ -870,10 +936,7 @@ export const getStudentsAPI = async () => {
         },
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Students load karne mein masla hua');
-    }
+    await throwIfNotOk(response, 'Students load karne mein masla hua');
     return await response.json();
 };
 
@@ -887,7 +950,7 @@ export const createTeachersAPI = async (data: any) => {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error('Teacher create nahi ho saka');
+    await throwIfNotOk(res, 'Teacher create nahi ho saka');
     return await res.json();
 };
 
@@ -897,7 +960,7 @@ export const getTeachersAPI = async () => {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error('Teachers list load nahi ho saki');
+    await throwIfNotOk(response, 'Teachers list load nahi ho saki');
     return await response.json();
 };
 
@@ -907,7 +970,7 @@ export const getAllTeachersAPI = async (page = 1, limit = 10) => {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!res.ok) throw new Error('Teachers load nahi ho sakay');
+    await throwIfNotOk(res, 'Teachers load nahi ho sakay');
     return await res.json();
 };
 
@@ -928,10 +991,7 @@ export const updateTeachersAPI = async (id: number, data: any) => {
         body: JSON.stringify(payload)
     });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Teacher update nahi ho saka');
-    }
+    await throwIfNotOk(res, 'Teacher update nahi ho saka');
     return await res.json();
 };
 
@@ -941,7 +1001,7 @@ export const deleteTeachersAPI = async (id: number) => {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!res.ok) throw new Error('Teacher delete nahi ho saka');
+    await throwIfNotOk(res, 'Teacher delete nahi ho saka');
     return true;
 };
 
@@ -954,34 +1014,176 @@ export const getFeesDataAPI = async (page = 1, limit = 10) => {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!res.ok) throw new Error('Fees data load nahi ho saka');
+    await throwIfNotOk(res, 'Fees data load nahi ho saka');
     return await res.json();
 };
 
 // ==============================
-// ASSIGNED COURSES
+// ASSIGNED COURSES (teacher inbox + workspace)
 // ==============================
-export const getAssignedCoursesAPI = async (page = 1, limit = 10) => {
+export type TeacherAssignmentStatus = 'pending' | 'accepted' | 'rejected';
+
+export type AssignedCourseItem = {
+    id: number;
+    courseName: string;
+    shortDescription?: string | null;
+    longDescription?: string | null;
+    price?: string | null;
+    coverImg?: string | null;
+    teacherStatus: TeacherAssignmentStatus | string;
+    needsAction: boolean;
+    courseCategory?: { id: number; name: string | null } | null;
+    createdBy?: { id: number; firstName: string; lastName: string } | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    [key: string]: unknown;
+};
+
+export type AssignedCoursesMeta = {
+    totalItems: number;
+    itemCount: number;
+    itemsPerPage: number;
+    totalPages: number;
+    currentPage: number;
+};
+
+export type AssignedCoursesSummary = {
+    pending: number;
+    accepted: number;
+    filter: string;
+};
+
+export type AssignedCoursesResponse = {
+    data: AssignedCourseItem[];
+    meta: AssignedCoursesMeta;
+    summary: AssignedCoursesSummary;
+};
+
+export type AssignCoursesListParams = {
+    status?: 'pending' | 'accepted';
+    page?: number;
+    limit?: number;
+};
+
+/** GET /courses/assign-courses — teacher assignment inbox / list */
+export const getAssignedCourses = async (
+    params?: AssignCoursesListParams
+): Promise<AssignedCoursesResponse> => {
     const token = getToken();
-    const response = await fetch(`${API_URL}/courses/assign-courses?page=${page}&limit=${limit}`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!response.ok) throw new Error('Assigned courses load nahi ho sakay');
+    const query = new URLSearchParams();
+    if (params?.status) query.set('status', params.status);
+    query.set('page', String(params?.page ?? 1));
+    query.set('limit', String(params?.limit ?? 10));
+
+    const response = await fetch(
+        `${API_URL}/courses/assign-courses?${query.toString()}`,
+        {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store',
+        }
+    );
+    await throwIfNotOk(response, 'Assigned courses load nahi ho sakay');
+    const json = await response.json();
+
+    const data = Array.isArray(json?.data)
+        ? json.data
+        : Array.isArray(json)
+          ? json
+          : [];
+
+    const meta: AssignedCoursesMeta = json?.meta || {
+        totalItems: data.length,
+        itemCount: data.length,
+        itemsPerPage: params?.limit ?? 10,
+        totalPages: 1,
+        currentPage: params?.page ?? 1,
+    };
+
+    const summary: AssignedCoursesSummary = json?.summary || {
+        pending: 0,
+        accepted: 0,
+        filter: params?.status || 'all',
+    };
+
+    return { data, meta, summary };
+};
+
+/** PATCH /courses/:courseId/teacher-assignment — in-app accept / reject */
+export const respondToCourseAssignment = async (
+    courseId: number,
+    action: 'accept' | 'reject'
+): Promise<{
+    message?: string;
+    courseName?: string;
+    teacherStatus?: TeacherAssignmentStatus | string;
+}> => {
+    const token = getToken();
+    const response = await fetch(
+        `${API_URL}/courses/${courseId}/teacher-assignment`,
+        {
+            method: 'PATCH',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action }),
+        }
+    );
+    await throwIfNotOk(response, 'Failed to update course assignment');
     return await response.json();
+};
+
+/** Workspace list (accepted courses) — keeps older callers working */
+export const getAssignedCoursesAPI = async (page = 1, limit = 10) => {
+    return getAssignedCourses({ page, limit, status: 'accepted' });
 };
 
 // ==============================
 // GOOGLE CALENDAR
 // ==============================
-export const connectGoogleCalendarAPI = async () => {
+export const connectGoogleCalendarAPI = async (opts?: {
+    /** Frontend URL Google OAuth should return to after backend callback */
+    returnUrl?: string;
+}) => {
     const token = getToken();
-    const response = await fetch(`${API_URL}/google-calendar/connect`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!response.ok) throw new Error('Google connection failed');
-    return await response.text();
+    const query = new URLSearchParams();
+    if (opts?.returnUrl) {
+        query.set('returnUrl', opts.returnUrl);
+        query.set('frontendUrl', opts.returnUrl);
+        query.set('redirect', opts.returnUrl);
+    }
+    const qs = query.toString();
+
+    const response = await fetch(
+        `${API_URL}/google-calendar/connect${qs ? `?${qs}` : ''}`,
+        {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        }
+    );
+    await throwIfNotOk(response, 'Google connection failed');
+
+    const text = (await response.text()).trim();
+    if (!text) throw new Error('Google connection URL was empty');
+
+    try {
+        const json = JSON.parse(text);
+        const url =
+            json.url ||
+            json.authUrl ||
+            json.auth_url ||
+            json.redirectUrl ||
+            json.data?.url ||
+            json.data;
+        if (typeof url === 'string' && url.startsWith('http')) return url;
+    } catch {
+        /* plain text URL */
+    }
+
+    const cleaned = text.replace(/^"|"$/g, '').trim();
+    if (cleaned.startsWith('http')) return cleaned;
+    throw new Error('Invalid Google connection URL from server');
 };
 
 
@@ -994,7 +1196,7 @@ export const deleteLectureAPI = async (lectureId: number, courseId: number) => {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error('Lecture delete nahi ho saka');
+    await throwIfNotOk(response, 'Lecture delete nahi ho saka');
     return true;
 };
 
@@ -1014,10 +1216,7 @@ export const updateLectureAPI = async (lectureId: number, courseId: number, data
         body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message || 'Lecture update nahi ho saka');
-    }
+    await throwIfNotOk(response, 'Lecture update nahi ho saka');
     return await response.json();
 };
 
@@ -1030,7 +1229,7 @@ export const deleteResourceAPI = async (courseId: number, sectionId: number, res
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error('Resource delete nahi ho saka');
+    await throwIfNotOk(response, 'Resource delete nahi ho saka');
     return true;
 };
 
@@ -1041,7 +1240,7 @@ export const updateResourceAPI = async (courseId: number, sectionId: number, res
         headers: { 'Authorization': `Bearer ${token}` },
         body: data,
     });
-    if (!response.ok) throw new Error('Resource update nahi ho saka');
+    await throwIfNotOk(response, 'Resource update nahi ho saka');
     return await response.json();
 };
 
@@ -1054,7 +1253,7 @@ export const getSpecificResourceAPI = async (courseId: number, sectionId: number
         headers: { 'Authorization': `Bearer ${token}` }
     });
 
-    if (!response.ok) throw new Error('Resource detail load nahi ho saki');
+    await throwIfNotOk(response, 'Resource detail load nahi ho saki');
     return await response.json();
 };
 
@@ -1075,7 +1274,7 @@ export const dismissStudentAPI = async (enrollmentId: number, courseId: number, 
         })
     });
 
-    if (!response.ok) throw new Error('Student remove nahi ho saka');
+    await throwIfNotOk(response, 'Student remove nahi ho saka');
     return await response.json();
 };
 
@@ -1086,7 +1285,7 @@ export const getLecturesBySectionAPI = async (courseId: number, sectionId: numbe
         headers: { 'Authorization': `Bearer ${token}` }
     });
 
-    if (!response.ok) throw new Error('Lectures load karne mein masla hua');
+    await throwIfNotOk(response, 'Lectures load karne mein masla hua');
     return await response.json();
 };
 
@@ -1099,7 +1298,7 @@ export const createQuizAPI = async (data: any) => {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
-    if (!response.ok) throw new Error('Quiz create nahi ho saka');
+    await throwIfNotOk(response, 'Quiz create nahi ho saka');
     return await response.json();
 };
 
@@ -1110,7 +1309,7 @@ export const updateQuizAPI = async (id: number, data: any) => {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     });
-    if (!response.ok) throw new Error('Quiz update nahi ho saka');
+    await throwIfNotOk(response, 'Quiz update nahi ho saka');
     return await response.json();
 };
 
@@ -1120,19 +1319,33 @@ export const deleteQuizAPI = async (id: number) => {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error('Quiz delete nahi ho saka');
+    await throwIfNotOk(response, 'Quiz delete nahi ho saka');
     return true;
 };
 
-export const getSpecificQuizAPI = async (id: number) => {
+export const getSpecificQuizAPI = async (id: number, opts?: { forStudent?: boolean }) => {
     const token = getToken();
     const response = await fetch(`${API_URL}/quizzes/${id}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` },
-        // cache: 'no-store'
+        cache: 'no-store',
     });
-    if (!response.ok) throw new Error('Quiz details nahi mil sakin');
-    return await response.json();
+    await throwIfNotOk(response, 'Quiz details nahi mil sakin');
+    const json = await response.json();
+    const quiz = json?.data ?? json;
+
+    // Never expose correct answers to students in client state
+    if (opts?.forStudent && quiz?.questions) {
+        quiz.questions = quiz.questions.map((q: any) => ({
+            ...q,
+            options: (q.options || []).map((opt: any) => {
+                const { is_correct, isCorrect, ...safe } = opt || {};
+                return safe;
+            }),
+        }));
+    }
+
+    return quiz;
 };
 
 // apiService.ts mein add karein
@@ -1146,10 +1359,7 @@ export const submitQuizAnswersAPI = async (payload: any) => {
         },
         body: JSON.stringify(payload)
     });
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Submission failed');
-    }
+    await throwIfNotOk(response, 'Submission failed');
     return await response.json();
 };
 
@@ -1160,7 +1370,7 @@ export const getQuizSubmissionsAPI = async (quizId: number) => {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error('Submissions load nahi ho sakeen');
+    await throwIfNotOk(response, 'Submissions load nahi ho sakeen');
     return await response.json();
 };
 
@@ -1170,7 +1380,7 @@ export const getQuizAttemptDetailAPI = async (attemptId: number) => {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error('Attempt details nahi mil sakin');
+    await throwIfNotOk(response, 'Attempt details nahi mil sakin');
     return await response.json();
 };
 
@@ -1181,7 +1391,7 @@ export const getQuizAttemptDetailAPI = async (attemptId: number) => {
 //         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
 //         body: JSON.stringify(data)
 //     });
-//     if (!response.ok) throw new Error('Grading fail ho gayi');
+//     await throwIfNotOk(response, 'Grading fail ho gayi');
 //     return await response.json();
 // };
 
@@ -1202,10 +1412,7 @@ export const gradeQuizAttemptAPI = async (attemptId: number, data: { comments: s
         body: JSON.stringify(data)
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Grading failed');
-    }
+    await throwIfNotOk(response, 'Grading failed');
 
     return await response.json();
 };
@@ -1217,7 +1424,7 @@ export const getStudentQuizResultAPI = async (attemptId: number) => {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
     });
-    if (!response.ok) throw new Error('Result fetch protocol failed');
+    await throwIfNotOk(response, 'Result fetch protocol failed');
     return await response.json();
 };
 
@@ -1283,7 +1490,7 @@ export const getMyAttendanceAPI = async (params?: {
         let message = 'Failed to fetch attendance';
         try {
             const errorData = await response.json();
-            message = errorData.message || message;
+            message = extractBackendMessage(errorData) || message;
         } catch {
             /* ignore parse errors */
         }
@@ -1307,11 +1514,108 @@ export const getAllAttendancesAPI = async () => {
         headers: { 'Authorization': `Bearer ${token}` },
         cache: 'no-store'
     });
-    if (!response.ok) throw new Error('Attendance list load nahi ho saki');
+    await throwIfNotOk(response, 'Attendance list load nahi ho saki');
     return await response.json();
 };
 
-export const updateAttendanceAPI = async (attendanceId: number, payload: any) => {
+export type AttendanceDetailStatus = 'present' | 'absent' | '-';
+
+export type AttendanceSessionDetail = {
+    id: number;
+    status: AttendanceDetailStatus | string;
+    student: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        email?: string;
+        rollNumber?: string | null;
+        roll_number?: string | null;
+        [key: string]: unknown;
+    };
+};
+
+export type AttendanceSession = {
+    id: number;
+    attendanceDate: string | null;
+    /** After first successful mark → true; new live lecture → false */
+    isMarked?: boolean | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    lecture?: {
+        id: number;
+        title: string;
+        [key: string]: unknown;
+    } | null;
+    teacher?: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        [key: string]: unknown;
+    } | null;
+    attendanceDetails: AttendanceSessionDetail[];
+};
+
+export type UpdateAttendancePayload = {
+    attendanceDate?: string;
+    presentStudentIds?: number[];
+    absentStudentIds?: number[];
+};
+
+/** Normalize list/detail payloads — support isMarked / is_marked */
+export function normalizeAttendanceSession(raw: unknown): AttendanceSession {
+    const session = ((raw as { data?: unknown })?.data ?? raw) as Record<string, unknown>;
+    const markedRaw = session?.isMarked ?? session?.is_marked;
+    const isMarked =
+        typeof markedRaw === 'boolean' ? markedRaw : markedRaw == null ? null : Boolean(markedRaw);
+
+    return {
+        ...(session as unknown as AttendanceSession),
+        isMarked,
+        attendanceDetails: Array.isArray(session?.attendanceDetails)
+            ? (session.attendanceDetails as AttendanceSessionDetail[])
+            : [],
+    };
+}
+
+export function normalizeAttendanceList(raw: unknown): AttendanceSession[] {
+    const root = (raw as { data?: unknown })?.data ?? raw;
+    const list = Array.isArray(root) ? root : [];
+    return list.map((item) => normalizeAttendanceSession(item));
+}
+
+/** Load one attendance roll — GET /attendance/:id */
+export const getAttendanceByIdAPI = async (
+    attendanceId: number
+): Promise<AttendanceSession> => {
+    const token = getToken();
+    if (!token) {
+        logoutLocal();
+        throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_URL}/attendance/${attendanceId}`, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+    });
+
+    if (response.status === 401) {
+        logoutLocal();
+        throw new Error('Unauthorized. Please sign in again.');
+    }
+
+    await throwIfNotOk(response, 'Failed to load attendance session');
+    const json = await response.json();
+    return normalizeAttendanceSession(json);
+};
+
+export const updateAttendanceAPI = async (
+    attendanceId: number,
+    payload: UpdateAttendancePayload
+): Promise<AttendanceSession> => {
     const token = getToken();
     const response = await fetch(`${API_URL}/attendance/${attendanceId}`, {
         method: 'PATCH',
@@ -1321,8 +1625,9 @@ export const updateAttendanceAPI = async (attendanceId: number, payload: any) =>
         },
         body: JSON.stringify(payload)
     });
-    if (!response.ok) throw new Error('Update fail ho gaya');
-    return await response.json();
+    await throwIfNotOk(response, 'Failed to update attendance');
+    const json = await response.json();
+    return normalizeAttendanceSession(json);
 };
 
 export const enrollWithProofAPI = async (formData: FormData) => {
@@ -1338,10 +1643,7 @@ export const enrollWithProofAPI = async (formData: FormData) => {
         body: formData,
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Enrollment request failed. Please try again.');
-    }
+    await throwIfNotOk(response, 'Enrollment request failed. Please try again.');
 
     return await response.json();
 };
@@ -1355,7 +1657,7 @@ export const getEnrollmentsAPI = async () => {
         headers: { 'Authorization': `Bearer ${token}` }
     });
 
-    if (!response.ok) throw new Error('Failed to fetch enrollments');
+    await throwIfNotOk(response, 'Failed to fetch enrollments');
     return await response.json();
 };
 
@@ -1374,7 +1676,7 @@ export const updateEnrollmentStatusAPI = async (id: number, data: { action: stri
         body: JSON.stringify(data)
     });
 
-    if (!response.ok) throw new Error('Failed to update status');
+    await throwIfNotOk(response, 'Failed to update status');
     return await response.json();
 };
 
@@ -1390,7 +1692,7 @@ export const getTransactionByIdAPI = async (transactionId: number | string) => {
         }
     });
 
-    if (!response.ok) throw new Error('Failed to fetch transaction details');
+    await throwIfNotOk(response, 'Failed to fetch transaction details');
     return await response.json();
 };
 
@@ -1407,7 +1709,7 @@ export const updateTransactionStatusAPI = async (transactionId: number | string,
         body: JSON.stringify(payload)
     });
 
-    if (!response.ok) throw new Error('Failed to update transaction status');
+    await throwIfNotOk(response, 'Failed to update transaction status');
     return await response.json();
 };
 
@@ -1424,9 +1726,7 @@ export const markLectureCompleteAPI = async (lectureId: number) => {
             }
         });
 
-        if (!response.ok) {
-            throw new Error("Failed to mark lecture as complete");
-        }
+        await throwIfNotOk(response, 'Failed to mark lecture as complete');
         return await response.json();
     } catch (error) {
         console.error("Complete API Error:", error);

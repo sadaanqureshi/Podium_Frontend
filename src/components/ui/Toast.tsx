@@ -1,48 +1,88 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { CheckCircle2, AlertTriangle, X } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Info, AlertCircle, X } from 'lucide-react';
+import type { ToastType } from '@/lib/toastBus';
 
-interface ToastProps {
+export type ToastItem = {
+    id: string;
     message: string;
-    type: 'success' | 'error' | null;
-    onClose: () => void;
-    duration?: number;
+    type: ToastType;
+};
+
+interface ToastStackProps {
+    toasts: ToastItem[];
+    onClose: (id: string) => void;
 }
 
-const Toast: React.FC<ToastProps> = ({ message, type, onClose, duration = 3000 }) => {
-    useEffect(() => {
-        if (type) {
-            const timer = setTimeout(() => {
-                onClose();
-            }, duration);
-            return () => clearTimeout(timer);
-        }
-    }, [type, duration, onClose]);
+const DURATION: Record<ToastType, number> = {
+    success: 3000,
+    info: 3500,
+    warning: 4000,
+    error: 4500,
+};
 
-    if (!type) return null;
+const STYLES: Record<ToastType, string> = {
+    success: 'bg-emerald-950/95 border-emerald-500/40 text-emerald-300',
+    error: 'bg-red-950/95 border-red-500/40 text-red-300',
+    warning: 'bg-amber-950/95 border-amber-500/40 text-amber-300',
+    info: 'bg-slate-900/95 border-sky-500/40 text-sky-300',
+};
+
+const IconFor = ({ type }: { type: ToastType }) => {
+    if (type === 'success') return <CheckCircle2 size={18} className="shrink-0" />;
+    if (type === 'warning') return <AlertTriangle size={18} className="shrink-0" />;
+    if (type === 'info') return <Info size={18} className="shrink-0" />;
+    return <AlertCircle size={18} className="shrink-0" />;
+};
+
+function ToastCard({
+    item,
+    onClose,
+}: {
+    item: ToastItem;
+    onClose: (id: string) => void;
+}) {
+    useEffect(() => {
+        const timer = setTimeout(() => onClose(item.id), DURATION[item.type]);
+        return () => clearTimeout(timer);
+    }, [item.id, item.type, onClose]);
 
     return (
-        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[1000] animate-in slide-in-from-top-5 duration-300 w-[90%] max-w-md">
-            <div className={`flex items-center justify-between gap-3 px-6 py-4 rounded-2xl shadow-2xl border ${
-                type === 'success' 
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
-                : 'bg-red-500/10 border-red-500/20 text-red-500'
-            } bg-card-bg backdrop-blur-xl transition-all`}>
-                
-                <div className="flex items-center gap-3">
-                    {type === 'success' ? <CheckCircle2 size={20} /> : <AlertTriangle size={20} />}
-                    <span className="text-xs font-black uppercase tracking-widest leading-none">
-                        {message}
-                    </span>
-                </div>
-
-                <button onClick={onClose} className="hover:opacity-70 transition-opacity">
-                    <X size={16} />
-                </button>
+        <div
+            role="status"
+            aria-live="polite"
+            className={`flex items-start justify-between gap-3 px-5 py-4 rounded-2xl shadow-2xl border backdrop-blur-md pointer-events-auto animate-in slide-in-from-top-4 fade-in duration-300 ${STYLES[item.type]}`}
+        >
+            <div className="flex items-start gap-3 min-w-0">
+                <IconFor type={item.type} />
+                <span className="text-sm font-semibold leading-snug break-words">
+                    {item.message}
+                </span>
             </div>
+            <button
+                type="button"
+                onClick={() => onClose(item.id)}
+                className="hover:opacity-70 transition-opacity shrink-0 mt-0.5"
+                aria-label="Dismiss"
+            >
+                <X size={16} />
+            </button>
+        </div>
+    );
+}
+
+/** Stacked toasts — fixed top center, high z-index for visibility over sidebars/modals. */
+const ToastStack: React.FC<ToastStackProps> = ({ toasts, onClose }) => {
+    if (!toasts.length) return null;
+
+    return (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[99999] w-[min(92vw,28rem)] flex flex-col gap-2 pointer-events-none">
+            {toasts.map((t) => (
+                <ToastCard key={t.id} item={t} onClose={onClose} />
+            ))}
         </div>
     );
 };
 
-export default Toast;
+export default ToastStack;

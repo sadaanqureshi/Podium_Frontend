@@ -303,7 +303,13 @@ export const GenericContentTab = ({
                         sectionId={sectionId}
                         subtitle={
                             type === 'quiz'
-                                ? `Marks: ${item.totalMarks}`
+                                ? `Marks: ${item.total_marks ?? item.totalMarks ?? '—'}${
+                                      item.is_Published === true || item.isPublished === true
+                                          ? ' · Published'
+                                          : item.is_Published === false || item.isPublished === false
+                                            ? ' · Draft'
+                                            : ''
+                                  }`
                                 : (item.lectureType === 'online'
                                     ? `Starts: ${item.liveStart ? new Date(item.liveStart).toLocaleString('en-GB') : 'TBD'}`
                                     : 'Recorded Session')

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { getFeesDataAPI, getEnrollmentsAPI, getTransactionByIdAPI } from '@/lib/api/apiService';
+import { getErrorMessage } from '@/lib/api/errorMessage';
 
 // # THUNK 1: Fetch Finance Data (List)
 export const fetchFeesData = createAsyncThunk(
@@ -9,7 +10,7 @@ export const fetchFeesData = createAsyncThunk(
             const res = await getFeesDataAPI(params?.page || 1, params?.limit || 10);
             return res.data || res;
         } catch (err: any) {
-            return rejectWithValue(err.message || 'Finance data load nahi ho saka');
+            return rejectWithValue(getErrorMessage(err, 'Finance data load nahi ho saka'));
         }
     }
 );
@@ -22,7 +23,7 @@ export const fetchEnrollmentsData = createAsyncThunk(
             const res = await getEnrollmentsAPI();
             return res; 
         } catch (err: any) {
-            return rejectWithValue(err.message || 'Enrollments data load nahi ho saka');
+            return rejectWithValue(getErrorMessage(err, 'Enrollments data load nahi ho saka'));
         }
     }
 );
@@ -35,7 +36,7 @@ export const fetchTransactionDetails = createAsyncThunk(
             const res = await getTransactionByIdAPI(transactionId);
             return res; 
         } catch (err: any) {
-            return rejectWithValue(err.message || 'Transaction details load nahi ho sake');
+            return rejectWithValue(getErrorMessage(err, 'Transaction details load nahi ho sake'));
         }
     }
 );

@@ -15,6 +15,7 @@ import {
     CourseUpdateType,
     MyCourseUpdatesResponse,
 } from '@/lib/api/apiService';
+import { getErrorMessage } from '@/lib/api/errorMessage';
 
 // ==============================
 // TYPES & INTERFACES
@@ -103,7 +104,7 @@ export const fetchAssignedCourses = createAsyncThunk(
             const response = await getAssignedCoursesAPI();
             return response.data || response;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Failed to fetch assigned courses');
+            return rejectWithValue(getErrorMessage(error, 'Failed to fetch assigned courses'));
         }
     }
 );
@@ -116,7 +117,7 @@ export const fetchAdminCourses = createAsyncThunk(
             const response = await getAllCoursesAPI(page, limit);
             return response;
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Failed to fetch admin courses');
+            return rejectWithValue(getErrorMessage(error, 'Failed to fetch admin courses'));
         }
     }
 );
@@ -135,7 +136,7 @@ export const fetchAdminMetadata = createAsyncThunk(
                 teachers: teacherRes.data || teacherRes
             };
         } catch (error: any) {
-            return rejectWithValue(error.message || 'Failed to fetch metadata');
+            return rejectWithValue(getErrorMessage(error, 'Failed to fetch metadata'));
         }
     }
 );
@@ -152,7 +153,7 @@ export const fetchCourseContent = createAsyncThunk(
             const content = await getCourseWithContentAPI(courseId);
             return { courseId, content, fromCache: false };
         } catch (error: any) {
-            return rejectWithValue(error.message || `Course ${courseId} load nahi ho saka`);
+            return rejectWithValue(getErrorMessage(error, `Course ${courseId} load nahi ho saka`));
         }
     }
 );
@@ -163,7 +164,7 @@ export const fetchEnrolledCourses = createAsyncThunk(
         try {
             return await getMyEnrolledCoursesAPI();
         } catch (err: any) {
-            return rejectWithValue(err.response?.data?.message || "Failed to fetch enrolled courses");
+            return rejectWithValue(getErrorMessage(err, 'Failed to fetch enrolled courses'));
         }
     }
 
@@ -176,7 +177,7 @@ export const fetchMyEnrollmentRequests = createAsyncThunk(
         try {
             return await getMyEnrollmentRequestsAPI(params);
         } catch (err: any) {
-            return rejectWithValue(err.message || 'Failed to fetch enrollment requests');
+            return rejectWithValue(getErrorMessage(err, 'Failed to fetch enrollment requests'));
         }
     }
 );
@@ -196,7 +197,7 @@ export const fetchMyCourseUpdates = createAsyncThunk(
         try {
             return await getMyCourseUpdatesAPI(params);
         } catch (err: any) {
-            return rejectWithValue(err.message || 'Failed to fetch course updates');
+            return rejectWithValue(getErrorMessage(err, 'Failed to fetch course updates'));
         }
     }
 );
@@ -208,7 +209,7 @@ export const fetchAllCourses = createAsyncThunk(
             const response = await getAllCoursesAPI(page, limit);
             return response; // Ismein { data: [], meta: {} } aayega
         } catch (error: any) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(getErrorMessage(error, 'Failed to fetch courses'));
         }
     }
 );

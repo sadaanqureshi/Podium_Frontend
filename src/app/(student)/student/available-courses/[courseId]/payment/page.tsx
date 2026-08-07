@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/context/ToastContext';
+import { getErrorMessage } from '@/lib/api/errorMessage';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/lib/store/hooks';
 import { enrollWithProofAPI } from '@/lib/api/apiService'; // API Import ki hai
@@ -61,7 +62,7 @@ const EnrollmentPaymentPage = ({ params }: { params: Promise<any> }) => {
       // 3. Success page par bhej dein
       router.push(`/student/available-courses/${courseId}/payment/success`);
     } catch (err: any) {
-      showToast(err.message || "Failed to upload proof.", "error");
+      showToast(getErrorMessage(err, 'Failed to upload proof.'), "error");
     } finally {
       setUploading(false);
     }
