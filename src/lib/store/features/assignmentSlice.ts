@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { getAssignmentSubmissionsAPI, gradeSubmissionAPI, submitAssignmentAPI } from '@/lib/api/apiService';
 import { getErrorMessage } from '@/lib/api/errorMessage';
+import { normalizeSubmissionsList } from '@/lib/assignmentSubmissions';
 
 interface AssignmentState {
     submissionsCache: Record<number, any[]>;
@@ -20,7 +21,7 @@ export const fetchSubmissions = createAsyncThunk(
     async (assignmentId: number, { rejectWithValue }) => {
         try {
             const res = await getAssignmentSubmissionsAPI(assignmentId);
-            return { assignmentId, data: res.data || res || [] };
+            return { assignmentId, data: normalizeSubmissionsList(res) };
         } catch (err: any) {
             return rejectWithValue(getErrorMessage(err, 'Submissions load nahi ho sakeen'));
         }
@@ -80,9 +81,24 @@ const assignmentSlice = createSlice({
             // # OPTIMISTIC UPDATE: Instant Grade Refresh in Redux Cache
             .addCase(submitGrade.fulfilled, (state, action) => {
                 const { assignmentId, studentId, updatedData } = action.payload;
+                const raw =
+                    updatedData && typeof updatedData === 'object' && !Array.isArray(updatedData)
+                        ? (updatedData.data && typeof updatedData.data === 'object'
+                              ? updatedData.data
+                              : updatedData)
+                        : {};
+                const patch = {
+                    ...raw,
+                    status: (raw as any)?.status || 'graded',
+                };
                 if (state.submissionsCache[assignmentId]) {
-                    state.submissionsCache[assignmentId] = state.submissionsCache[assignmentId].map((sub) =>
-                        sub.studentId === studentId ? { ...sub, ...updatedData } : sub
+                    state.submissionsCache[assignmentId] = state.submissionsCache[assignmentId].map(
+                        (sub) => {
+                            const subStudentId = sub.studentId ?? sub.student?.id ?? sub.userId;
+                            return Number(subStudentId) === Number(studentId)
+                                ? { ...sub, ...patch }
+                                : sub;
+                        }
                     );
                 }
             });

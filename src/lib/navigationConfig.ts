@@ -1,33 +1,94 @@
 // src/lib/navigationConfig.ts
 import {
-  LayoutDashboard, BookOpen, NotepadText, Users, Settings,
-  History, Bell, Moon, CreditCard, Megaphone, NotebookPen, BookCopy, CalendarCheck, ClipboardList, Sparkles, Inbox
+  LayoutDashboard,
+  BookOpen,
+  NotepadText,
+  Users,
+  Settings,
+  History,
+  Bell,
+  Moon,
+  CreditCard,
+  Megaphone,
+  NotebookPen,
+  BookCopy,
+  CalendarCheck,
+  ClipboardList,
+  Sparkles,
+  Inbox,
+  GraduationCap,
+  UserRound,
+  Library,
+  FolderOpen,
+  FileQuestion,
+  UserCog,
+  BadgeCheck,
+  Layers,
+  Award,
 } from 'lucide-react';
 
+/**
+ * Longer / more specific keys win in getNavIcon.
+ * Keep phrases that appear in API sidebar names for admin / teacher / student.
+ */
 export const ICON_MAPPING: Record<string, any> = {
-  "dashboard": LayoutDashboard,
-  "management": Users,
-  "courses": BookOpen,
-  "quizzes": NotepadText,
-  "assignments": NotebookPen,
-  "assignment": NotebookPen,
-  "course assignments": Inbox,
-  "course assignment": Inbox,
-  "assign courses": Inbox,
-  "resources": BookCopy,
-  "resource": BookCopy,
-  "audit logs": History,
-  "profile": Settings,
-  "notifications": Bell,
-  "dark mode": Moon,
-  "fees": CreditCard,
-  "announcements": Megaphone,
-  "configuration": Settings,
-  "enrollments": Users,
-  "enrollment": ClipboardList,
-  "attendance": CalendarCheck,
-  "course updates": Sparkles,
-  "updates": Sparkles,
+  // Dashboards
+  'admin dashboard': LayoutDashboard,
+  'teacher dashboard': LayoutDashboard,
+  'student dashboard': LayoutDashboard,
+  dashboard: LayoutDashboard,
+
+  // People / admin ops
+  'student management': GraduationCap,
+  'teacher management': UserCog,
+  'teacher assignments': BadgeCheck,
+  'teacher assignment': BadgeCheck,
+  management: Users,
+
+  // Courses (role-specific labels still share course icons)
+  'courses management': BookOpen,
+  'assigned courses': Library,
+  'enrolled courses': BookOpen,
+  'available courses': Layers,
+  'my courses': BookOpen,
+  courses: BookOpen,
+
+  // Teacher inbox vs student homework
+  'course assignments': Inbox,
+  'course assignment': Inbox,
+  'assign courses': Inbox,
+  'assign course': Inbox,
+  'course updates': Sparkles,
+  'course update': Sparkles,
+  updates: Sparkles,
+
+  // Learning content
+  quizzes: FileQuestion,
+  quiz: FileQuestion,
+  assignments: NotebookPen,
+  assignment: NotebookPen,
+  resources: BookCopy,
+  resource: BookCopy,
+  'my grades': Award,
+  marksheet: Award,
+  grades: Award,
+
+  // Ops
+  'audit logs': History,
+  'audit log': History,
+  enrollments: ClipboardList,
+  enrollment: ClipboardList,
+  attendance: CalendarCheck,
+  fees: CreditCard,
+  announcements: Megaphone,
+  annoucement: Megaphone,
+  announcement: Megaphone,
+  configuration: Settings,
+  profile: UserRound,
+  notifications: Bell,
+  'dark mode': Moon,
+  folders: FolderOpen,
+  section: FolderOpen,
 };
 
 export type AppRole = 'admin' | 'teacher' | 'student';
@@ -81,12 +142,17 @@ export const getSignInPathForRole = (role: string): string => {
   return '/';
 };
 
-/** Prefer longer key matches so "Attendance Management" → attendance, not management */
+/** Prefer longer key matches so specific labels beat generic ones */
 export const getNavIcon = (itemName: string) => {
-  const lowerName = itemName.toLowerCase();
+  const lowerName = itemName.toLowerCase().trim();
+
+  // Exact match first
+  if (ICON_MAPPING[lowerName]) return ICON_MAPPING[lowerName];
+
   const key = Object.keys(ICON_MAPPING)
     .filter((k) => lowerName.includes(k))
     .sort((a, b) => b.length - a.length)[0];
+
   return key ? ICON_MAPPING[key] : null;
 };
 
@@ -96,6 +162,14 @@ export const getNavLabel = (itemName: string, role?: string): string => {
   const r = normalizeRole(role);
 
   if (lower.includes('attendance')) return 'Attendance';
+
+  // Admin: course ↔ teacher assignment queue (not student homework)
+  if (
+    r === 'admin' &&
+    (lower.includes('teacher assignment') || lower === 'teacher assignments')
+  ) {
+    return 'Teacher Assignments';
+  }
 
   // Teacher inbox for admin-assigned courses (API may send "Course Updates")
   if (
@@ -131,6 +205,13 @@ export const getNavLabel = (itemName: string, role?: string): string => {
     return 'My Courses';
   }
 
+  if (
+    r === 'student' &&
+    (lower === 'my grades' || lower.includes('marksheet') || lower === 'grades')
+  ) {
+    return 'My Grades';
+  }
+
   return itemName;
 };
 
@@ -150,11 +231,21 @@ export const getRolePath = (roleInput: any, itemName: string): string => {
     return rolePrefix ? `${rolePrefix}/dashboard` : '/dashboard';
   }
 
-  // --- ATTENDANCE (role-scoped) ---
+  // --- ATTENDANCE (teacher / student only; admin nav removed) ---
   if (name.includes('attendance')) {
+    if (role === 'admin') return '/admin/dashboard';
     if (role === 'teacher') return '/teacher/attendance';
-    if (role === 'admin') return '/admin/attendance';
     return '/student/attendance';
+  }
+
+  // --- STUDENT: My Grades hub (pick a course marksheet) ---
+  if (
+    name === 'my grades' ||
+    name.includes('my grade') ||
+    name.includes('marksheet') ||
+    name === 'grades'
+  ) {
+    return '/student/my-grades';
   }
 
   // --- TEACHER: course assignment inbox (before generic "assignment" folder) ---
@@ -199,17 +290,31 @@ export const getRolePath = (roleInput: any, itemName: string): string => {
     }
   }
 
+  // --- ADMIN: Teacher Assignments (before generic "assignment" folder) ---
+  if (
+    role === 'admin' &&
+    (name.includes('teacher assignment') || name === 'teacher assignments')
+  ) {
+    return '/admin/teacher-assignments';
+  }
+
   // --- DYNAMIC FOLDERS ---
   // Skip generic "assignment" when the item is the teacher course-assignment inbox
+  // or the admin teacher-assignments queue
   const isTeacherCourseAssignmentInbox =
     role === 'teacher' &&
     (name.includes('course assignment') ||
       name.includes('assign course') ||
       name.includes('course update'));
+  const isAdminTeacherAssignments =
+    role === 'admin' && name.includes('teacher assignment');
 
   const dynamicFolders = ['quiz', 'assignment', 'resource', 'profile', 'fees'];
   const matched = dynamicFolders.find((folder) => name.includes(folder));
-  if (matched && !(matched === 'assignment' && isTeacherCourseAssignmentInbox)) {
+  if (
+    matched &&
+    !(matched === 'assignment' && (isTeacherCourseAssignmentInbox || isAdminTeacherAssignments))
+  ) {
     let folderName = matched;
     if (matched === 'quiz') folderName = 'quizzes';
     return rolePrefix ? `${rolePrefix}/${folderName}` : `/${folderName}`;
@@ -223,6 +328,7 @@ export const getRolePath = (roleInput: any, itemName: string): string => {
   const overrides: Record<string, string> = {
     'student management': '/admin/student',
     'teacher management': '/admin/teacher',
+    'teacher assignments': '/admin/teacher-assignments',
     'assigned courses': '/teacher/assigned-courses',
     'course assignments': '/teacher/course-assignments',
     'annoucement management': role === 'admin' ? '/admin/announcements' : '/announcements',

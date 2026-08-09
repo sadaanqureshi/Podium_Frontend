@@ -136,7 +136,8 @@ export default function EnrolledCoursesPage() {
                 description="Manage and track your active training modules."
                 courses={mappedCourses}
                 basePath="/student/enrolled-courses"
-                showProgress={true} 
+                showProgress={true}
+                showMarksheetLink={true}
             />
         </div>
     );

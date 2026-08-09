@@ -1,6 +1,16 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus } from 'lucide-react';
+import {
+    Plus,
+    Users,
+    UserCheck,
+    UserX,
+    BookOpen,
+    ClipboardList,
+    Sparkles,
+} from 'lucide-react';
+import Pagination from '@/components/ui/Pagination';
+import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { fetchAllStudents } from '@/lib/store/features/userSlice';
 import { createStudentsAPI, updateStudentsAPI, deleteStudentsAPI } from '@/lib/api/apiService';
@@ -10,87 +20,196 @@ import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 import { useToast } from '@/context/ToastContext';
 import { getErrorMessage } from '@/lib/api/errorMessage';
 
+const PAGE_LIMIT = 10;
+
 const StudentManagement = () => {
     const dispatch = useAppDispatch();
+    const router = useRouter();
     const { showToast } = useToast();
-    
-    // # REDUX STATE
+
     const { students, loading } = useAppSelector((state) => state.users);
-    
+    const [page, setPage] = useState(1);
     const [modalOpen, setModalOpen] = useState(false);
     const [modalLoading, setModalLoading] = useState(false);
     const [selectedUser, setSelectedUser] = useState<any>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
-    const [deleteName, setDeleteName] = useState("");
+    const [deleteName, setDeleteName] = useState('');
 
-    useEffect(() => { 
-        dispatch(fetchAllStudents({ page: 1, limit: 10 })); 
-    }, [dispatch]);
+    useEffect(() => {
+        dispatch(fetchAllStudents({ page, limit: PAGE_LIMIT }));
+    }, [dispatch, page]);
 
-    // # DYNAMIC FIELDS LOGIC
+    const stats = students.stats;
+    const meta = students.meta;
+    const totalPages = Math.max(1, meta?.totalPages || 1);
+
     const studentFields: FormField[] = useMemo(() => {
         const baseFields: FormField[] = [
             { name: 'firstName', label: 'First Name', type: 'text', required: true },
             { name: 'lastName', label: 'Last Name', type: 'text', required: true },
             { name: 'email', label: 'Email Address', type: 'text', required: true },
             { name: 'contactNumber', label: 'Phone Number', type: 'text' },
-            // { name: 'isActive', label: 'Status', type: 'select', options: [{ label: 'Active', value: 'true' }, { label: 'Inactive', value: 'false' }] }
         ];
 
-        // Agar Edit mode hai (selectedUser), toh password field add kardo
         if (selectedUser) {
             return [
-                ...baseFields.slice(0, 3), 
-                { name: 'password', label: 'Update Password', type: 'text', placeholder: 'Leave empty to keep current' },
-                ...baseFields.slice(3)
+                ...baseFields.slice(0, 3),
+                {
+                    name: 'password',
+                    label: 'Update Password',
+                    type: 'text',
+                    placeholder: 'Leave empty to keep current',
+                },
+                ...baseFields.slice(3),
             ];
         }
         return baseFields;
     }, [selectedUser]);
 
-    const studentColumns = useMemo(() => [
-        { header: 'Student Name', key: 'firstName' }, 
-        { header: 'Email Address', key: 'email' },
-        { header: 'Contact', key: 'contactNumber' },
-        { 
-            header: 'Status', key: 'isActive', align: 'center' as const,
-            render: (item: any) => (
-                <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                    item.isActive ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
-                }`}>
-                    {item.isActive ? 'Active' : 'Suspended'}
-                </span>
-            )
-        }
-    ], []);
+    const studentColumns = useMemo(
+        () => [
+            { header: 'Student Name', key: 'firstName' },
+            { header: 'Email Address', key: 'email' },
+            {
+                header: 'Roll No',
+                key: 'rollNumber',
+                render: (item: any) => (
+                    <span className="text-xs font-bold text-text-muted">
+                        {item.rollNumber || '—'}
+                    </span>
+                ),
+            },
+            { header: 'Contact', key: 'contactNumber' },
+            {
+                header: 'Status',
+                key: 'isActive',
+                align: 'center' as const,
+                render: (item: any) => (
+                    <span
+                        className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                            item.isActive
+                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+                        }`}
+                    >
+                        {item.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                ),
+            },
+        ],
+        []
+    );
+
+    const openProfile = (id: number) => {
+        router.push(`/admin/student/${id}`);
+    };
 
     const handleSubmit = async (formData: FormData) => {
         setModalLoading(true);
         const data = Object.fromEntries(formData);
         try {
             if (selectedUser) {
-                // Agar password empty hai edit mein, toh usey payload se hata do
                 if (!data.password) delete data.password;
                 await updateStudentsAPI(selectedUser.id, data);
-                showToast("Student data updated", "success");
+                showToast('Student data updated', 'success');
             } else {
                 await createStudentsAPI(data);
-                showToast("New student created", "success");
+                showToast('New student created', 'success');
             }
             setModalOpen(false);
-            dispatch(fetchAllStudents({ page: 1, limit: 10 }));
-        } catch (err: any) { showToast(getErrorMessage(err, 'Failed to save student'), "error"); }
-        finally { setModalLoading(false); }
+            dispatch(fetchAllStudents({ page, limit: PAGE_LIMIT }));
+        } catch (err: unknown) {
+            showToast(getErrorMessage(err, 'Failed to save student'), 'error');
+        } finally {
+            setModalLoading(false);
+        }
     };
 
+    const statCards = [
+        {
+            label: 'Total Students',
+            value: stats?.totalStudents ?? 0,
+            icon: Users,
+            accent: 'text-accent-blue bg-accent-blue/10',
+        },
+        {
+            label: 'Active',
+            value: stats?.activeStudents ?? 0,
+            icon: UserCheck,
+            accent: 'text-emerald-500 bg-emerald-500/10',
+        },
+        {
+            label: 'Inactive',
+            value: stats?.inactiveStudents ?? 0,
+            icon: UserX,
+            accent: 'text-rose-500 bg-rose-500/10',
+        },
+        {
+            label: 'With Enrollments',
+            value: stats?.studentsWithEnrollments ?? 0,
+            icon: BookOpen,
+            accent: 'text-violet-400 bg-violet-500/10',
+        },
+        {
+            label: 'Pending Requests',
+            value: stats?.pendingEnrollmentRequests ?? 0,
+            icon: ClipboardList,
+            accent: 'text-amber-500 bg-amber-500/10',
+        },
+        {
+            label: 'New This Month',
+            value: stats?.newStudentsThisMonth ?? 0,
+            icon: Sparkles,
+            accent: 'text-sky-400 bg-sky-500/10',
+        },
+    ];
+
     return (
-        <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main">
-            <div className="flex justify-between items-center mb-10">
-                <h1 className="text-3xl font-black uppercase tracking-tight italic">Student Registry</h1>
-                <button onClick={() => { setSelectedUser(null); setModalOpen(true); }}
-                className="flex items-center gap-2 px-4 py-2 bg-accent-blue text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95">
+        <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main space-y-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h1 className="text-3xl font-black uppercase tracking-tight">Student Registry</h1>
+                    <p className="text-text-muted text-sm font-medium mt-1">
+                        Browse students and open a profile for enrollments and history.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setSelectedUser(null);
+                        setModalOpen(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-accent-blue text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95"
+                >
                     <Plus size={18} strokeWidth={3} /> Register Student
                 </button>
+            </div>
+
+            {/* Stats from API `stats` */}
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4">
+                {statCards.map((card) => {
+                    const Icon = card.icon;
+                    return (
+                        <div
+                            key={card.label}
+                            className="bg-card-bg border border-border-subtle rounded-2xl p-4 shadow-sm flex items-center gap-3"
+                        >
+                            <div
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${card.accent}`}
+                            >
+                                <Icon size={18} />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-[9px] font-black text-text-muted uppercase tracking-widest truncate">
+                                    {card.label}
+                                </p>
+                                <p className="text-xl font-black tabular-nums">
+                                    {loading && !students.data?.length ? '—' : card.value}
+                                </p>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
             <div className="bg-card-bg rounded-[1rem] shadow-2xl border border-border-subtle overflow-hidden">
@@ -98,24 +217,51 @@ const StudentManagement = () => {
                     data={students.data || []}
                     loading={loading || false}
                     columnConfig={studentColumns}
-                    visibleActions={['edit', 'delete']}
-                    onEdit={(user) => { setSelectedUser({ ...user, isActive: String(user.isActive) }); setModalOpen(true); }}
-                    onDelete={(id, name) => { setDeleteId(id); setDeleteName(name); }}
+                    visibleActions={['view', 'edit', 'delete']}
+                    onView={openProfile}
+                    onRowClick={(item) => openProfile(item.id)}
+                    onEdit={(user) => {
+                        setSelectedUser({ ...user, isActive: String(user.isActive) });
+                        setModalOpen(true);
+                    }}
+                    onDelete={(id, name) => {
+                        setDeleteId(id);
+                        setDeleteName(name);
+                    }}
                     type="Student"
                 />
+
+                <div className="px-6 py-4 border-t border-border-subtle bg-app-bg/40">
+                    <Pagination
+                        page={meta?.currentPage || page}
+                        totalPages={totalPages}
+                        totalItems={meta?.totalItems ?? 0}
+                        loading={loading}
+                        onPageChange={setPage}
+                    />
+                </div>
             </div>
 
-            <DeleteConfirmationModal 
-                isOpen={!!deleteId} onClose={() => setDeleteId(null)} 
+            <DeleteConfirmationModal
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
                 onConfirm={async () => {
                     await deleteStudentsAPI(deleteId!);
-                    dispatch(fetchAllStudents({ page: 1, limit: 10 }));
+                    dispatch(fetchAllStudents({ page, limit: PAGE_LIMIT }));
                     setDeleteId(null);
-                }} 
-                title={deleteName} 
+                }}
+                title={deleteName}
             />
 
-            <GenericFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={selectedUser ? "Update Intel" : "Create Record"} fields={studentFields} onSubmit={handleSubmit} loading={modalLoading} initialData={selectedUser} />
+            <GenericFormModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                title={selectedUser ? 'Update Intel' : 'Create Record'}
+                fields={studentFields}
+                onSubmit={handleSubmit}
+                loading={modalLoading}
+                initialData={selectedUser}
+            />
         </div>
     );
 };

@@ -2,7 +2,7 @@
 import { use, useEffect, useState } from 'react';
 import UnifiedCourseDetail from '@/components/courses/UnifiedCourseDetail';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
-import { fetchCourseContent } from '@/lib/store/features/courseSlice';
+import { fetchCourseContent, refreshCourseContent } from '@/lib/store/features/courseSlice';
 import { getStudentsAPI } from '@/lib/api/apiService';
 
 export default function AdminCoursePage({ params }: { params: Promise<{ id: string }> }) {
@@ -16,10 +16,12 @@ export default function AdminCoursePage({ params }: { params: Promise<{ id: stri
 
     useEffect(() => {
         if (courseId) {
+            // Always refetch so admin gets stats + pending/rejected arrays
+            dispatch(refreshCourseContent(courseId));
             dispatch(fetchCourseContent(courseId));
-            // Admin-only: Fetch global student list for enrollment
             getStudentsAPI().then(res => {
-                setAllStudents((res.data || []).map((s: any) => ({
+                const list = Array.isArray(res) ? res : res?.data || [];
+                setAllStudents(list.map((s: any) => ({
                     label: `${s.firstName} ${s.lastName} (${s.email})`,
                     value: s.id
                 })));

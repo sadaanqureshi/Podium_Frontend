@@ -1,16 +1,14 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import React, { Suspense, useEffect } from 'react';
+import { AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { fetchTeacherDashboard } from '@/lib/store/features/teacherDashboardSlice';
+import { useToast } from '@/context/ToastContext';
 import {
-    TeacherMetricCards,
-    RecentCoursesWidget,
-    PendingCourseAssignmentsWidget,
-    GradingQueueWidget,
-    RecentAttendanceWidget,
-    GoogleCalendarStatusWidget,
+    TeacherKpiGrid,
+    TeacherActionPanel,
+    TeacherActivityPanel,
 } from '@/components/teacher/dashboard/TeacherDashboardWidgets';
 import {
     StudentsPerCourseChart,
@@ -19,58 +17,55 @@ import {
     GradingQueueChart,
 } from '@/components/teacher/dashboard/TeacherDashboardCharts';
 
-export default function TeacherDashboard() {
+function TeacherDashboardInner() {
     const dispatch = useAppDispatch();
+    const { showToast } = useToast();
     const { data, loading, error } = useAppSelector((s) => s.teacherDashboard);
-
-    useEffect(() => {
-        dispatch(fetchTeacherDashboard());
-    }, [dispatch]);
 
     const refresh = () => {
         dispatch(fetchTeacherDashboard());
     };
 
+    useEffect(() => {
+        dispatch(fetchTeacherDashboard());
+    }, [dispatch]);
+
+    useEffect(() => {
+        const onFocus = () => {
+            if (document.visibilityState === 'visible') {
+                dispatch(fetchTeacherDashboard());
+            }
+        };
+        document.addEventListener('visibilitychange', onFocus);
+        window.addEventListener('focus', onFocus);
+        return () => {
+            document.removeEventListener('visibilitychange', onFocus);
+            window.removeEventListener('focus', onFocus);
+        };
+    }, [dispatch]);
+
+    useEffect(() => {
+        if (error && data) {
+            showToast(error, 'error');
+        }
+    }, [error, data, showToast]);
+
     if (loading && !data) {
-        return (
-            <div className="bg-app-bg h-full">
-                <div className="max-w-6xl mx-auto px-6 pt-12 space-y-8">
-                    <div className="hero-registry-card rounded-[3rem] p-10 md:p-16 border border-border-subtle animate-pulse">
-                        <div className="h-4 w-40 bg-border-subtle rounded mb-6" />
-                        <div className="h-10 w-3/4 max-w-xl bg-border-subtle rounded mb-4" />
-                        <div className="h-4 w-2/3 max-w-md bg-border-subtle rounded" />
-                    </div>
-                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className="h-24 rounded-2xl bg-card-bg border border-border-subtle animate-pulse"
-                            />
-                        ))}
-                    </div>
-                    <div className="flex items-center justify-center py-16 text-text-muted gap-3">
-                        <Loader2 className="animate-spin" size={20} />
-                        <span className="text-xs font-black uppercase tracking-widest">
-                            Loading dashboard…
-                        </span>
-                    </div>
-                </div>
-            </div>
-        );
+        return <DashboardSkeleton />;
     }
 
     if (error && !data) {
         return (
-            <div className="bg-app-bg h-full flex items-center justify-center px-6">
-                <div className="max-w-md w-full bg-card-bg border border-border-subtle rounded-2xl p-8 text-center space-y-4 shadow-sm">
-                    <div className="mx-auto w-12 h-12 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center">
+            <div className="min-h-screen bg-app-bg text-text-main flex items-center justify-center px-6">
+                <div className="max-w-md w-full rounded-2xl border border-border-subtle bg-card-bg p-8 text-center space-y-4 shadow-xl">
+                    <div className="mx-auto w-12 h-12 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
                         <AlertCircle size={22} />
                     </div>
                     <p className="text-sm font-black uppercase tracking-wider">{error}</p>
                     <button
                         type="button"
                         onClick={refresh}
-                        className="inline-flex items-center gap-2 mx-auto px-5 py-3 rounded-xl bg-accent-blue text-white text-[10px] font-black uppercase tracking-widest hover:opacity-90"
+                        className="inline-flex items-center gap-2 mx-auto px-5 py-3 rounded-xl bg-accent-blue text-white text-[10px] font-black uppercase tracking-widest hover:bg-hover-blue"
                     >
                         <RefreshCw size={14} /> Try again
                     </button>
@@ -91,90 +86,147 @@ export default function TeacherDashboard() {
         googleCalendar,
     } = data;
 
+    const pendingActions =
+        (metrics.pendingCourseAssignmentCount ?? 0) +
+        (metrics.submissionsToGradeCount ?? 0) +
+        (metrics.unmarkedAttendanceCount ?? 0);
+
     return (
-        <div className="bg-app-bg h-full">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 md:pt-12 pb-16 space-y-8 md:space-y-10">
-                {/* Welcome hero */}
-                <div className="hero-registry-card rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 border border-border-subtle relative overflow-hidden shadow-2xl">
-                    <div className="absolute top-0 right-0 w-80 h-80 bg-accent-blue/5 rounded-full blur-[100px] -mr-40 -mt-40" />
-                    <div className="relative z-10 space-y-4 text-center md:text-left">
-                        <span className="text-[10px] font-black text-accent-blue uppercase tracking-[0.3em]">
-                            Instructor Hub
-                        </span>
-                        <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter">
-                            Welcome to Podium Professional, {welcome.firstName}{' '}
-                            {welcome.lastName}
-                        </h1>
-                        <p className="text-text-muted text-sm font-medium max-w-xl leading-relaxed uppercase tracking-wider">
-                            Your teaching overview — courses, grading, attendance, and assignments.
-                        </p>
+        <div className="min-h-screen bg-app-bg text-text-main pb-20 relative overflow-hidden">
+            <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(37,99,235,0.12),_transparent_50%),radial-gradient(ellipse_at_bottom_right,_rgba(37,99,235,0.06),_transparent_45%)] dark:bg-[radial-gradient(ellipse_at_top,_rgba(37,99,235,0.16),_transparent_50%),radial-gradient(ellipse_at_bottom_right,_rgba(56,189,248,0.06),_transparent_45%)]" />
+                <div
+                    className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]"
+                    style={{
+                        backgroundImage:
+                            'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
+                    }}
+                />
+            </div>
+
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-8 md:pt-10 space-y-8 md:space-y-10">
+                <section className="rounded-[1.75rem] md:rounded-[2rem] border border-border-subtle bg-card-bg p-6 md:p-10 shadow-xl overflow-hidden relative">
+                    <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-accent-blue/10 blur-3xl" />
+                    <div className="relative z-10 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+                        <div className="space-y-3 max-w-2xl">
+                            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-accent-blue">
+                                Instructor hub
+                            </p>
+                            <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-none text-text-main">
+                                Welcome back, {welcome.firstName}
+                            </h1>
+                            <p className="text-sm font-medium text-text-muted uppercase tracking-wider">
+                                Courses · grading · attendance
+                            </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="rounded-2xl border border-accent-blue/25 bg-accent-blue/10 px-4 py-3 min-w-[150px]">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-accent-blue">
+                                    Students taught
+                                </p>
+                                <p className="text-xl font-black tabular-nums text-text-main mt-1">
+                                    {metrics.studentsEnrolledCount ?? 0}
+                                </p>
+                            </div>
+                            <div
+                                className={`rounded-2xl border px-4 py-3 min-w-[140px] ${
+                                    pendingActions > 0
+                                        ? 'border-accent-blue/35 bg-accent-blue/10'
+                                        : 'border-border-subtle bg-app-bg'
+                                }`}
+                            >
+                                <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">
+                                    Action required
+                                </p>
+                                <p className="text-xl font-black tabular-nums text-accent-blue mt-1">
+                                    {pendingActions}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={refresh}
+                                disabled={loading}
+                                className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl border border-border-subtle text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-accent-blue hover:border-accent-blue/30 disabled:opacity-50"
+                            >
+                                {loading ? (
+                                    <Loader2 size={14} className="animate-spin" />
+                                ) : (
+                                    <RefreshCw size={14} />
+                                )}
+                                Refresh
+                            </button>
+                        </div>
                     </div>
+                </section>
+
+                <TeacherKpiGrid
+                    metrics={metrics}
+                    googleCalendar={googleCalendar}
+                    gradingQueueCount={gradingQueue.length}
+                />
+
+                <TeacherActionPanel
+                    pendingCourseAssignments={pendingCourseAssignments}
+                    gradingQueue={gradingQueue}
+                    recentAttendance={recentAttendance}
+                />
+
+                <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                    <StudentsPerCourseChart courses={recentCourses} />
+                    <WorkloadSnapshotChart metrics={metrics} />
+                    <AttendanceMarkStatusChart items={recentAttendance} />
+                </section>
+
+                <GradingQueueChart items={gradingQueue} />
+
+                <TeacherActivityPanel
+                    recentCourses={recentCourses}
+                    gradingQueue={gradingQueue}
+                    recentAttendance={recentAttendance}
+                    googleCalendar={googleCalendar}
+                />
+            </div>
+        </div>
+    );
+}
+
+function DashboardSkeleton() {
+    return (
+        <div className="min-h-screen bg-app-bg px-4 sm:px-6 pt-10 pb-20">
+            <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
+                <div className="h-40 rounded-[2rem] bg-card-bg border border-border-subtle" />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="h-36 rounded-2xl bg-card-bg border border-border-subtle"
+                        />
+                    ))}
                 </div>
-
-                {error && (
-                    <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-bold uppercase tracking-wider">
-                        <span>{error}</span>
-                        <button
-                            type="button"
-                            onClick={refresh}
-                            className="inline-flex items-center gap-1.5 shrink-0 hover:underline"
-                        >
-                            <RefreshCw size={12} /> Retry
-                        </button>
-                    </div>
-                )}
-
-                <TeacherMetricCards metrics={metrics} />
-
-                {/* Charts 1–3 above the fold */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                    <ChartCard title="Students per Course" className="lg:col-span-1">
-                        <StudentsPerCourseChart courses={recentCourses} />
-                    </ChartCard>
-                    <ChartCard title="Workload Snapshot">
-                        <WorkloadSnapshotChart metrics={metrics} />
-                    </ChartCard>
-                    <ChartCard title="Attendance Mark Status">
-                        <AttendanceMarkStatusChart items={recentAttendance} />
-                    </ChartCard>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="h-72 rounded-2xl bg-card-bg border border-border-subtle"
+                        />
+                    ))}
                 </div>
-
-                <ChartCard title="Grading Queue">
-                    <GradingQueueChart items={gradingQueue} />
-                </ChartCard>
-
-                {/* Widgets */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-                    <RecentCoursesWidget courses={recentCourses} />
-                    <PendingCourseAssignmentsWidget items={pendingCourseAssignments} />
-                    <GradingQueueWidget items={gradingQueue} />
-                    <RecentAttendanceWidget items={recentAttendance} />
-                    <div className="lg:col-span-2">
-                        <GoogleCalendarStatusWidget googleCalendar={googleCalendar} />
-                    </div>
+                <div className="flex items-center justify-center gap-3 py-10 text-text-muted">
+                    <Loader2 className="animate-spin" size={18} />
+                    <span className="text-xs font-black uppercase tracking-widest">
+                        Loading dashboard…
+                    </span>
                 </div>
             </div>
         </div>
     );
 }
 
-function ChartCard({
-    title,
-    children,
-    className = '',
-}: {
-    title: string;
-    children: React.ReactNode;
-    className?: string;
-}) {
+export default function TeacherDashboardPage() {
     return (
-        <div
-            className={`bg-card-bg border border-border-subtle rounded-2xl p-5 md:p-6 shadow-sm space-y-2 ${className}`}
-        >
-            <h3 className="text-xs font-black uppercase tracking-widest text-text-muted">
-                {title}
-            </h3>
-            {children}
-        </div>
+        <Suspense fallback={<DashboardSkeleton />}>
+            <TeacherDashboardInner />
+        </Suspense>
     );
 }

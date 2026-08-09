@@ -452,6 +452,15 @@ export interface FormField {
     options?: { label: string; value: string | number }[];
 }
 
+function sumQuizQuestionMarks(questions: unknown): number {
+    if (!Array.isArray(questions)) return 0;
+    return questions.reduce((sum, q: any) => sum + (Number(q?.marks) || 0), 0);
+}
+
+function isAutoQuizTotalMarksField(name: string) {
+    return name === 'total_marks' || name === 'totalMarks';
+}
+
 interface GenericFormModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -507,7 +516,12 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
             // Using Date objects for react-datepicker instead of ISO strings
             if (startTime) formattedData.start_time = new Date(startTime);
             if (endTime) formattedData.end_time = new Date(endTime);
-            if (totalMarks) formattedData.total_marks = totalMarks;
+            // Prefer sum of question marks over a stale stored total
+            if (Array.isArray(initialData.questions) && initialData.questions.length > 0) {
+                formattedData.total_marks = sumQuizQuestionMarks(initialData.questions);
+            } else if (totalMarks) {
+                formattedData.total_marks = totalMarks;
+            }
 
             if (initialData.contactNumber) {
                 const numStr = String(initialData.contactNumber);
@@ -552,8 +566,15 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
             }
         }
 
+        const hasQuizBuilderField = fields.some((f) => f.type === 'quiz-builder');
+
         fields.forEach((field) => {
             const val = formValues[field.name];
+
+            // Total marks are derived from questions — never require manual entry
+            if (hasQuizBuilderField && isAutoQuizTotalMarksField(field.name)) {
+                return;
+            }
 
             if (field.required && (!val || (Array.isArray(val) && val.length === 0))) {
                 newErrors[field.name] = `${field.label} is required.`;
@@ -590,11 +611,17 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                 const quiz = val as any[];
                 quiz.forEach((q, idx) => {
                     if (!q.question_text) newErrors[field.name] = `Question ${idx + 1} has no text.`;
+                    if (!(Number(q.marks) > 0)) {
+                        newErrors[field.name] = `Question ${idx + 1} needs points greater than 0.`;
+                    }
                     if (q.question_type !== 'SHORT') {
                         if (!q.options || q.options.length < 2) newErrors[field.name] = `Question ${idx + 1} requires 2+ options.`;
                         if (!q.options.some((o: any) => o.is_correct)) newErrors[field.name] = `Question ${idx + 1} missing correct key.`;
                     }
                 });
+                if (quiz.length > 0 && sumQuizQuestionMarks(quiz) <= 0) {
+                    newErrors[field.name] = 'Total marks must be greater than 0.';
+                }
             }
         });
 
@@ -613,19 +640,54 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
         }
     };
 
+    const handleQuizQuestionsChange = (name: string, questions: any[]) => {
+        const total = sumQuizQuestionMarks(questions);
+        setFormValues((prev) => {
+            const next: Record<string, any> = { ...prev, [name]: questions, total_marks: total };
+            if ('totalMarks' in prev || fields.some((f) => f.name === 'totalMarks')) {
+                next.totalMarks = total;
+            }
+            return next;
+        });
+        if (errors[name] || errors.total_marks || errors.totalMarks) {
+            setErrors((prev) => {
+                const updated = { ...prev };
+                delete updated[name];
+                delete updated.total_marks;
+                delete updated.totalMarks;
+                return updated;
+            });
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!validate()) return;
 
         const formData = new FormData();
+        const quizBuilderField = fields.find((f) => f.type === 'quiz-builder');
+        const computedQuizTotal = quizBuilderField
+            ? sumQuizQuestionMarks(formValues[quizBuilderField.name])
+            : null;
+
         fields.forEach((field) => {
             let value = formValues[field.name];
+
+            // Always submit auto-summed quiz total (never a stale manual value)
+            if (quizBuilderField && isAutoQuizTotalMarksField(field.name)) {
+                formData.append(field.name, String(computedQuizTotal ?? 0));
+                return;
+            }
 
             if (field.type === 'files') {
                 if (value instanceof File) formData.append(field.name, value);
             } else if (field.type === 'quiz-builder') {
                 formData.append(field.name, JSON.stringify(value || []));
+                // Ensure API always receives total_marks even if the field was removed from the form
+                if (!fields.some((f) => isAutoQuizTotalMarksField(f.name))) {
+                    formData.append('total_marks', String(computedQuizTotal ?? 0));
+                }
             }
             else if (field.type === 'phone' || field.name === 'contactNumber') {
                 if (value) {
@@ -655,14 +717,24 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
 
     if (!isOpen) return null;
 
+    const hasQuizBuilder = fields.some((f) => f.type === 'quiz-builder');
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-card-bg w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-border-subtle">
+            <div
+                className={`bg-card-bg w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-border-subtle ${
+                    hasQuizBuilder ? 'max-w-4xl' : 'max-w-3xl'
+                }`}
+            >
 
-                <div className="flex justify-between items-center px-8 py-6 border-b border-border-subtle bg-app-bg/50">
+                <div className="flex justify-between items-center px-6 sm:px-8 py-5 border-b border-border-subtle bg-app-bg/50">
                     <div>
                         <h2 className="text-xl font-bold tracking-tight text-text-main">{title}</h2>
-                        <p className="text-xs text-text-muted mt-1 font-medium">Please fill in the details below.</p>
+                        <p className="text-xs text-text-muted mt-1 font-medium">
+                            {hasQuizBuilder
+                                ? 'Update details, then build or edit questions below.'
+                                : 'Please fill in the details below.'}
+                        </p>
                     </div>
                     <button onClick={onClose} className="p-2 text-text-muted hover:text-text-main hover:bg-border-subtle rounded-lg transition-colors">
                         <X size={20} />
@@ -670,7 +742,11 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                 </div>
 
                 <form onSubmit={handleSubmit} className="overflow-y-visible bg-card-bg flex-1">
-                    <div className="px-8 py-6 space-y-6 max-h-[60vh] overflow-y-auto no-scrollbar">
+                    <div
+                        className={`px-6 sm:px-8 py-6 space-y-6 overflow-y-auto no-scrollbar ${
+                            hasQuizBuilder ? 'max-h-[68vh]' : 'max-h-[60vh]'
+                        }`}
+                    >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             {fields.map((field) => {
                                 // Determine minDate for end_time based on start_time
@@ -682,16 +758,26 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                                     }
                                 }
 
+                                // Quiz total marks = sum of question points (not user-entered)
+                                if (hasQuizBuilder && isAutoQuizTotalMarksField(field.name)) {
+                                    return null;
+                                }
+
                                 return (
                                 <div key={field.name} className={(field.type === 'textarea' || field.type === 'quiz-builder') ? 'md:col-span-2' : ''}>
-                                    <label className="block text-xs font-semibold text-text-main mb-2">
-                                        {field.label} {field.required && <span className="text-red-500 ml-0.5">*</span>}
-                                    </label>
+                                    {field.type !== 'quiz-builder' && (
+                                        <label className="block text-xs font-semibold text-text-main mb-2">
+                                            {field.label}{' '}
+                                            {field.required && (
+                                                <span className="text-red-500 ml-0.5">*</span>
+                                            )}
+                                        </label>
+                                    )}
 
                                     {field.type === 'quiz-builder' ? (
                                         <QuizBuilderField
                                             initialData={formValues[field.name]}
-                                            onChange={(data) => handleInputChange(field.name, data)}
+                                            onChange={(data) => handleQuizQuestionsChange(field.name, data)}
                                             error={errors[field.name]}
                                         />
                                     ) : (

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CheckCircle2, AlertTriangle, Info, AlertCircle, X } from 'lucide-react';
 import type { ToastType } from '@/lib/toastBus';
 
@@ -72,16 +73,23 @@ function ToastCard({
     );
 }
 
-/** Stacked toasts — fixed top center, high z-index for visibility over sidebars/modals. */
+/** Stacked toasts — portaled to body so they sit above modals/backdrops. */
 const ToastStack: React.FC<ToastStackProps> = ({ toasts, onClose }) => {
-    if (!toasts.length) return null;
+    const [mounted, setMounted] = useState(false);
 
-    return (
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted || !toasts.length) return null;
+
+    return createPortal(
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[99999] w-[min(92vw,28rem)] flex flex-col gap-2 pointer-events-none">
             {toasts.map((t) => (
                 <ToastCard key={t.id} item={t} onClose={onClose} />
             ))}
-        </div>
+        </div>,
+        document.body
     );
 };
 

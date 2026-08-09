@@ -8,8 +8,6 @@ import {
     CheckCircle2,
     XCircle,
     Tag,
-    ChevronLeft,
-    ChevronRight,
     ImageIcon,
 } from 'lucide-react';
 import {
@@ -21,6 +19,7 @@ import {
 } from '@/lib/api/apiService';
 import { useToast } from '@/context/ToastContext';
 import { getErrorMessage } from '@/lib/api/errorMessage';
+import Pagination from '@/components/ui/Pagination';
 
 type FilterTab = 'pending' | 'accepted' | 'all';
 
@@ -357,32 +356,14 @@ export default function TeacherCourseAssignmentsPage() {
                     )}
                 </div>
 
-                {/* Pagination */}
-                {meta && totalPages > 1 && (
-                    <div className="flex items-center justify-between gap-3 pt-2">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
-                            Page {meta.currentPage} of {totalPages} · {meta.totalItems} total
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                disabled={page <= 1 || loading}
-                                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-border-subtle text-[10px] font-black uppercase tracking-widest text-text-muted disabled:opacity-40 hover:border-accent-blue/40"
-                            >
-                                <ChevronLeft size={14} /> Prev
-                            </button>
-                            <button
-                                type="button"
-                                disabled={page >= totalPages || loading}
-                                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-border-subtle text-[10px] font-black uppercase tracking-widest text-text-muted disabled:opacity-40 hover:border-accent-blue/40"
-                            >
-                                Next <ChevronRight size={14} />
-                            </button>
-                        </div>
-                    </div>
-                )}
+                <Pagination
+                    className="pt-2"
+                    page={meta?.currentPage || page}
+                    totalPages={totalPages}
+                    totalItems={meta?.totalItems ?? 0}
+                    loading={loading}
+                    onPageChange={setPage}
+                />
             </div>
 
             {/* Reject confirm */}

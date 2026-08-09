@@ -4,12 +4,15 @@ import {
     TeacherDashboardResponse,
 } from '@/lib/api/apiService';
 import { getErrorMessage } from '@/lib/api/errorMessage';
+import { enrichTeacherDashboardWithQuizGrading } from '@/lib/teacherDashboardEnrichment';
 
 export const fetchTeacherDashboard = createAsyncThunk(
     'teacherDashboard/fetch',
     async (_, { rejectWithValue }) => {
         try {
-            return await getTeacherDashboard();
+            const base = await getTeacherDashboard();
+            // Backend grading queue is assignment-only — merge quiz attempts to grade
+            return await enrichTeacherDashboardWithQuizGrading(base);
         } catch (err: unknown) {
             return rejectWithValue(getErrorMessage(err, 'Failed to load dashboard'));
         }

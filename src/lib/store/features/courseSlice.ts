@@ -8,12 +8,16 @@ import {
     getMyEnrolledCoursesAPI,
     getMyEnrollmentRequestsAPI,
     getMyCourseUpdatesAPI,
+    getAdminTeacherAssignmentsAPI,
     MyEnrollmentRequestItem,
     MyEnrollmentRequestsResponse,
     EnrollmentRequestStatus,
     CourseUpdateItem,
     CourseUpdateType,
     MyCourseUpdatesResponse,
+    GetAdminTeacherAssignmentsParams,
+    AdminTeacherAssignmentsStats,
+    AdminTeacherAssignmentItem,
 } from '@/lib/api/apiService';
 import { getErrorMessage } from '@/lib/api/errorMessage';
 
@@ -24,6 +28,10 @@ interface CourseContent {
     course: any;
     sections: any[];
     enrollments?: any[];
+    pendingEnrollments?: any[];
+    rejectedEnrollments?: any[];
+    stats?: Record<string, number> | null;
+    enrollmentCount?: number;
 }
 
 type MyEnrollmentRequestsSummary = MyEnrollmentRequestsResponse['summary'];
@@ -36,9 +44,55 @@ const emptyRequestSummary: MyEnrollmentRequestsSummary = {
     total: 0,
 };
 
+type AdminCoursesListStats = {
+    totalCourses: number;
+    activeCourses: number;
+    inactiveCourses: number;
+    withTeacher: number;
+    withoutTeacher: number;
+    pendingTeacherAssignments: number;
+    totalEnrolledStudents: number;
+    pendingEnrollmentRequests: number;
+};
+
+const emptyAdminCourseStats: AdminCoursesListStats = {
+    totalCourses: 0,
+    activeCourses: 0,
+    inactiveCourses: 0,
+    withTeacher: 0,
+    withoutTeacher: 0,
+    pendingTeacherAssignments: 0,
+    totalEnrolledStudents: 0,
+    pendingEnrollmentRequests: 0,
+};
+
+const emptyTeacherAssignmentStats: AdminTeacherAssignmentsStats = {
+    total: 0,
+    pending: 0,
+    accepted: 0,
+    rejected: 0,
+    unassigned: 0,
+};
+
 interface CourseState {
-    assignedCourses: any[];
-    adminCourses: { data: any[]; meta: any | null };
+    assignedCourses: { data: any[]; meta: any | null };
+    adminCourses: {
+        data: any[];
+        meta: any | null;
+        stats: AdminCoursesListStats;
+    };
+    teacherAssignments: {
+        data: AdminTeacherAssignmentItem[];
+        meta: {
+            totalItems: number;
+            itemCount: number;
+            itemsPerPage: number;
+            totalPages: number;
+            currentPage: number;
+        } | null;
+        stats: AdminTeacherAssignmentsStats;
+    };
+    teacherAssignmentsLoading: boolean;
     categories: any[];
     teachers: any[];
     courseContent: Record<number, CourseContent>;
@@ -65,8 +119,10 @@ interface CourseState {
 }
 
 const initialState: CourseState = {
-    assignedCourses: [],
-    adminCourses: { data: [], meta: null },
+    assignedCourses: { data: [], meta: null },
+    adminCourses: { data: [], meta: null, stats: emptyAdminCourseStats },
+    teacherAssignments: { data: [], meta: null, stats: emptyTeacherAssignmentStats },
+    teacherAssignmentsLoading: false,
     categories: [],
     teachers: [],
     courseContent: {},
@@ -96,13 +152,15 @@ const initialState: CourseState = {
 // ASYNC THUNKS
 // ==============================
 
-// Teacher: Get assigned courses
+// Teacher: Get assigned courses (paginated)
 export const fetchAssignedCourses = createAsyncThunk(
     'course/fetchAssignedCourses',
-    async (_, { rejectWithValue }) => {
+    async (
+        { page = 1, limit = 6 }: { page?: number; limit?: number } = {},
+        { rejectWithValue }
+    ) => {
         try {
-            const response = await getAssignedCoursesAPI();
-            return response.data || response;
+            return await getAssignedCoursesAPI(page, limit);
         } catch (error: any) {
             return rejectWithValue(getErrorMessage(error, 'Failed to fetch assigned courses'));
         }
@@ -118,6 +176,19 @@ export const fetchAdminCourses = createAsyncThunk(
             return response;
         } catch (error: any) {
             return rejectWithValue(getErrorMessage(error, 'Failed to fetch admin courses'));
+        }
+    }
+);
+
+export const fetchTeacherAssignments = createAsyncThunk(
+    'course/fetchTeacherAssignments',
+    async (params: GetAdminTeacherAssignmentsParams | undefined, { rejectWithValue }) => {
+        try {
+            return await getAdminTeacherAssignmentsAPI(
+                params || { page: 1, limit: 10, status: 'pending' }
+            );
+        } catch (error: any) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to fetch teacher assignments'));
         }
     }
 );
@@ -222,8 +293,14 @@ export const courseSlice = createSlice({
     initialState,
     reducers: {
         clearCourseCache: (state) => {
-            state.assignedCourses = [];
-            state.adminCourses = { data: [], meta: null };
+            state.assignedCourses = { data: [], meta: null };
+            state.adminCourses = { data: [], meta: null, stats: emptyAdminCourseStats };
+            state.teacherAssignments = {
+                data: [],
+                meta: null,
+                stats: emptyTeacherAssignmentStats,
+            };
+            state.teacherAssignmentsLoading = false;
             state.courseContent = {};
             state.preflightedCourses = [];
             state.enrolledCourses = [];
@@ -287,7 +364,10 @@ export const courseSlice = createSlice({
             .addCase(fetchAssignedCourses.pending, (state) => { state.loading.assignedCourses = true; })
             .addCase(fetchAssignedCourses.fulfilled, (state, action) => {
                 state.loading.assignedCourses = false;
-                state.assignedCourses = action.payload;
+                state.assignedCourses = {
+                    data: action.payload?.data || [],
+                    meta: action.payload?.meta || null,
+                };
             })
             .addCase(fetchAssignedCourses.rejected, (state, action) => {
                 state.loading.assignedCourses = false;
@@ -298,8 +378,28 @@ export const courseSlice = createSlice({
             .addCase(fetchAdminCourses.pending, (state) => { state.loading.adminCourses = true; })
             .addCase(fetchAdminCourses.fulfilled, (state, action) => {
                 state.loading.adminCourses = false;
-                state.adminCourses.data = action.payload.data;
-                state.adminCourses.meta = action.payload.meta;
+                state.adminCourses.data = action.payload?.data || [];
+                state.adminCourses.meta = action.payload?.meta || null;
+                state.adminCourses.stats = action.payload?.stats || emptyAdminCourseStats;
+            })
+            .addCase(fetchAdminCourses.rejected, (state, action) => {
+                state.loading.adminCourses = false;
+                state.error = action.payload as string;
+            })
+
+            .addCase(fetchTeacherAssignments.pending, (state) => {
+                state.teacherAssignmentsLoading = true;
+            })
+            .addCase(fetchTeacherAssignments.fulfilled, (state, action) => {
+                state.teacherAssignmentsLoading = false;
+                state.teacherAssignments.data = action.payload?.data || [];
+                state.teacherAssignments.meta = action.payload?.meta || null;
+                state.teacherAssignments.stats =
+                    action.payload?.stats || emptyTeacherAssignmentStats;
+            })
+            .addCase(fetchTeacherAssignments.rejected, (state, action) => {
+                state.teacherAssignmentsLoading = false;
+                state.error = action.payload as string;
             })
 
             // Admin Metadata
@@ -363,7 +463,14 @@ export const courseSlice = createSlice({
 
             // FETCH ALL COURSES cases
             .addCase(fetchAllCourses.pending, (state) => { state.loading.availableCourses = true; })
-            .addCase(fetchAllCourses.fulfilled, (state, action) => { state.loading.availableCourses = false; state.availableCourses = action.payload; })
+            .addCase(fetchAllCourses.fulfilled, (state, action) => {
+                state.loading.availableCourses = false;
+                // Student catalog: keep only data/meta (ignore admin-only `stats` if present)
+                state.availableCourses = {
+                    data: action.payload?.data || [],
+                    meta: action.payload?.meta || null,
+                };
+            })
             .addCase(fetchAllCourses.rejected, (state, action) => { state.loading.availableCourses = false; state.error = action.payload as string; });
     },
 });

@@ -8,6 +8,7 @@ import academicReducer from './features/academicSlice'; // # New
 import financeReducer from './features/financeSlice'; // # New
 import studentDashboardReducer from './features/studentDashboardSlice';
 import teacherDashboardReducer from './features/teacherDashboardSlice';
+import adminDashboardReducer from './features/adminDashboardSlice';
 import { toastMiddleware } from './toastMiddleware';
 
 const loadingMiddleware: Middleware = (storeAPI) => (next) => (action: any) => {
@@ -28,6 +29,7 @@ export const makeStore = () => {
       finance: financeReducer,
       studentDashboard: studentDashboardReducer,
       teacherDashboard: teacherDashboardReducer,
+      adminDashboard: adminDashboardReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({ serializableCheck: false }).concat(
