@@ -142,6 +142,8 @@ interface ColumnConfig {
     key: string;
     render?: (item: any) => React.ReactNode;
     align?: 'left' | 'center' | 'right';
+    /** Optional width class for table-fixed layouts (e.g. w-[28%], w-20) */
+    widthClass?: string;
 }
 
 interface UserManagementTableProps {
@@ -151,17 +153,21 @@ interface UserManagementTableProps {
     onEdit?: (item: any) => void;
     onDelete?: (id: number, name: string) => void;
     onView?: (id: number) => void;
+    /** Makes entire row clickable (e.g. open profile) */
+    onRowClick?: (item: any) => void;
     type: string;
     visibleActions?: ('edit' | 'delete' | 'view')[];
+    /** Parent already provides card chrome — avoid nested border/scroll */
+    embedded?: boolean;
 }
 
 const UserManagementTable: React.FC<UserManagementTableProps> = ({
-    data, loading, columnConfig, onEdit, onDelete, onView, type, visibleActions = []
+    data, loading, columnConfig, onEdit, onDelete, onView, onRowClick, type, visibleActions = [], embedded = false
 }) => {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 bg-card-bg rounded-xl border border-border-subtle shadow-sm">
+            <div className={`flex flex-col items-center justify-center py-20 bg-card-bg shadow-sm ${embedded ? '' : 'rounded-xl border border-border-subtle'}`}>
                 <Loader2 className="animate-spin text-accent-blue mb-3" size={32} />
                 <p className="text-text-muted font-medium text-sm">Loading {type}s...</p>
             </div>
@@ -171,15 +177,16 @@ const UserManagementTable: React.FC<UserManagementTableProps> = ({
     const showActionsColumn = (visibleActions || []).length > 0;
 
     return (
-        // Wrapper par overflow-hidden aur border lagaya hai taake corners automatically clean cut hon
-        <div className="overflow-x-auto rounded-xl border border-border-subtle bg-card-bg shadow-sm">
-            <table className="w-full text-left border-collapse">
+        <div className={`w-full max-w-full overflow-hidden ${embedded ? '' : 'rounded-xl border border-border-subtle bg-card-bg shadow-sm'}`}>
+            <table className="w-full table-fixed text-left border-collapse">
                 <thead>
                     <tr className="bg-table-header-bg">
                         {columnConfig.map((col, index) => (
                             <th
                                 key={index}
-                                className={`px-6 py-4 text-xs font-bold uppercase tracking-wider text-text-muted border-b border-border-subtle ${
+                                className={`px-3 md:px-4 py-4 text-xs font-bold uppercase tracking-wider text-text-muted border-b border-border-subtle ${
+                                    col.widthClass || ''
+                                } ${
                                     col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : ''
                                 }`}
                             >
@@ -187,7 +194,7 @@ const UserManagementTable: React.FC<UserManagementTableProps> = ({
                             </th>
                         ))}
                         {showActionsColumn && (
-                            <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-text-muted border-b border-border-subtle text-right">
+                            <th className="w-[88px] px-3 md:px-4 py-4 text-xs font-bold uppercase tracking-wider text-text-muted border-b border-border-subtle text-right">
                                 Actions
                             </th>
                         )}
@@ -197,19 +204,23 @@ const UserManagementTable: React.FC<UserManagementTableProps> = ({
                     {(data || []).length > 0 ? (
                         data.map((item, idx) => (
                             <tr
-                                key={item.id || idx}
-                                className="group hover:bg-sidebar-to/10 transition-colors duration-200"
+                                key={item.uuid || item.id || idx}
+                                onClick={() => onRowClick?.(item)}
+                                className={`group hover:bg-sidebar-to/10 transition-colors duration-200 ${
+                                    onRowClick ? 'cursor-pointer' : ''
+                                }`}
                             >
                                 {columnConfig.map((col, colIdx) => (
                                     <td
                                         key={col.key || colIdx}
-                                        className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-text-main ${
+                                        className={`px-3 md:px-4 py-4 text-sm font-medium text-text-main overflow-hidden ${
                                             col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : ''
                                         }`}
                                     >
-                                        {/* Avatar / Profile Logic */}
-                                        {col.key === 'firstName' ? (
-                                            <div className="flex items-center gap-3">
+                                        {col.render ? (
+                                            col.render(item)
+                                        ) : col.key === 'firstName' ? (
+                                            <div className="flex items-center gap-3 min-w-0">
                                                 <div className="w-10 h-10 rounded-lg bg-app-bg border border-border-subtle flex items-center justify-center overflow-hidden shrink-0">
                                                     {item.profilePicture || item.coverImg ? (
                                                         <img src={item.profilePicture || item.coverImg} alt="Profile" className="w-full h-full object-cover" />
@@ -219,30 +230,29 @@ const UserManagementTable: React.FC<UserManagementTableProps> = ({
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div>
-                                                    <p className="font-semibold text-text-main text-sm">
+                                                <div className="min-w-0">
+                                                    <p className="font-semibold text-text-main text-sm truncate">
                                                         {item.firstName ? `${item.firstName} ${item.lastName || ''}` : item.courseName}
                                                     </p>
-                                                    {/* Agar email hai toh yahan fallback mein dikha sakte hain (optional) */}
                                                 </div>
                                             </div>
-                                        ) : col.render ? (
-                                            col.render(item)
                                         ) : (
-                                            <span className={item[col.key] ? "text-text-main" : "text-text-muted italic text-xs"}>
+                                            <span className={`block truncate ${item[col.key] ? "text-text-main" : "text-text-muted italic text-xs"}`}>
                                                 {item[col.key] || 'N/A'}
                                             </span>
                                         )}
                                     </td>
                                 ))}
 
-                                {/* Actions Column */}
                                 {showActionsColumn && (
-                                    <td className="px-6 py-4 text-right">
+                                    <td
+                                        className="px-3 md:px-4 py-4 text-right"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
                                         <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
                                             {visibleActions.includes('view') && (
                                                 <button 
-                                                    onClick={() => onView?.(item.id)} 
+                                                    onClick={() => onView?.(item.uuid ?? item.id)} 
                                                     className="p-2 text-accent-blue hover:bg-accent-blue/10 rounded-lg transition-colors"
                                                     title="View"
                                                 >

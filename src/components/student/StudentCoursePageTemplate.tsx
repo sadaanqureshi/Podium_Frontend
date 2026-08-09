@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import CourseList from '@/components/courses/CourseList'; // Wahi generic list use ho rahi hai
-import { Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import SearchBar from '@/components/ui/SearchBar';
+import Pagination from '@/components/ui/Pagination';
 
 const COURSES_PER_PAGE = 6;
 
@@ -93,42 +94,16 @@ const StudentCoursePageTemplate: React.FC<TemplateProps> = ({
         </AnimatePresence>
       </div>
 
-      {/* Pagination: Matched with Accent Blue Indicators */}
-      {totalPages > 1 && (
-        <nav className="flex items-center justify-center sm:justify-start gap-3 text-[10px] font-black uppercase tracking-[0.15em]">
-            <button 
-                onClick={() => paginate(currentPage - 1)} 
-                disabled={currentPage === 1} 
-                className="flex items-center gap-2 px-4 py-2 text-text-muted hover:text-accent-blue disabled:opacity-30 transition-all"
-            >
-                <ChevronLeft size={16} /> <span>Prev</span>
-            </button>
-            
-            <div className="flex items-center gap-2">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                <button 
-                    key={number} 
-                    onClick={() => paginate(number)} 
-                    className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${
-                        currentPage === number 
-                        ? 'bg-accent-blue text-white border-accent-blue shadow-lg shadow-accent-blue/20 scale-110' 
-                        : 'bg-card-bg text-text-muted border-border-subtle hover:border-accent-blue/30'
-                    }`}
-                >
-                    {number}
-                </button>
-                ))}
-            </div>
-
-            <button 
-                onClick={() => paginate(currentPage + 1)} 
-                disabled={currentPage === totalPages} 
-                className="flex items-center gap-2 px-4 py-2 text-text-muted hover:text-accent-blue disabled:opacity-30 transition-all"
-            >
-                <span>Next</span> <ChevronRight size={16} />
-            </button>
-        </nav>
-      )}
+      <Pagination
+        variant="numbered"
+        page={currentPage}
+        totalPages={totalPages}
+        totalItems={courses.length}
+        onPageChange={paginate}
+        hideWhenSinglePage
+        align="start"
+        className="pt-2"
+      />
     </div>
   );
 };

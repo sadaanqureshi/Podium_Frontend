@@ -238,7 +238,7 @@
 
 
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Layers, FolderPlus, Video,
     MonitorPlay, CalendarPlus, LayoutGrid,
@@ -246,6 +246,19 @@ import {
 } from 'lucide-react';
 import ContentCard from './ContentCard';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import { fetchSubmissions } from '@/lib/store/features/assignmentSlice';
+import {
+    countStatusBearingSubmissions,
+    hasSubmissionStatus,
+} from '@/lib/assignmentSubmissions';
+import { getQuizSubmissionsAPI } from '@/lib/api/apiService';
+import {
+    hasQuizCountOnWithContent,
+    normalizeQuizAttemptsList,
+    resolveQuizSubmissionBadge,
+    type QuizAttemptRow,
+} from '@/lib/quizSubmissions';
 
 interface Props {
     title: string;
@@ -260,15 +273,109 @@ interface Props {
     onSubTabChange?: (subTab: 'recorded' | 'online') => void;
 }
 
+function resolveSubmissionCount(item: any, cached?: any[]): number | null {
+    // Prefer live submissions list — only count rows that have a status
+    if (Array.isArray(cached)) {
+        return countStatusBearingSubmissions(cached);
+    }
+    // Fallback fields from course payload (only if > 0)
+    const fallback =
+        (typeof item?.submissionCount === 'number' && item.submissionCount) ||
+        (typeof item?.submissionsCount === 'number' && item.submissionsCount) ||
+        (typeof item?.pendingSubmissionCount === 'number' && item.pendingSubmissionCount) ||
+        (typeof item?._count?.submissions === 'number' && item._count.submissions) ||
+        (Array.isArray(item?.submissions)
+            ? item.submissions.filter(hasSubmissionStatus).length
+            : 0);
+    return fallback > 0 ? fallback : null;
+}
+
+function assignmentSubtitle(item: any) {
+    const marks = item.totalMarks ?? item.total_marks;
+    const due = item.dueDate
+        ? new Date(item.dueDate).toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+          })
+        : null;
+    const parts = [
+        marks != null ? `${marks} pts` : null,
+        due ? `Due ${due}` : null,
+    ].filter(Boolean);
+    return parts.length ? parts.join(' · ') : 'Assignment';
+}
+
 export const GenericContentTab = ({
     title, type, data, role,
     onAddSection, onAddItem, onEditItem, onDeleteItem,
     onSubTabChange
 }: Props) => {
+    const dispatch = useAppDispatch();
+    const submissionsCache = useAppSelector((s) => s.assignment.submissionsCache);
+    const fetchedSubmissionIds = useRef<Set<number>>(new Set());
+    const fetchedQuizIds = useRef<Set<number>>(new Set());
+    const [quizAttemptsCache, setQuizAttemptsCache] = useState<Record<number, QuizAttemptRow[]>>(
+        {}
+    );
+
     const [activeLectureSubTab, setActiveLectureSubTab] = useState<'recorded' | 'online'>('recorded');
     
     // Collapsible Logic: Initialize with all sections open by default
     const [openSections, setOpenSections] = useState<number[]>(data.map((_, index) => index));
+
+    const assignmentIds = useMemo(() => {
+        if (type !== 'assignment' || role === 'student') return [] as number[];
+        return data
+            .flatMap((section) => section.items || [])
+            .map((item: any) => Number(item?.id))
+            .filter((id: number) => Number.isFinite(id) && id > 0);
+    }, [type, role, data]);
+
+    const quizItemsNeedingFetch = useMemo(() => {
+        if (type !== 'quiz' || role === 'student') return [] as number[];
+        return data
+            .flatMap((section) => section.items || [])
+            .filter((item: any) => !hasQuizCountOnWithContent(item))
+            .map((item: any) => Number(item?.id))
+            .filter((id: number) => Number.isFinite(id) && id > 0);
+    }, [type, role, data]);
+
+    useEffect(() => {
+        if (!assignmentIds.length) return;
+        assignmentIds.forEach((id) => {
+            if (fetchedSubmissionIds.current.has(id)) return;
+            if (submissionsCache[id] !== undefined) {
+                fetchedSubmissionIds.current.add(id);
+                return;
+            }
+            fetchedSubmissionIds.current.add(id);
+            dispatch(fetchSubmissions(id));
+        });
+    }, [assignmentIds, dispatch, submissionsCache]);
+
+    // Quiz badges: prefer with-content counts; otherwise soft-fetch attempts API (like assignments)
+    useEffect(() => {
+        if (!quizItemsNeedingFetch.length) return;
+        let cancelled = false;
+        quizItemsNeedingFetch.forEach((id) => {
+            if (fetchedQuizIds.current.has(id)) return;
+            fetchedQuizIds.current.add(id);
+            getQuizSubmissionsAPI(id)
+                .then((res) => {
+                    if (cancelled) return;
+                    const rows = normalizeQuizAttemptsList(res);
+                    setQuizAttemptsCache((prev) => ({ ...prev, [id]: rows }));
+                })
+                .catch(() => {
+                    if (cancelled) return;
+                    setQuizAttemptsCache((prev) => ({ ...prev, [id]: [] }));
+                });
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [quizItemsNeedingFetch]);
 
     const toggleSection = (index: number) => {
         setOpenSections(prev => 
@@ -295,32 +402,53 @@ export const GenericContentTab = ({
 
         return (
             <div className="flex flex-col gap-1">
-                {filtered.map((item: any) => (
-                    <ContentCard
-                        key={item.id}
-                        id={item.id}
-                        title={item.title || item.name}
-                        sectionId={sectionId}
-                        subtitle={
-                            type === 'quiz'
-                                ? `Marks: ${item.total_marks ?? item.totalMarks ?? '—'}${
-                                      item.is_Published === true || item.isPublished === true
-                                          ? ' · Published'
-                                          : item.is_Published === false || item.isPublished === false
-                                            ? ' · Draft'
-                                            : ''
-                                  }`
-                                : (item.lectureType === 'online'
-                                    ? `Starts: ${item.liveStart ? new Date(item.liveStart).toLocaleString('en-GB') : 'TBD'}`
-                                    : 'Recorded Session')
-                        }
-                        type={type}
-                        role={role}
-                        isCompleted={item.isCompleted}
-                        onEdit={() => onEditItem(item, sectionId)}
-                        onDelete={() => onDeleteItem(item, sectionId)}
-                    />
-                ))}
+                {filtered.map((item: any) => {
+                    const submissionCount =
+                        role === 'student'
+                            ? null
+                            : type === 'assignment'
+                              ? resolveSubmissionCount(item, submissionsCache[item.id])
+                              : type === 'quiz'
+                                ? resolveQuizSubmissionBadge(
+                                      item,
+                                      quizAttemptsCache[item.id]
+                                  )
+                                : null;
+
+                    const subtitle =
+                        type === 'quiz'
+                            ? `Marks: ${item.total_marks ?? item.totalMarks ?? '—'}${
+                                  item.is_Published === true || item.isPublished === true
+                                      ? ' · Published'
+                                      : item.is_Published === false || item.isPublished === false
+                                        ? ' · Draft'
+                                        : ''
+                              }`
+                            : type === 'assignment'
+                              ? assignmentSubtitle(item)
+                              : type === 'resource'
+                                ? 'Resource file'
+                                : item.lectureType === 'online'
+                                  ? `Starts: ${item.liveStart ? new Date(item.liveStart).toLocaleString('en-GB') : 'TBD'}`
+                                  : 'Recorded Session';
+
+                    return (
+                        <ContentCard
+                            key={item.id}
+                            id={item.id}
+                            title={item.title || item.name}
+                            sectionId={sectionId}
+                            subtitle={subtitle}
+                            type={type}
+                            role={role}
+                            isCompleted={item.isCompleted}
+                            badgeCount={submissionCount}
+                            badgeLabel="submissions"
+                            onEdit={() => onEditItem(item, sectionId)}
+                            onDelete={() => onDeleteItem(item, sectionId)}
+                        />
+                    );
+                })}
             </div>
         );
     };

@@ -178,67 +178,68 @@ interface CourseCardProps {
   imageUrl: string;
   basePath: string;
   showProgress?: boolean;
+  /** When set, shows a marksheet CTA on enrolled course cards */
+  marksheetHref?: string | null;
 }
 
 const Card: React.FC<CourseCardProps> = ({
   id, title, author, description, rating, progress = 0,
-  imageUrl, basePath, showProgress = true
+  imageUrl, basePath, showProgress = true, marksheetHref,
 }) => {
+  const courseHref = `${basePath}/${id}`;
+
   return (
-    <Link href={`${basePath}/${id}`} className="block h-full outline-none">
-      {/* Reduced roundness to xl, cleaner shadow, flexbox for perfect alignment */}
-      <div className="w-full h-full flex flex-col rounded-xl overflow-hidden shadow-sm hover:shadow-lg border border-border-subtle bg-card-bg group transition-all duration-300">
-        
-        {/* Image Section: Fixed elegant height */}
+    <div className="w-full h-full flex flex-col rounded-xl overflow-hidden shadow-sm hover:shadow-lg border border-border-subtle bg-card-bg group transition-all duration-300">
+      <Link href={courseHref} className="block outline-none">
         <div className="relative w-full h-40 shrink-0 border-b border-border-subtle/50">
-          <Image 
-            src={imageUrl || '/blankcover.jpg'} 
-            alt={title || "Course Material"} 
-            fill 
-            className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out" 
-            unoptimized 
+          <Image
+            src={imageUrl || '/blankcover.jpg'}
+            alt={title || 'Course Material'}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+            unoptimized
           />
         </div>
+      </Link>
 
-        {/* Content Section: Tightened spacing and dynamic growth */}
-        <div className="p-5 flex flex-col flex-grow">
-          
-          <div className="mb-4">
-            {/* Author */}
-            <p className="text-accent-blue text-[10px] font-bold uppercase tracking-wider mb-1.5">
-              {author || "Expert Faculty"}
-            </p>
-            
-            {/* Title */}
-            <h3 className="text-lg font-bold text-text-main line-clamp-2 mb-1.5 group-hover:text-accent-blue transition-colors leading-snug">
-              {title || "Untitled Course"}
-            </h3>
-            
-            {/* Description */}
-            <p className="text-text-muted text-xs line-clamp-2 font-medium leading-relaxed">
-              {description}
-            </p>
-          </div>
+      <div className="p-5 flex flex-col flex-grow">
+        <Link href={courseHref} className="mb-4 outline-none">
+          <p className="text-accent-blue text-[10px] font-bold uppercase tracking-wider mb-1.5">
+            {author || 'Expert Faculty'}
+          </p>
+          <h3 className="text-lg font-bold text-text-main line-clamp-2 mb-1.5 group-hover:text-accent-blue transition-colors leading-snug">
+            {title || 'Untitled Course'}
+          </h3>
+          <p className="text-text-muted text-xs line-clamp-2 font-medium leading-relaxed">
+            {description}
+          </p>
+        </Link>
 
-          {/* Progress Section (Always stays at the bottom nicely) */}
-          {showProgress && (
-            <div className="mt-auto pt-2">
-              <div className="flex justify-between items-end text-[10px] font-bold mb-2">
-                <span className="text-text-muted uppercase tracking-wider">Progress</span>
-                <span className="text-text-main">{progress}%</span>
-              </div>
-              <div className="w-full bg-app-bg border border-border-subtle rounded-full h-1.5 overflow-hidden">
-                <div 
-                  className="bg-accent-blue h-full rounded-full transition-all duration-700 ease-in-out" 
-                  style={{ width: `${progress}%` }} 
-                />
-              </div>
+        {showProgress && (
+          <div className="mt-auto pt-2">
+            <div className="flex justify-between items-end text-[10px] font-bold mb-2">
+              <span className="text-text-muted uppercase tracking-wider">Progress</span>
+              <span className="text-text-main">{progress}%</span>
             </div>
-          )}
-          
-        </div>
+            <div className="w-full bg-app-bg border border-border-subtle rounded-full h-1.5 overflow-hidden">
+              <div
+                className="bg-accent-blue h-full rounded-full transition-all duration-700 ease-in-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {marksheetHref && (
+          <Link
+            href={marksheetHref}
+            className="mt-4 inline-flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-accent-blue/30 bg-accent-blue/10 text-accent-blue text-[10px] font-black uppercase tracking-widest hover:bg-accent-blue hover:text-white transition-colors"
+          >
+            View Marksheet
+          </Link>
+        )}
       </div>
-    </Link>
+    </div>
   );
 };
 

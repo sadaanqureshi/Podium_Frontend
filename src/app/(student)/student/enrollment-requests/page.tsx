@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     Loader2,
     ClipboardList,
@@ -14,17 +14,22 @@ import {
     Tag,
     ExternalLink,
     ImageIcon,
+    RefreshCw,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import {
     fetchMyEnrollmentRequests,
     clearMyEnrollmentRequests,
 } from '@/lib/store/features/courseSlice';
 import { useToast } from '@/context/ToastContext';
-import type {
-    EnrollmentRequestStatus,
-    MyEnrollmentRequestItem,
-    TransactionStatus,
+import { getErrorMessage } from '@/lib/api/errorMessage';
+import {
+    enrollWithProofAPI,
+    type EnrollmentRequestStatus,
+    type MyEnrollmentRequestItem,
+    type TransactionStatus,
 } from '@/lib/api/apiService';
 
 const STATUS_FILTERS: { label: string; value: EnrollmentRequestStatus | '' }[] = [
@@ -97,7 +102,65 @@ const formatDate = (value: string | null | undefined) => {
     });
 };
 
-function RequestCard({ item }: { item: MyEnrollmentRequestItem }) {
+/** Live countdown until reapplyAvailableAt */
+function useReapplyCountdown(reapplyAvailableAt: string | null | undefined) {
+    const [now, setNow] = useState(() => Date.now());
+
+    useEffect(() => {
+        if (!reapplyAvailableAt) return;
+        const id = window.setInterval(() => setNow(Date.now()), 30_000);
+        return () => window.clearInterval(id);
+    }, [reapplyAvailableAt]);
+
+    return useMemo(() => {
+        if (!reapplyAvailableAt) return null;
+        const target = new Date(reapplyAvailableAt).getTime();
+        if (Number.isNaN(target)) return null;
+        const ms = target - now;
+        if (ms <= 0) return { ready: true as const, label: 'available now' };
+        const totalMins = Math.ceil(ms / 60_000);
+        const hours = Math.floor(totalMins / 60);
+        const mins = totalMins % 60;
+        if (hours >= 24) {
+            const days = Math.floor(hours / 24);
+            const remH = hours % 24;
+            return {
+                ready: false as const,
+                label: remH
+                    ? `${days}d ${remH}h remaining`
+                    : `${days} day${days === 1 ? '' : 's'} remaining`,
+            };
+        }
+        if (hours > 0) {
+            return {
+                ready: false as const,
+                label: mins
+                    ? `${hours}h ${mins}m remaining`
+                    : `${hours} hour${hours === 1 ? '' : 's'} remaining`,
+            };
+        }
+        return {
+            ready: false as const,
+            label: `${mins} minute${mins === 1 ? '' : 's'} remaining`,
+        };
+    }, [reapplyAvailableAt, now]);
+}
+
+function isPaidCourse(price: string | null | undefined) {
+    if (price == null || price === '') return false;
+    const n = Number(price);
+    return !Number.isNaN(n) && n > 0;
+}
+
+function RequestCard({
+    item,
+    reapplyingId,
+    onReapply,
+}: {
+    item: MyEnrollmentRequestItem;
+    reapplyingId: number | null;
+    onReapply: (item: MyEnrollmentRequestItem) => void;
+}) {
     const course = item.course;
     const tx = item.transaction;
     const status = enrollmentStatusBadge(item.status);
@@ -105,6 +168,16 @@ function RequestCard({ item }: { item: MyEnrollmentRequestItem }) {
     const teacherName = course?.teacher
         ? `${course.teacher.firstName} ${course.teacher.lastName}`.trim()
         : null;
+
+    const countdown = useReapplyCountdown(item.reapplyAvailableAt);
+    // Prefer backend canReapply; fall back to reapplyAvailableAt countdown
+    const canReapply =
+        item.status === 'rejected' &&
+        (item.canReapply === true ||
+            (item.canReapply !== false &&
+                (countdown == null || countdown.ready === true)));
+    const cooldownLocked = item.status === 'rejected' && !canReapply;
+    const busy = reapplyingId === item.id;
 
     return (
         <article className="bg-card-bg border border-border-subtle rounded-2xl overflow-hidden shadow-sm flex flex-col sm:flex-row">
@@ -164,21 +237,74 @@ function RequestCard({ item }: { item: MyEnrollmentRequestItem }) {
                         <Calendar size={12} className="text-accent-blue" />
                         Requested {formatDate(item.createdAt)}
                     </span>
-                    {item.updatedAt && item.updatedAt !== item.createdAt && (
+                    {item.rejectedAt && (
                         <span className="inline-flex items-center gap-1.5">
-                            Updated {formatDate(item.updatedAt)}
+                            Rejected {formatDate(item.rejectedAt)}
                         </span>
                     )}
+                    {item.updatedAt &&
+                        item.updatedAt !== item.createdAt &&
+                        !item.rejectedAt && (
+                            <span className="inline-flex items-center gap-1.5">
+                                Updated {formatDate(item.updatedAt)}
+                            </span>
+                        )}
                 </div>
 
                 {item.status === 'rejected' && (
-                    <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-red-500 mb-1">
-                            Rejection reason
-                        </p>
-                        <p className="text-xs font-medium text-text-main leading-relaxed">
-                            {item.rejectionReason?.trim() || 'No reason provided'}
-                        </p>
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 space-y-3">
+                        <div>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-red-500 mb-1">
+                                Rejection reason
+                            </p>
+                            <p className="text-xs font-medium text-text-main leading-relaxed">
+                                {item.rejectionReason?.trim() || 'No reason provided'}
+                            </p>
+                        </div>
+
+                        {cooldownLocked && (
+                            <p className="text-[11px] font-bold text-amber-500 uppercase tracking-wider inline-flex items-center gap-1.5">
+                                <Clock3 size={12} />
+                                You can request again in{' '}
+                                {countdown?.label ||
+                                    formatDate(item.reapplyAvailableAt)}
+                            </p>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-2">
+                            {isPaidCourse(course?.price) ? (
+                                canReapply ? (
+                                    <Link
+                                        href={`/student/available-courses/${course?.id}/payment`}
+                                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-accent-blue text-white text-[10px] font-black uppercase tracking-widest hover:opacity-90"
+                                    >
+                                        <RefreshCw size={12} /> Request again
+                                    </Link>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        disabled
+                                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-border-subtle text-text-muted text-[10px] font-black uppercase tracking-widest opacity-60 cursor-not-allowed"
+                                    >
+                                        <RefreshCw size={12} /> Request again
+                                    </button>
+                                )
+                            ) : (
+                                <button
+                                    type="button"
+                                    disabled={!canReapply || busy || !course?.id}
+                                    onClick={() => onReapply(item)}
+                                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-accent-blue text-white text-[10px] font-black uppercase tracking-widest hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {busy ? (
+                                        <Loader2 size={12} className="animate-spin" />
+                                    ) : (
+                                        <RefreshCw size={12} />
+                                    )}
+                                    Request again
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -224,9 +350,11 @@ function RequestCard({ item }: { item: MyEnrollmentRequestItem }) {
 export default function EnrollmentRequestsPage() {
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
+    const router = useRouter();
 
     const [mounted, setMounted] = useState(false);
     const [statusFilter, setStatusFilter] = useState<EnrollmentRequestStatus | ''>('');
+    const [reapplyingId, setReapplyingId] = useState<number | null>(null);
 
     const {
         myEnrollmentRequests,
@@ -242,6 +370,33 @@ export default function EnrollmentRequestsPage() {
                 : { status: statusFilter };
         dispatch(fetchMyEnrollmentRequests(params));
     }, [dispatch, statusFilter]);
+
+    const handleReapply = async (item: MyEnrollmentRequestItem) => {
+        const courseId = item.course?.id;
+        if (!courseId) {
+            showToast('Course not found for this request', 'error');
+            return;
+        }
+
+        // Paid courses need a new screenshot via payment page
+        if (isPaidCourse(item.course?.price)) {
+            router.push(`/student/available-courses/${courseId}/payment`);
+            return;
+        }
+
+        setReapplyingId(item.id);
+        try {
+            const formData = new FormData();
+            formData.append('courseId', String(courseId));
+            await enrollWithProofAPI(formData);
+            showToast('Enrollment request submitted again', 'success');
+            loadRequests();
+        } catch (err) {
+            showToast(getErrorMessage(err, 'Could not re-request enrollment'), 'error');
+        } finally {
+            setReapplyingId(null);
+        }
+    };
 
     useEffect(() => {
         setMounted(true);
@@ -400,7 +555,12 @@ export default function EnrollmentRequestsPage() {
                             </div>
                         )}
                         {myEnrollmentRequests.map((item) => (
-                            <RequestCard key={item.id} item={item} />
+                            <RequestCard
+                                key={item.id}
+                                item={item}
+                                reapplyingId={reapplyingId}
+                                onReapply={handleReapply}
+                            />
                         ))}
                     </div>
                 )}

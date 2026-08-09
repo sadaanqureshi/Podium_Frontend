@@ -133,11 +133,15 @@ const AdminQuizDetailPage = ({ params }: { params: Promise<any> }) => {
         setModalLoading(true);
         try {
             const rawData = Object.fromEntries(formData);
+            const questions = JSON.parse(rawData.questions as string);
+            const total_marks =
+                Number(rawData.total_marks) ||
+                questions.reduce((sum: number, q: any) => sum + (Number(q?.marks) || 0), 0);
             const payload = {
                 ...rawData,
-                total_marks: Number(rawData.total_marks),
+                total_marks,
                 is_Published: rawData.is_Published === 'true',
-                questions: JSON.parse(rawData.questions as string)
+                questions,
             };
             await updateQuizAPI(quizId, payload);
             setIsEditModalOpen(false);
@@ -325,7 +329,6 @@ const AdminQuizDetailPage = ({ params }: { params: Promise<any> }) => {
                 fields={[
                     { name: 'title', label: 'Quiz Title', type: 'text', required: true },
                     { name: 'description', label: 'Instruction Set', type: 'textarea' },
-                    { name: 'total_marks', label: 'Point Volume', type: 'number', required: true },
                     { name: 'start_time', label: 'Protocol Start', type: 'datetime-local' },
                     { name: 'end_time', label: 'Protocol Terminate', type: 'datetime-local' },
                     { name: 'is_Published', label: 'Availability', type: 'select', options: [{ label: 'Live Registry', value: 'true' }, { label: 'Internal Draft', value: 'false' }] },
@@ -337,7 +340,6 @@ const AdminQuizDetailPage = ({ params }: { params: Promise<any> }) => {
                     ...displayQuiz,
                     start_time: (displayQuiz?.start_time || displayQuiz?.startTime) ? new Date(displayQuiz?.start_time || displayQuiz?.startTime).toISOString().slice(0, 16) : '',
                     end_time: (displayQuiz?.end_time || displayQuiz?.endTime) ? new Date(displayQuiz?.end_time || displayQuiz?.endTime).toISOString().slice(0, 16) : '',
-                    total_marks: displayQuiz?.total_marks || displayQuiz?.totalMarks,
                     is_Published: String(displayQuiz?.is_Published)
                 }}
             />

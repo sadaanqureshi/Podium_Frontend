@@ -1,8 +1,21 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getFeesDataAPI, getEnrollmentsAPI, getTransactionByIdAPI } from '@/lib/api/apiService';
+import {
+    getFeesDataAPI,
+    getEnrollmentsAPI,
+    getTransactionByIdAPI,
+    GetAdminEnrollmentsParams,
+    AdminEnrollmentsListStats,
+} from '@/lib/api/apiService';
 import { getErrorMessage } from '@/lib/api/errorMessage';
 
-// # THUNK 1: Fetch Finance Data (List)
+const emptyEnrollmentStats: AdminEnrollmentsListStats = {
+    total: 0,
+    pending: 0,
+    enrolled: 0,
+    rejected: 0,
+    dismissed: 0,
+};
+
 export const fetchFeesData = createAsyncThunk(
     'finance/fetchFeesData',
     async (params: { page: number; limit: number } | undefined, { rejectWithValue }) => {
@@ -15,26 +28,23 @@ export const fetchFeesData = createAsyncThunk(
     }
 );
 
-// # THUNK 2: Fetch Enrollments Data
 export const fetchEnrollmentsData = createAsyncThunk(
     'finance/fetchEnrollmentsData',
-    async (_, { rejectWithValue }) => {
+    async (params: GetAdminEnrollmentsParams | undefined, { rejectWithValue }) => {
         try {
-            const res = await getEnrollmentsAPI();
-            return res; 
+            return await getEnrollmentsAPI(params || { page: 1, limit: 10, status: 'pending' });
         } catch (err: any) {
             return rejectWithValue(getErrorMessage(err, 'Enrollments data load nahi ho saka'));
         }
     }
 );
 
-// # THUNK 3: Fetch Single Transaction Details (NEW API from image_593d95.png)
 export const fetchTransactionDetails = createAsyncThunk(
     'finance/fetchTransactionDetails',
     async (transactionId: number | string, { rejectWithValue }) => {
         try {
             const res = await getTransactionByIdAPI(transactionId);
-            return res; 
+            return res;
         } catch (err: any) {
             return rejectWithValue(getErrorMessage(err, 'Transaction details load nahi ho sake'));
         }
@@ -43,19 +53,29 @@ export const fetchTransactionDetails = createAsyncThunk(
 
 interface FinanceState {
     transactions: any[];
-    enrollments: any[]; 
-    selectedTransaction: any | null; // Single transaction details store karne ke liye
+    enrollments: any[];
+    enrollmentsMeta: {
+        totalItems: number;
+        itemCount: number;
+        itemsPerPage: number;
+        totalPages: number;
+        currentPage: number;
+    } | null;
+    enrollmentsStats: AdminEnrollmentsListStats;
+    selectedTransaction: any | null;
     stats: any | null;
     meta: any | null;
     loading: boolean;
-    enrollmentsLoading: boolean; 
-    detailsLoading: boolean; // Detail fetch ki loading state
+    enrollmentsLoading: boolean;
+    detailsLoading: boolean;
     error: string | null;
 }
 
 const initialState: FinanceState = {
     transactions: [],
     enrollments: [],
+    enrollmentsMeta: null,
+    enrollmentsStats: emptyEnrollmentStats,
     selectedTransaction: null,
     stats: null,
     meta: null,
@@ -72,18 +92,21 @@ const financeSlice = createSlice({
         clearFinanceCache: (state) => {
             state.transactions = [];
             state.enrollments = [];
+            state.enrollmentsMeta = null;
+            state.enrollmentsStats = emptyEnrollmentStats;
             state.selectedTransaction = null;
             state.stats = null;
             state.meta = null;
         },
         clearSelectedTransaction: (state) => {
             state.selectedTransaction = null;
-        }
+        },
     },
     extraReducers: (builder) => {
         builder
-            // Transactions Cases
-            .addCase(fetchFeesData.pending, (state) => { state.loading = true; })
+            .addCase(fetchFeesData.pending, (state) => {
+                state.loading = true;
+            })
             .addCase(fetchFeesData.fulfilled, (state, action) => {
                 state.loading = false;
                 state.transactions = action.payload.transactions || [];
@@ -94,30 +117,38 @@ const financeSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload as string;
             })
-            // Enrollments Cases
-            .addCase(fetchEnrollmentsData.pending, (state) => { state.enrollmentsLoading = true; })
+            .addCase(fetchEnrollmentsData.pending, (state) => {
+                state.enrollmentsLoading = true;
+            })
             .addCase(fetchEnrollmentsData.fulfilled, (state, action) => {
                 state.enrollmentsLoading = false;
-                state.enrollments = action.payload || [];
+                state.enrollments = action.payload?.data || [];
+                state.enrollmentsMeta = action.payload?.meta || null;
+                state.enrollmentsStats = action.payload?.stats || emptyEnrollmentStats;
             })
             .addCase(fetchEnrollmentsData.rejected, (state, action) => {
                 state.enrollmentsLoading = false;
                 state.error = action.payload as string;
             })
-            // Transaction Details Cases
             .addCase(fetchTransactionDetails.pending, (state) => {
                 state.detailsLoading = true;
                 state.error = null;
             })
             .addCase(fetchTransactionDetails.fulfilled, (state, action) => {
                 state.detailsLoading = false;
-                state.selectedTransaction = action.payload;
+                const payload = action.payload;
+                state.selectedTransaction =
+                    payload?.data && typeof payload.data === 'object' && !Array.isArray(payload.data)
+                        ? payload.data
+                        : payload?.transaction && typeof payload.transaction === 'object'
+                          ? payload.transaction
+                          : payload;
             })
             .addCase(fetchTransactionDetails.rejected, (state, action) => {
                 state.detailsLoading = false;
                 state.error = action.payload as string;
             });
-    }
+    },
 });
 
 export const { clearFinanceCache, clearSelectedTransaction } = financeSlice.actions;

@@ -8,6 +8,20 @@ import { throwIfNotOk, extractBackendMessage } from './errorMessage';
 // process.env use karne se Next.js khud hi environment ke mutabiq URL utha lega
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3006';
 
+/** Turn relative upload paths into absolute URLs the browser can load. */
+export const resolveMediaUrl = (url?: string | null): string | null => {
+    if (url == null || typeof url !== 'string') return null;
+    const trimmed = url.trim();
+    if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return null;
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+        return trimmed;
+    }
+    if (trimmed.startsWith('//')) return `https:${trimmed}`;
+    const base = API_URL.replace(/\/$/, '');
+    if (trimmed.startsWith('/')) return `${base}${trimmed}`;
+    return `${base}/${trimmed}`;
+};
+
 export const getToken = (serverToken?: string) => {
     if (serverToken) return serverToken; 
     if (typeof window !== 'undefined') {
@@ -435,6 +449,21 @@ export const getStudentDashboardAPI = async (): Promise<StudentDashboardResponse
 // ==============================
 // TEACHER DASHBOARD (aggregate home)
 // ==============================
+export type TeacherDashboardGradingItem = {
+    kind?: 'assignment' | 'quiz';
+    /** Present for assignment rows (backend) */
+    assignmentId?: number;
+    /** Present for quiz rows (frontend enrichment) */
+    quizId?: number;
+    id?: number;
+    title: string;
+    courseId: number;
+    courseName: string;
+    sectionId?: number | null;
+    dueDate: string | null;
+    pendingSubmissionCount: number;
+};
+
 export type TeacherDashboardResponse = {
     welcome: {
         id: number;
@@ -468,14 +497,7 @@ export type TeacherDashboardResponse = {
         createdAt: string | null;
         updatedAt: string | null;
     }>;
-    gradingQueue: Array<{
-        assignmentId: number;
-        title: string;
-        courseId: number;
-        courseName: string;
-        dueDate: string | null;
-        pendingSubmissionCount: number;
-    }>;
+    gradingQueue: TeacherDashboardGradingItem[];
     recentAttendance: Array<{
         attendanceId: number;
         attendanceDate: string | null;
@@ -533,6 +555,148 @@ export const getTeacherDashboard = async (): Promise<TeacherDashboardResponse> =
 
 export const getTeacherDashboardAPI = getTeacherDashboard;
 
+// ==============================
+// ADMIN DASHBOARD (aggregate home)
+// ==============================
+export type AdminDashboardResponse = {
+    welcome: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        email: string;
+    };
+    metrics: {
+        students: { total: number; active: number; newThisMonth: number };
+        teachers: { total: number; active: number; newThisMonth: number };
+        courses: {
+            total: number;
+            active: number;
+            withTeacher: number;
+            withoutTeacher: number;
+        };
+        enrollments: {
+            total: number;
+            pending: number;
+            enrolled: number;
+            rejected: number;
+            dismissed: number;
+        };
+        teacherAssignments: {
+            pending: number;
+            accepted: number;
+            rejected: number;
+            unassigned: number;
+        };
+        revenue: {
+            totalRevenue: string;
+            pendingAmount: string;
+            revenueThisMonth: string;
+            paidCount: number;
+            pendingCount: number;
+            failedCount: number;
+            freeCount: number;
+        };
+        workload: {
+            pendingSubmissionsToGrade: number;
+            unmarkedAttendanceSessions: number;
+        };
+    };
+    actionRequired: {
+        pendingEnrollments: Array<{
+            id: number;
+            studentName: string;
+            studentId: number;
+            courseName: string;
+            courseId: number;
+            amount: string;
+            screenshotUrl: string | null;
+            createdAt: string | null;
+        }>;
+        pendingTeacherAssignments: Array<{
+            courseId: number;
+            courseName: string;
+            teacherName: string;
+            teacherId: number;
+            assignmentStatus: string;
+            updatedAt: string | null;
+        }>;
+        pendingPayments: Array<{
+            uuid: string;
+            studentName: string;
+            courseName: string;
+            amount: string;
+            screenshotUrl: string | null;
+            createdAt: string | null;
+        }>;
+    };
+    recentActivity: {
+        recentEnrollments: Array<{
+            id: number;
+            status: string;
+            studentName: string;
+            courseName: string;
+            createdAt: string | null;
+        }>;
+        recentCourses: Array<{
+            id: number;
+            courseName: string;
+            coverImg: string | null;
+            teacherStatus: string;
+            teacherName: string | null;
+            createdAt: string | null;
+        }>;
+        recentStudents: Array<{
+            id: number;
+            firstName: string;
+            lastName: string;
+            email: string;
+            createdAt: string | null;
+        }>;
+    };
+    charts: {
+        enrollmentsByStatus: Array<{ label: string; value: number }>;
+        coursesByAssignmentStatus: Array<{ label: string; value: number }>;
+        revenueLast6Months: Array<{ month: string; amount: string }>;
+    };
+};
+
+/** GET /admin/dashboard — admin home aggregate */
+export const getAdminDashboard = async (): Promise<AdminDashboardResponse> => {
+    const token = getToken();
+    if (!token) {
+        logoutLocal();
+        throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_URL}/admin/dashboard`, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+    });
+
+    if (!response.ok) {
+        let message = 'Failed to load admin dashboard';
+        try {
+            const errorData = await response.json();
+            message = extractBackendMessage(errorData) || message;
+        } catch {
+            /* ignore */
+        }
+        if (response.status === 403) {
+            throw new Error(message || 'Only admins can view this dashboard.');
+        }
+        throw new Error(message);
+    }
+
+    const json = await response.json();
+    return (json?.data ?? json) as AdminDashboardResponse;
+};
+
+export const getAdminDashboardAPI = getAdminDashboard;
+
 export type EnrollmentRequestStatus = 'pending' | 'enrolled' | 'rejected' | 'dismissed';
 export type TransactionStatus = 'pending' | 'paid' | 'free' | 'failed';
 
@@ -541,6 +705,12 @@ export type MyEnrollmentRequestItem = {
     status: EnrollmentRequestStatus;
     isActive: boolean;
     rejectionReason: string | null;
+    /** When admin rejected this request (ISO) */
+    rejectedAt?: string | null;
+    /** false while inside 48h cooldown after reject */
+    canReapply?: boolean;
+    /** ISO datetime when re-request is allowed; null if already eligible or not rejected */
+    reapplyAvailableAt?: string | null;
     createdAt: string | null;
     updatedAt: string | null;
     course: {
@@ -847,7 +1017,16 @@ export const gradeSubmissionAPI = async (
         body: JSON.stringify(data)
     });
     await throwIfNotOk(response, 'Grading fail ho gayi');
-    return await response.json();
+    // PATCH may return 200/204 with an empty body — don't fail JSON parse on success
+    const text = await response.text();
+    if (!text?.trim()) {
+        return { marksObtained: data.marksObtained, comments: data.comments };
+    }
+    try {
+        return JSON.parse(text);
+    } catch {
+        return { marksObtained: data.marksObtained, comments: data.comments };
+    }
 };
 
 // ==============================
@@ -870,18 +1049,230 @@ export const enrollStudentAPI = async (payload: { courseId: number; studentId: n
     return await response.json();
 };
 
-export const getEnrolledStudentsAPI = async (courseId: string) => {
+export type AdminEnrollmentStatus = 'pending' | 'enrolled' | 'rejected' | 'dismissed';
+export type AdminEnrollmentPaymentStatus = 'pending' | 'paid' | 'free' | 'failed';
+
+export type AdminEnrollmentItem = {
+    id: number;
+    status: AdminEnrollmentStatus | string;
+    isActive?: boolean;
+    lectureViewed?: number;
+    rejectionReason?: string | null;
+    rejectedAt?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    student?: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        email: string;
+        rollNumber?: string | null;
+        contactNumber?: string | null;
+    } | null;
+    course?: {
+        id: number;
+        courseName: string;
+        price?: string | null;
+        coverImg?: string | null;
+    } | null;
+    transaction?: {
+        id: number;
+        uuid?: string | null;
+        amount?: string | null;
+        status?: AdminEnrollmentPaymentStatus | string | null;
+        paymentType?: string | null;
+        screenshotUrl?: string | null;
+        createdAt?: string | null;
+        updatedAt?: string | null;
+    } | null;
+    enrolledBy?: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        email: string;
+    } | null;
+};
+
+export type AdminEnrollmentsListStats = {
+    total: number;
+    pending: number;
+    enrolled: number;
+    rejected: number;
+    dismissed: number;
+};
+
+export type AdminEnrollmentsListResponse = {
+    data: AdminEnrollmentItem[];
+    meta: {
+        totalItems: number;
+        itemCount: number;
+        itemsPerPage: number;
+        totalPages: number;
+        currentPage: number;
+    };
+    stats: AdminEnrollmentsListStats;
+};
+
+export type AdminEnrollmentsByCourseResponse = {
+    course?: {
+        id: number;
+        courseName: string;
+        price?: string | null;
+        coverImg?: string | null;
+    } | null;
+    data: AdminEnrollmentItem[];
+    stats: AdminEnrollmentsListStats;
+};
+
+export type GetAdminEnrollmentsParams = {
+    page?: number;
+    limit?: number;
+    status?: AdminEnrollmentStatus | '';
+    studentName?: string;
+    courseName?: string;
+    courseId?: number;
+};
+
+/** GET /admin/enrollments/course/:courseId — enriched roster (admin JWT only) */
+export const getEnrolledStudentsAPI = async (
+    courseId: string | number
+): Promise<AdminEnrollmentsByCourseResponse> => {
     const token = getToken();
     const response = await fetch(`${API_URL}/admin/enrollments/course/${courseId}`, {
         method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
     });
-    return await response.json();
+    await throwIfNotOk(response, 'Failed to fetch course enrollments');
+    const json = await response.json();
+    // Backward-compatible if API ever returns a bare array
+    if (Array.isArray(json)) {
+        return {
+            data: json,
+            stats: {
+                total: json.length,
+                pending: 0,
+                enrolled: json.length,
+                rejected: 0,
+                dismissed: 0,
+            },
+        };
+    }
+    return {
+        course: json?.course ?? null,
+        data: Array.isArray(json?.data) ? json.data : [],
+        stats: json?.stats || {
+            total: 0,
+            pending: 0,
+            enrolled: 0,
+            rejected: 0,
+            dismissed: 0,
+        },
+    };
 };
 
 // ==============================
-// STUDENT APIs
+// STUDENT APIs (admin)
 // ==============================
+export type AdminStudentListItem = {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    contactNumber?: string | null;
+    role?: string;
+    rollNumber?: string | null;
+    isActive: boolean;
+    createdAt?: string | null;
+};
+
+export type AdminStudentsListStats = {
+    totalStudents: number;
+    activeStudents: number;
+    inactiveStudents: number;
+    studentsWithEnrollments: number;
+    pendingEnrollmentRequests: number;
+    newStudentsThisMonth: number;
+};
+
+export type AdminStudentsListResponse = {
+    data: AdminStudentListItem[];
+    meta: {
+        totalItems: number;
+        itemCount: number;
+        itemsPerPage: number;
+        totalPages: number;
+        currentPage: number;
+    };
+    stats: AdminStudentsListStats;
+};
+
+export type AdminStudentProfileResponse = {
+    student: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        email: string;
+        contactNumber?: string | null;
+        rollNumber?: string | null;
+        role?: string;
+        isActive: boolean;
+        createdAt?: string | null;
+        updatedAt?: string | null;
+    };
+    stats: {
+        enrolledCourses: number;
+        pendingEnrollments: number;
+        rejectedEnrollments: number;
+        totalEnrollments: number;
+        attendancePresent: number;
+        attendanceAbsent: number;
+        attendanceRatePercent: number | null;
+        paidTransactions: number;
+        pendingPayments: number;
+        failedPayments: number;
+        totalPaidAmount: string;
+    };
+    enrollments: Array<{
+        id: number;
+        status: 'pending' | 'enrolled' | 'rejected' | 'dismissed' | string;
+        isActive: boolean;
+        lectureViewed?: number;
+        rejectionReason?: string | null;
+        rejectedAt?: string | null;
+        createdAt?: string | null;
+        updatedAt?: string | null;
+        course: {
+            id: number;
+            courseName: string;
+            price?: string | null;
+            coverImg?: string | null;
+            teacher?: {
+                id: number;
+                firstName: string;
+                lastName: string;
+                email?: string;
+            } | null;
+        } | null;
+        transaction: {
+            id: number;
+            amount: string;
+            status: 'pending' | 'paid' | 'free' | 'failed' | string;
+            paymentType?: string | null;
+            screenshotUrl?: string | null;
+            createdAt?: string | null;
+            updatedAt?: string | null;
+        } | null;
+    }>;
+    recentAttendance: Array<{
+        attendanceId: number;
+        attendanceDate: string | null;
+        status: 'present' | 'absent' | string;
+        lectureTitle: string;
+        courseName: string;
+        courseId: number;
+    }>;
+};
+
 export const createStudentsAPI = async (data: any) => {
     const token = getToken();
     const res = await fetch(`${API_URL}/admin/users/students`, {
@@ -893,14 +1284,66 @@ export const createStudentsAPI = async (data: any) => {
     return await res.json();
 };
 
-export const getAllStudentsAPI = async (page = 1, limit = 10) => {
+export const getAllStudentsAPI = async (
+    page = 1,
+    limit = 10
+): Promise<AdminStudentsListResponse> => {
     const token = getToken();
     const res = await fetch(`${API_URL}/admin/users/students?page=${page}&limit=${limit}`, {
         method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
     });
     await throwIfNotOk(res, 'Students load nahi ho sakay');
-    return await res.json();
+    const json = await res.json();
+    return {
+        data: Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [],
+        meta: json?.meta || {
+            totalItems: 0,
+            itemCount: 0,
+            itemsPerPage: limit,
+            totalPages: 1,
+            currentPage: page,
+        },
+        stats: json?.stats || {
+            totalStudents: 0,
+            activeStudents: 0,
+            inactiveStudents: 0,
+            studentsWithEnrollments: 0,
+            pendingEnrollmentRequests: 0,
+            newStudentsThisMonth: 0,
+        },
+    };
+};
+
+/** GET /admin/users/students/:studentId — admin student profile */
+export const getAdminStudentByIdAPI = async (
+    studentId: number
+): Promise<AdminStudentProfileResponse> => {
+    const token = getToken();
+    if (!token) {
+        logoutLocal();
+        throw new Error('No authentication token found');
+    }
+
+    const res = await fetch(`${API_URL}/admin/users/students/${studentId}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+    });
+
+    if (res.status === 401) {
+        logoutLocal();
+        throw new Error('Unauthorized. Please sign in again.');
+    }
+
+    if (res.status === 404) {
+        throw new Error('Student not found');
+    }
+
+    await throwIfNotOk(res, 'Failed to load student profile');
+    const json = await res.json();
+    return (json?.data ?? json) as AdminStudentProfileResponse;
 };
 
 export const updateStudentsAPI = async (userId: number, data: any) => {
@@ -941,8 +1384,74 @@ export const getStudentsAPI = async () => {
 };
 
 // ==============================
-// TEACHER APIs
+// TEACHER APIs (admin)
 // ==============================
+export type AdminTeacherListItem = {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    contactNumber?: string | null;
+    role?: string;
+    isActive: boolean;
+    createdAt?: string | null;
+};
+
+export type AdminTeachersListStats = {
+    totalTeachers: number;
+    activeTeachers: number;
+    inactiveTeachers: number;
+    teachersWithAcceptedCourses: number;
+    pendingCourseAssignments: number;
+    newTeachersThisMonth: number;
+};
+
+export type AdminTeachersListResponse = {
+    data: AdminTeacherListItem[];
+    meta: {
+        totalItems: number;
+        itemCount: number;
+        itemsPerPage: number;
+        totalPages: number;
+        currentPage: number;
+    };
+    stats: AdminTeachersListStats;
+};
+
+export type AdminTeacherProfileResponse = {
+    teacher: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        email: string;
+        contactNumber?: string | null;
+        role?: string;
+        isActive: boolean;
+        createdAt?: string | null;
+        updatedAt?: string | null;
+    };
+    stats: {
+        acceptedCourses: number;
+        pendingCourseAssignments: number;
+        totalAssignedCourses: number;
+        studentsEnrolled: number;
+        pendingSubmissionsToGrade: number;
+        unmarkedAttendanceSessions: number;
+    };
+    courses: Array<{
+        id: number;
+        courseName: string;
+        shortDescription?: string | null;
+        price?: string | null;
+        coverImg?: string | null;
+        isActive?: boolean;
+        teacherStatus: 'pending' | 'accepted' | 'rejected' | string;
+        enrolledStudentsCount: number;
+        createdAt?: string | null;
+        courseCategory?: { id: number; name: string | null } | null;
+    }>;
+};
+
 export const createTeachersAPI = async (data: any) => {
     const token = getToken();
     const res = await fetch(`${API_URL}/admin/users/teachers`, {
@@ -964,14 +1473,66 @@ export const getTeachersAPI = async () => {
     return await response.json();
 };
 
-export const getAllTeachersAPI = async (page = 1, limit = 10) => {
+export const getAllTeachersAPI = async (
+    page = 1,
+    limit = 10
+): Promise<AdminTeachersListResponse> => {
     const token = getToken();
     const res = await fetch(`${API_URL}/admin/users/teachers?page=${page}&limit=${limit}`, {
         method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
     });
     await throwIfNotOk(res, 'Teachers load nahi ho sakay');
-    return await res.json();
+    const json = await res.json();
+    return {
+        data: Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [],
+        meta: json?.meta || {
+            totalItems: 0,
+            itemCount: 0,
+            itemsPerPage: limit,
+            totalPages: 1,
+            currentPage: page,
+        },
+        stats: json?.stats || {
+            totalTeachers: 0,
+            activeTeachers: 0,
+            inactiveTeachers: 0,
+            teachersWithAcceptedCourses: 0,
+            pendingCourseAssignments: 0,
+            newTeachersThisMonth: 0,
+        },
+    };
+};
+
+/** GET /admin/users/teachers/:teacherId — admin teacher profile */
+export const getAdminTeacherByIdAPI = async (
+    teacherId: number
+): Promise<AdminTeacherProfileResponse> => {
+    const token = getToken();
+    if (!token) {
+        logoutLocal();
+        throw new Error('No authentication token found');
+    }
+
+    const res = await fetch(`${API_URL}/admin/users/teachers/${teacherId}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+    });
+
+    if (res.status === 401) {
+        logoutLocal();
+        throw new Error('Unauthorized. Please sign in again.');
+    }
+
+    if (res.status === 404) {
+        throw new Error('Teacher not found');
+    }
+
+    await throwIfNotOk(res, 'Failed to load teacher profile');
+    const json = await res.json();
+    return (json?.data ?? json) as AdminTeacherProfileResponse;
 };
 
 export const updateTeachersAPI = async (id: number, data: any) => {
@@ -1131,6 +1692,122 @@ export const respondToCourseAssignment = async (
         }
     );
     await throwIfNotOk(response, 'Failed to update course assignment');
+    return await response.json();
+};
+
+// ==============================
+// ADMIN TEACHER ASSIGNMENTS (course ↔ teacher queue)
+// ==============================
+export type AdminTeacherAssignmentStatus =
+    | 'pending'
+    | 'accepted'
+    | 'rejected'
+    | 'unassigned';
+
+export type AdminTeacherAssignmentItem = {
+    courseId: number;
+    courseName: string;
+    shortDescription?: string | null;
+    price?: string | null;
+    coverImg?: string | null;
+    isActive?: boolean;
+    assignmentStatus: AdminTeacherAssignmentStatus | string;
+    needsAction?: boolean;
+    teacher?: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        email: string;
+        contactNumber?: string | null;
+    } | null;
+    courseCategory?: { id: number; name: string | null } | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+};
+
+export type AdminTeacherAssignmentsStats = {
+    total: number;
+    pending: number;
+    accepted: number;
+    rejected: number;
+    unassigned: number;
+};
+
+export type AdminTeacherAssignmentsResponse = {
+    data: AdminTeacherAssignmentItem[];
+    meta: {
+        totalItems: number;
+        itemCount: number;
+        itemsPerPage: number;
+        totalPages: number;
+        currentPage: number;
+    };
+    stats: AdminTeacherAssignmentsStats;
+};
+
+export type GetAdminTeacherAssignmentsParams = {
+    page?: number;
+    limit?: number;
+    status?: AdminTeacherAssignmentStatus | '';
+    teacherName?: string;
+    courseName?: string;
+    teacherId?: number;
+};
+
+/** GET /admin/teacher-assignments — admin review queue */
+export const getAdminTeacherAssignmentsAPI = async (
+    params: GetAdminTeacherAssignmentsParams = {}
+): Promise<AdminTeacherAssignmentsResponse> => {
+    const token = getToken();
+    const qs = new URLSearchParams();
+    qs.set('page', String(params.page ?? 1));
+    qs.set('limit', String(params.limit ?? 10));
+    if (params.status) qs.set('status', params.status);
+    if (params.teacherName?.trim()) qs.set('teacherName', params.teacherName.trim());
+    if (params.courseName?.trim()) qs.set('courseName', params.courseName.trim());
+    if (params.teacherId != null) qs.set('teacherId', String(params.teacherId));
+
+    const response = await fetch(`${API_URL}/admin/teacher-assignments?${qs.toString()}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+    });
+    await throwIfNotOk(response, 'Failed to fetch teacher assignments');
+    const json = await response.json();
+
+    return {
+        data: Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [],
+        meta: json?.meta || {
+            totalItems: 0,
+            itemCount: 0,
+            itemsPerPage: params.limit ?? 10,
+            totalPages: 1,
+            currentPage: params.page ?? 1,
+        },
+        stats: json?.stats || {
+            total: 0,
+            pending: 0,
+            accepted: 0,
+            rejected: 0,
+            unassigned: 0,
+        },
+    };
+};
+
+/** POST /courses/assign-teacher/:courseId/:teacherId — send / reassign invitation */
+export const assignTeacherToCourseAPI = async (courseId: number, teacherId: number) => {
+    const token = getToken();
+    const response = await fetch(
+        `${API_URL}/courses/assign-teacher/${courseId}/${teacherId}`,
+        {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        }
+    );
+    await throwIfNotOk(response, 'Failed to assign teacher to course');
     return await response.json();
 };
 
@@ -1428,6 +2105,104 @@ export const getStudentQuizResultAPI = async (attemptId: number) => {
     return await response.json();
 };
 
+// ==============================
+// STUDENT COURSE MARKSHEET
+// ==============================
+export type MarksheetWorkStatus = 'missing' | 'submitted' | 'graded' | 'late';
+
+export type MarksheetBucketSummary = {
+    total: number;
+    graded: number;
+    submitted: number;
+    missing: number;
+    obtainedMarks: number;
+    gradedTotalMarks: number;
+    possibleTotalMarks: number;
+    percentage: number | null;
+};
+
+export type CourseMarksheetResponse = {
+    student: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        email: string;
+    };
+    course: {
+        id: number;
+        courseName: string;
+        coverImg: string | null;
+        price?: string | number | null;
+    };
+    summary: {
+        assignments: MarksheetBucketSummary;
+        quizzes: MarksheetBucketSummary;
+        overall: {
+            obtainedMarks: number;
+            gradedTotalMarks: number;
+            possibleTotalMarks: number;
+            percentage: number | null;
+            gradedItems: number;
+            totalItems: number;
+        };
+    };
+    assignments: Array<{
+        id: number;
+        title: string;
+        sectionId: number;
+        sectionTitle: string;
+        dueDate: string | null;
+        totalMarks: number;
+        status: MarksheetWorkStatus;
+        marksObtained: number | null;
+        comments: string | null;
+        submittedAt: string | null;
+    }>;
+    quizzes: Array<{
+        id: number;
+        title: string;
+        sectionId: number;
+        sectionTitle: string;
+        totalMarks: number;
+        attemptId: number | null;
+        attemptStatus: Exclude<MarksheetWorkStatus, 'late'> | MarksheetWorkStatus;
+        marksObtained: number | null;
+        comments: string | null;
+        submittedAt: string | null;
+        gradedAt: string | null;
+    }>;
+};
+
+/** GET /progress/courses/:courseId/marksheet — enrolled student only */
+export const getCourseMarksheetAPI = async (
+    courseId: number
+): Promise<CourseMarksheetResponse> => {
+    const token = getToken();
+    if (!token) {
+        logoutLocal();
+        throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_URL}/progress/courses/${courseId}/marksheet`, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+    });
+
+    if (response.status === 401) {
+        logoutLocal();
+        throw new Error('Unauthorized. Please sign in again.');
+    }
+
+    await throwIfNotOk(response, 'Failed to load marksheet');
+
+    const json = await response.json();
+    return (json?.data ?? json) as CourseMarksheetResponse;
+};
+
 // # ATTENDANCE APIs
 export type StudentAttendanceStatus = 'present' | 'absent' | '-';
 
@@ -1648,35 +2423,87 @@ export const enrollWithProofAPI = async (formData: FormData) => {
     return await response.json();
 };
 
-// Enrollments fetch karne ki API
-export const getEnrollmentsAPI = async () => {
-    // const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+/** GET /admin/enrollments — paginated list with stats (admin JWT) */
+export const getEnrollmentsAPI = async (
+    params: GetAdminEnrollmentsParams = {}
+): Promise<AdminEnrollmentsListResponse> => {
     const token = getToken();
-    const response = await fetch(`${API_URL}/admin/enrollments`, {
+    const qs = new URLSearchParams();
+    qs.set('page', String(params.page ?? 1));
+    qs.set('limit', String(params.limit ?? 10));
+    if (params.status) qs.set('status', params.status);
+    if (params.studentName?.trim()) qs.set('studentName', params.studentName.trim());
+    if (params.courseName?.trim()) qs.set('courseName', params.courseName.trim());
+    if (params.courseId != null) qs.set('courseId', String(params.courseId));
+
+    const response = await fetch(`${API_URL}/admin/enrollments?${qs.toString()}`, {
         method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
     });
 
     await throwIfNotOk(response, 'Failed to fetch enrollments');
-    return await response.json();
+    const json = await response.json();
+
+    // Guard if an older server still returns a bare array
+    if (Array.isArray(json)) {
+        return {
+            data: json,
+            meta: {
+                totalItems: json.length,
+                itemCount: json.length,
+                itemsPerPage: json.length || 10,
+                totalPages: 1,
+                currentPage: 1,
+            },
+            stats: {
+                total: json.length,
+                pending: json.filter((e: any) => e.status === 'pending').length,
+                enrolled: json.filter((e: any) => e.status === 'enrolled').length,
+                rejected: json.filter((e: any) => e.status === 'rejected').length,
+                dismissed: json.filter((e: any) => e.status === 'dismissed').length,
+            },
+        };
+    }
+
+    return {
+        data: Array.isArray(json?.data) ? json.data : [],
+        meta: json?.meta || {
+            totalItems: 0,
+            itemCount: 0,
+            itemsPerPage: params.limit ?? 10,
+            totalPages: 1,
+            currentPage: params.page ?? 1,
+        },
+        stats: json?.stats || {
+            total: 0,
+            pending: 0,
+            enrolled: 0,
+            rejected: 0,
+            dismissed: 0,
+        },
+    };
 };
 
-// Enrollment status update karne ki API (Approve/Reject)
-export const updateEnrollmentStatusAPI = async (id: number, data: { action: string; rejectionReason?: string }) => {
-    // const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+export type UpdateEnrollmentStatusPayload =
+    | { action: 'approve' }
+    | { action: 'reject'; rejectionReason: string };
+
+/** PATCH /enrollments/:id/status — admin approve / reject (pending only) */
+export const updateEnrollmentStatusAPI = async (
+    id: number,
+    data: UpdateEnrollmentStatusPayload
+) => {
     const token = getToken();
-    
-    // Note: Backend method POST, PUT ya PATCH ho sakta hai. Agar error aaye toh PATCH ko POST kar lijiyega.
     const response = await fetch(`${API_URL}/enrollments/${id}/status`, {
-        method: 'PATCH', 
-        headers: { 
+        method: 'PATCH',
+        headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` 
+            Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
     });
 
-    await throwIfNotOk(response, 'Failed to update status');
+    await throwIfNotOk(response, 'Failed to update enrollment status');
     return await response.json();
 };
 

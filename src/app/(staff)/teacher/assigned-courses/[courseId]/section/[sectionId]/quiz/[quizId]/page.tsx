@@ -1,13 +1,29 @@
 'use client';
+
 import React, { useState, useEffect, use, useMemo } from 'react';
-import { Loader2, ArrowLeft, ClipboardList, AlertCircle, Settings2, Megaphone } from 'lucide-react';
 import Link from 'next/link';
+import {
+    Loader2,
+    ArrowLeft,
+    ClipboardList,
+    AlertCircle,
+    Megaphone,
+    Users,
+    HelpCircle,
+    CalendarClock,
+    Pencil,
+} from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { fetchCourseContent, refreshCourseContent } from '@/lib/store/features/courseSlice';
-import { getSpecificQuizAPI, updateQuizAPI } from '@/lib/api/apiService';
+import { getSpecificQuizAPI, updateQuizAPI, getQuizSubmissionsAPI } from '@/lib/api/apiService';
 import { getErrorMessage } from '@/lib/api/errorMessage';
 import { useToast } from '@/context/ToastContext';
 import GenericFormModal from '@/components/ui/GenericFormModal';
+import {
+    countRealQuizAttempts,
+    normalizeQuizAttemptsList,
+    resolveQuizCountFromWithContent,
+} from '@/lib/quizSubmissions';
 
 const QuizDetailPage = ({ params }: { params: Promise<any> }) => {
     const resolvedParams = use(params);
@@ -24,6 +40,16 @@ const QuizDetailPage = ({ params }: { params: Promise<any> }) => {
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [modalLoading, setModalLoading] = useState(false);
+    const [submissionCount, setSubmissionCount] = useState<number | null>(null);
+    const [pendingReviewCount, setPendingReviewCount] = useState(0);
+
+    const courseQuiz = useMemo(
+        () =>
+            fullData?.sections
+                ?.flatMap((s: any) => s.quizzes || [])
+                ?.find((q: any) => q.id === quizId),
+        [fullData, quizId]
+    );
 
     useEffect(() => {
         const getFullQuizData = async () => {
@@ -43,26 +69,59 @@ const QuizDetailPage = ({ params }: { params: Promise<any> }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [courseId, quizId, dispatch]);
 
-    const displayQuiz =
-        localQuiz ||
-        fullData?.sections?.flatMap((s: any) => s.quizzes || [])?.find((q: any) => q.id === quizId);
+    useEffect(() => {
+        let cancelled = false;
+        const loadAttempts = async () => {
+            const fromContent = resolveQuizCountFromWithContent(courseQuiz || localQuiz);
+            if (fromContent !== null) {
+                setSubmissionCount(fromContent);
+            }
+            try {
+                const res = await getQuizSubmissionsAPI(quizId);
+                if (cancelled) return;
+                const rows = normalizeQuizAttemptsList(res);
+                const real = countRealQuizAttempts(rows);
+                setSubmissionCount(real ?? 0);
+                setPendingReviewCount(
+                    rows.filter((r) => r.isGraded !== true && isAttemptPresent(r)).length
+                );
+            } catch {
+                if (cancelled) return;
+                if (fromContent === null) setSubmissionCount(0);
+            }
+        };
+        if (quizId) loadAttempts();
+        return () => {
+            cancelled = true;
+        };
+    }, [quizId, courseQuiz, localQuiz]);
+
+    const displayQuiz = localQuiz || courseQuiz;
 
     const isPublished =
         displayQuiz?.is_Published === true ||
         displayQuiz?.isPublished === true ||
         displayQuiz?.is_Published === 'true';
 
-    const totalMarks = displayQuiz?.total_marks ?? displayQuiz?.totalMarks ?? '—';
+    const totalMarks = Number(displayQuiz?.total_marks ?? displayQuiz?.totalMarks ?? 0);
+    const questionCount = displayQuiz?.questions?.length || 0;
+    const startAt = displayQuiz?.start_time || displayQuiz?.startTime || null;
+    const endAt = displayQuiz?.end_time || displayQuiz?.endTime || null;
+    const submissionsHref = `/teacher/assigned-courses/${courseId}/section/${sectionId}/quiz/${quizId}/submissions`;
 
     const handleUpdateSubmit = async (formData: FormData) => {
         setModalLoading(true);
         try {
             const rawData = Object.fromEntries(formData);
+            const questions = JSON.parse(rawData.questions as string);
+            const total_marks =
+                Number(rawData.total_marks) ||
+                questions.reduce((sum: number, q: any) => sum + (Number(q?.marks) || 0), 0);
             const payload = {
                 ...rawData,
-                total_marks: Number(rawData.total_marks),
+                total_marks,
                 is_Published: rawData.is_Published === 'true',
-                questions: JSON.parse(rawData.questions as string),
+                questions,
             };
             await updateQuizAPI(quizId, payload);
             setIsEditModalOpen(false);
@@ -110,7 +169,7 @@ const QuizDetailPage = ({ params }: { params: Promise<any> }) => {
             <div className="h-screen flex flex-col items-center justify-center bg-app-bg">
                 <Loader2 className="animate-spin text-accent-blue mb-4" size={40} />
                 <p className="text-text-muted font-bold uppercase tracking-widest text-[10px]">
-                    Loading Data...
+                    Loading quiz…
                 </p>
             </div>
         );
@@ -132,142 +191,247 @@ const QuizDetailPage = ({ params }: { params: Promise<any> }) => {
         );
 
     return (
-        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 pb-20 bg-app-bg h-full text-text-main animate-in fade-in slide-in-from-top-4">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                <Link
-                    href={`/teacher/assigned-courses/${courseId}`}
-                    className="inline-flex items-center gap-2 text-text-muted hover:text-accent-blue font-bold text-xs uppercase tracking-wider transition-colors"
-                >
-                    <ArrowLeft size={16} /> Back to Course
-                </Link>
-                <div className="flex flex-wrap gap-3">
-                    <button
-                        type="button"
-                        onClick={handleQuickPublish}
-                        disabled={modalLoading}
-                        className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider border flex items-center gap-2 disabled:opacity-50 ${
-                            isPublished
-                                ? 'bg-amber-500/10 text-amber-500 border-amber-500/25'
-                                : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/25'
-                        }`}
-                    >
-                        <Megaphone size={16} />
-                        {isPublished ? 'Unpublish' : 'Publish'}
-                    </button>
-                    <Link
-                        href={`/teacher/assigned-courses/${courseId}/section/${sectionId}/quiz/${quizId}/submissions`}
-                        className="px-5 py-2.5 bg-accent-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm hover:bg-accent-blue/90 transition-all active:scale-95"
-                    >
-                        Submissions
-                    </Link>
-                    <button
-                        onClick={() => setIsEditModalOpen(true)}
-                        className="px-5 py-2.5 bg-card-bg border border-border-subtle text-text-main rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm flex items-center gap-2 hover:border-accent-blue transition-colors"
-                    >
-                        <Settings2 size={16} /> Structure
-                    </button>
-                </div>
+        <div className="min-h-screen bg-app-bg text-text-main pb-20 relative overflow-hidden">
+            <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(37,99,235,0.10),_transparent_50%)]" />
             </div>
 
-            <div className="bg-card-bg rounded-2xl p-6 md:p-10 shadow-sm border border-border-subtle relative overflow-hidden flex flex-col md:flex-row items-start md:items-center gap-6">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none" />
-
-                <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center border border-border-subtle shadow-sm relative z-10 shrink-0">
-                    <ClipboardList size={32} className="text-accent-blue" />
-                </div>
-
-                <div className="relative z-10 space-y-2 flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-block px-2.5 py-1 bg-accent-blue/10 text-accent-blue rounded-md text-[10px] font-bold uppercase tracking-widest">
-                            Quiz
-                        </span>
-                        <span
-                            className={`inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border ${
+            <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-6 md:pt-8 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <Link
+                        href={`/teacher/assigned-courses/${courseId}`}
+                        className="inline-flex items-center gap-2 text-text-muted hover:text-accent-blue font-bold text-xs uppercase tracking-wider transition-colors"
+                    >
+                        <ArrowLeft size={16} /> Back to course
+                    </Link>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={handleQuickPublish}
+                            disabled={modalLoading}
+                            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border disabled:opacity-50 ${
                                 isPublished
-                                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                                    : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                    ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
+                                    : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
                             }`}
                         >
-                            {isPublished ? 'Published' : 'Draft'}
-                        </span>
-                        <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">
-                            {totalMarks} pts
-                        </span>
+                            {modalLoading ? (
+                                <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                                <Megaphone size={14} />
+                            )}
+                            {isPublished ? 'Set draft' : 'Publish live'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsEditModalOpen(true)}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-border-subtle bg-card-bg text-text-main hover:border-accent-blue/40"
+                        >
+                            <Pencil size={14} /> Edit quiz
+                        </button>
+                        <Link
+                            href={submissionsHref}
+                            className="relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-accent-blue text-white hover:bg-hover-blue"
+                        >
+                            <Users size={14} />
+                            Submissions
+                            {typeof submissionCount === 'number' && submissionCount > 0 && (
+                                <span className="ml-0.5 min-w-[1.25rem] h-5 px-1.5 rounded-md bg-white/20 text-[10px] tabular-nums flex items-center justify-center">
+                                    {submissionCount}
+                                </span>
+                            )}
+                        </Link>
                     </div>
-                    <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-main leading-tight capitalize">
-                        {displayQuiz.title}
-                    </h1>
-                    <p className="text-text-muted text-sm font-medium leading-relaxed max-w-2xl">
-                        {displayQuiz.description}
-                    </p>
                 </div>
-            </div>
 
-            <div className="space-y-6 pt-4">
-                <h3 className="text-sm font-extrabold uppercase tracking-widest text-text-main border-b border-border-subtle pb-3">
-                    Questions ({displayQuiz.questions?.length || 0})
-                </h3>
-
-                {!displayQuiz.questions?.length && (
-                    <div className="rounded-2xl border border-border-subtle bg-card-bg p-10 text-center text-xs font-bold uppercase tracking-widest text-text-muted">
-                        No questions yet — open Structure to add some
-                    </div>
-                )}
-
-                {displayQuiz.questions?.map((q: any, index: number) => (
-                    <div
-                        key={q.id ?? index}
-                        className="p-6 md:p-8 bg-card-bg border border-border-subtle rounded-2xl shadow-sm"
-                    >
-                        <div className="flex justify-between items-start mb-6 gap-4 border-b border-border-subtle/50 pb-4">
-                            <div>
-                                <p className="text-[10px] font-bold text-accent-blue uppercase tracking-widest mb-2">
-                                    Question {index + 1} · {q.question_type}
-                                </p>
-                                <p className="font-extrabold text-lg text-text-main leading-snug">
-                                    {q.question_text}
-                                </p>
-                            </div>
-                            <span className="px-3 py-1 bg-app-bg text-text-muted rounded-lg text-[10px] font-bold border border-border-subtle uppercase tracking-widest shrink-0">
-                                {q.marks} PTS
-                            </span>
+                {/* Hero */}
+                <section className="rounded-[1.75rem] border border-border-subtle bg-card-bg p-6 md:p-8 shadow-xl overflow-hidden relative">
+                    <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-accent-blue/10 blur-3xl" />
+                    <div className="relative z-10 flex flex-col lg:flex-row lg:items-start gap-6">
+                        <div className="w-14 h-14 rounded-2xl bg-accent-blue/10 text-accent-blue border border-accent-blue/20 flex items-center justify-center shrink-0">
+                            <ClipboardList size={28} />
                         </div>
-
-                        {q.question_type !== 'SHORT' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {q.options?.map((opt: any, i: number) => (
-                                    <div
-                                        key={opt.id ?? i}
-                                        className={`p-4 rounded-xl border text-[13px] font-bold flex items-center gap-3 transition-colors ${
-                                            opt.is_correct || opt.isCorrect
-                                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
-                                                : 'bg-app-bg border-border-subtle text-text-muted'
-                                        }`}
-                                    >
-                                        <div
-                                            className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                                                opt.is_correct || opt.isCorrect
-                                                    ? 'bg-emerald-500'
-                                                    : 'bg-border-subtle'
-                                            }`}
-                                        />
-                                        <span className="leading-snug">{opt.option_text}</span>
-                                    </div>
-                                ))}
+                        <div className="flex-1 min-w-0 space-y-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-accent-blue/10 text-accent-blue border border-accent-blue/20">
+                                    Quiz
+                                </span>
+                                <span
+                                    className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                                        isPublished
+                                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/25'
+                                            : 'bg-amber-500/10 text-amber-500 border-amber-500/25'
+                                    }`}
+                                >
+                                    {isPublished ? 'Published' : 'Draft'}
+                                </span>
                             </div>
-                        )}
+                            <h1 className="text-2xl md:text-4xl font-black tracking-tight text-text-main leading-tight">
+                                {displayQuiz.title}
+                            </h1>
+                            {displayQuiz.description && (
+                                <p className="text-sm text-text-muted font-medium leading-relaxed max-w-2xl">
+                                    {displayQuiz.description}
+                                </p>
+                            )}
+                            {(startAt || endAt) && (
+                                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 pt-1">
+                                    <div className="inline-flex items-center gap-2 text-[12px]">
+                                        <CalendarClock size={14} className="text-accent-blue shrink-0" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">
+                                            Start
+                                        </span>
+                                        <span className="font-semibold text-text-main tabular-nums">
+                                            {startAt
+                                                ? new Date(startAt).toLocaleString('en-GB')
+                                                : 'Not set'}
+                                        </span>
+                                    </div>
+                                    <div className="inline-flex items-center gap-2 text-[12px]">
+                                        <CalendarClock size={14} className="text-accent-blue shrink-0 sm:hidden" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">
+                                            End
+                                        </span>
+                                        <span className="font-semibold text-text-main tabular-nums">
+                                            {endAt
+                                                ? new Date(endAt).toLocaleString('en-GB')
+                                                : 'Not set'}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                ))}
+                </section>
+
+                {/* KPI strip */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <Kpi
+                        icon={HelpCircle}
+                        label="Questions"
+                        value={String(questionCount)}
+                        support="In this quiz"
+                    />
+                    <Kpi
+                        icon={ClipboardList}
+                        label="Total points"
+                        value={String(totalMarks || '—')}
+                        support="Max score"
+                    />
+                    <Kpi
+                        icon={Users}
+                        label="Submissions"
+                        value={submissionCount == null ? '…' : String(submissionCount)}
+                        support={
+                            pendingReviewCount > 0
+                                ? `${pendingReviewCount} awaiting review`
+                                : 'Student attempts'
+                        }
+                        highlight={(submissionCount ?? 0) > 0}
+                        href={submissionsHref}
+                    />
+                    <Kpi
+                        icon={Megaphone}
+                        label="Visibility"
+                        value={isPublished ? 'Live' : 'Draft'}
+                        support={isPublished ? 'Visible to students' : 'Hidden from students'}
+                        highlight={!isPublished}
+                    />
+                </div>
+
+                {/* Questions */}
+                <section className="space-y-4">
+                    <div className="flex items-center justify-between gap-3 border-b border-border-subtle pb-3">
+                        <h2 className="text-sm font-black uppercase tracking-widest text-text-main">
+                            Questions ({questionCount})
+                        </h2>
+                        <button
+                            type="button"
+                            onClick={() => setIsEditModalOpen(true)}
+                            className="text-[10px] font-black uppercase tracking-widest text-accent-blue hover:underline"
+                        >
+                            Manage questions
+                        </button>
+                    </div>
+
+                    {!questionCount ? (
+                        <div className="rounded-2xl border border-dashed border-border-subtle bg-card-bg p-12 text-center space-y-3">
+                            <p className="text-xs font-bold uppercase tracking-widest text-text-muted">
+                                No questions yet
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent-blue text-white text-[10px] font-black uppercase tracking-widest"
+                            >
+                                <Pencil size={14} /> Add questions
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {displayQuiz.questions.map((q: any, index: number) => (
+                                <article
+                                    key={q.id ?? index}
+                                    className="rounded-2xl border border-border-subtle bg-card-bg p-5 md:p-6"
+                                >
+                                    <div className="flex justify-between items-start gap-4 mb-4">
+                                        <div className="min-w-0">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-accent-blue mb-1.5">
+                                                Question {index + 1} · {q.question_type}
+                                            </p>
+                                            <p className="font-bold text-base text-text-main leading-snug">
+                                                {q.question_text}
+                                            </p>
+                                        </div>
+                                        <span className="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-app-bg border border-border-subtle text-text-muted">
+                                            {q.marks} pts
+                                        </span>
+                                    </div>
+
+                                    {q.question_type === 'SHORT' ? (
+                                        <p className="text-[11px] font-medium text-text-muted italic">
+                                            Short answer — graded manually after submission.
+                                        </p>
+                                    ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            {q.options?.map((opt: any, i: number) => {
+                                                const correct = opt.is_correct || opt.isCorrect;
+                                                return (
+                                                    <div
+                                                        key={opt.id ?? i}
+                                                        className={`px-3.5 py-3 rounded-xl border text-[13px] font-semibold flex items-center gap-2.5 ${
+                                                            correct
+                                                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                                                                : 'bg-app-bg border-border-subtle text-text-muted'
+                                                        }`}
+                                                    >
+                                                        <span
+                                                            className={`w-2 h-2 rounded-full shrink-0 ${
+                                                                correct
+                                                                    ? 'bg-emerald-500'
+                                                                    : 'bg-border-subtle'
+                                                            }`}
+                                                        />
+                                                        {opt.option_text}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </article>
+                            ))}
+                        </div>
+                    )}
+                </section>
             </div>
 
             <GenericFormModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
-                title="Modify Assessment"
+                title="Edit quiz"
                 fields={[
                     { name: 'title', label: 'Quiz Title', type: 'text', required: true },
                     { name: 'description', label: 'Quiz Description', type: 'textarea' },
-                    { name: 'total_marks', label: 'Total Points', type: 'number', required: true },
                     { name: 'start_time', label: 'Start Time', type: 'datetime-local' },
                     { name: 'end_time', label: 'End Time', type: 'datetime-local' },
                     {
@@ -290,19 +454,10 @@ const QuizDetailPage = ({ params }: { params: Promise<any> }) => {
                 loading={modalLoading}
                 initialData={{
                     ...displayQuiz,
-                    start_time:
-                        displayQuiz?.start_time || displayQuiz?.startTime
-                            ? new Date(displayQuiz?.start_time || displayQuiz?.startTime)
-                                  .toISOString()
-                                  .slice(0, 16)
-                            : '',
-                    end_time:
-                        displayQuiz?.end_time || displayQuiz?.endTime
-                            ? new Date(displayQuiz?.end_time || displayQuiz?.endTime)
-                                  .toISOString()
-                                  .slice(0, 16)
-                            : '',
-                    total_marks: displayQuiz?.total_marks || displayQuiz?.totalMarks,
+                    start_time: startAt
+                        ? new Date(startAt).toISOString().slice(0, 16)
+                        : '',
+                    end_time: endAt ? new Date(endAt).toISOString().slice(0, 16) : '',
                     is_Published: String(
                         displayQuiz?.is_Published ?? displayQuiz?.isPublished ?? false
                     ),
@@ -311,5 +466,53 @@ const QuizDetailPage = ({ params }: { params: Promise<any> }) => {
         </div>
     );
 };
+
+function isAttemptPresent(row: { submittedAt?: string | null; id?: number; attemptId?: number }) {
+    return Boolean(row.submittedAt || row.id != null || row.attemptId != null);
+}
+
+function Kpi({
+    icon: Icon,
+    label,
+    value,
+    support,
+    highlight,
+    href,
+}: {
+    icon: React.ElementType;
+    label: string;
+    value: string;
+    support: string;
+    highlight?: boolean;
+    href?: string;
+}) {
+    const className = `rounded-2xl border p-4 transition-all ${
+        highlight
+            ? 'border-accent-blue/35 bg-accent-blue/[0.07]'
+            : 'border-border-subtle bg-card-bg'
+    } ${href ? 'hover:-translate-y-0.5 hover:border-accent-blue/40' : ''}`;
+
+    const body = (
+        <>
+            <div className="w-9 h-9 rounded-xl bg-accent-blue/10 text-accent-blue flex items-center justify-center mb-3">
+                <Icon size={16} />
+            </div>
+            <p className="text-2xl font-black tabular-nums text-text-main">{value}</p>
+            <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-text-muted">
+                {label}
+            </p>
+            <p className="mt-1 text-[11px] text-text-muted">{support}</p>
+        </>
+    );
+
+    if (href) {
+        return (
+            <Link href={href} className={className}>
+                {body}
+            </Link>
+        );
+    }
+    return <div className={className}>{body}</div>;
+}
 
 export default QuizDetailPage;

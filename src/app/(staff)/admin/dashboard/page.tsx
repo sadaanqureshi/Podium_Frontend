@@ -1,106 +1,208 @@
 'use client';
-import React, { useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
-import { fetchAdminCourses } from '@/lib/store/features/courseSlice';
-import { ShieldAlert, Database, DollarSign, Activity, Settings2, UserPlus } from 'lucide-react';
-import Link from 'next/link';
 
-export default function AdminDashboard() {
+import React, { Suspense, useEffect } from 'react';
+import { AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import { fetchAdminDashboard } from '@/lib/store/features/adminDashboardSlice';
+import { useToast } from '@/context/ToastContext';
+import { formatMoney } from '@/lib/adminDashboardFormat';
+import {
+    AdminKpiGrid,
+    ActionRequiredPanel,
+    RecentActivityPanel,
+} from '@/components/admin/dashboard/AdminDashboardWidgets';
+import {
+    EnrollmentsByStatusChart,
+    CoursesByAssignmentChart,
+    RevenueTrendChart,
+} from '@/components/admin/dashboard/AdminDashboardCharts';
+
+function AdminDashboardInner() {
     const dispatch = useAppDispatch();
-    const { adminCourses } = useAppSelector((state) => state.course);
+    const { showToast } = useToast();
+    const { data, loading, error } = useAppSelector((s) => s.adminDashboard);
+
+    const refresh = () => {
+        dispatch(fetchAdminDashboard());
+    };
 
     useEffect(() => {
-        dispatch(fetchAdminCourses({ page: 1, limit: 10 }));
+        dispatch(fetchAdminDashboard());
     }, [dispatch]);
 
+    useEffect(() => {
+        const onFocus = () => {
+            if (document.visibilityState === 'visible') {
+                dispatch(fetchAdminDashboard());
+            }
+        };
+        document.addEventListener('visibilitychange', onFocus);
+        window.addEventListener('focus', onFocus);
+        return () => {
+            document.removeEventListener('visibilitychange', onFocus);
+            window.removeEventListener('focus', onFocus);
+        };
+    }, [dispatch]);
+
+    useEffect(() => {
+        if (error && data) {
+            showToast(error, 'error');
+        }
+    }, [error, data, showToast]);
+
+    if (loading && !data) {
+        return <DashboardSkeleton />;
+    }
+
+    if (error && !data) {
+        return (
+            <div className="min-h-screen bg-app-bg text-text-main flex items-center justify-center px-6">
+                <div className="max-w-md w-full rounded-2xl border border-border-subtle bg-card-bg p-8 text-center space-y-4 shadow-xl">
+                    <div className="mx-auto w-12 h-12 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center">
+                        <AlertCircle size={22} />
+                    </div>
+                    <p className="text-sm font-black uppercase tracking-wider">{error}</p>
+                    <button
+                        type="button"
+                        onClick={refresh}
+                        className="inline-flex items-center gap-2 mx-auto px-5 py-3 rounded-xl bg-accent-blue text-white text-[10px] font-black uppercase tracking-widest hover:bg-hover-blue"
+                    >
+                        <RefreshCw size={14} /> Try again
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!data) return null;
+
+    const { welcome, metrics, actionRequired, recentActivity, charts } = data;
+    const pendingActions =
+        (actionRequired.pendingEnrollments?.length || 0) +
+        (actionRequired.pendingTeacherAssignments?.length || 0) +
+        (actionRequired.pendingPayments?.length || 0);
+
     return (
-        <div className="min-h-screen bg-app-bg text-text-main pb-20">
-            <div className="max-w-7xl mx-auto px-6 pt-12 space-y-12">
-                
-                {/* System Hero */}
-                <div className="hero-registry-card rounded-[3rem] p-10 md:p-16 border border-border-subtle shadow-xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-80 h-80 bg-red-500/5 rounded-full blur-[100px] -mr-40 -mt-40"></div>
-                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
-                        <div className="space-y-4">
-                            <span className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em]">System Superuser</span>
-                            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none text-text-main">Central Control Admin</h1>
-                            <p className="text-text-muted text-sm font-medium uppercase tracking-widest">Monitor system-wide metrics, users, and financial logs.</p>
-                        </div>
-                        <div className="flex gap-4">
-                            <button className="p-4 bg-card-bg border border-border-subtle rounded-2xl text-text-muted hover:text-red-500 shadow-xl"><ShieldAlert size={24} /></button>
-                            <button className="p-4 bg-card-bg border border-border-subtle rounded-2xl text-text-muted hover:text-accent-blue shadow-xl"><Settings2 size={24} /></button>
-                        </div>
-                    </div>
-                </div>
+        <div className="min-h-screen bg-app-bg text-text-main pb-20 relative overflow-hidden">
+            <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(37,99,235,0.12),_transparent_50%),radial-gradient(ellipse_at_bottom_right,_rgba(37,99,235,0.06),_transparent_45%)] dark:bg-[radial-gradient(ellipse_at_top,_rgba(37,99,235,0.16),_transparent_50%),radial-gradient(ellipse_at_bottom_right,_rgba(56,189,248,0.06),_transparent_45%)]" />
+                <div
+                    className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]"
+                    style={{
+                        backgroundImage:
+                            'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
+                    }}
+                />
+            </div>
 
-                {/* Admin Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="bg-card-bg p-8 rounded-[2rem] border border-border-subtle space-y-2">
-                        <DollarSign className="text-emerald-500 mb-2" size={24} />
-                        <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">Total Revenue</p>
-                        <p className="text-2xl font-black">$42.8k</p>
-                    </div>
-                    <div className="bg-card-bg p-8 rounded-[2rem] border border-border-subtle space-y-2">
-                        <Database className="text-accent-blue mb-2" size={24} />
-                        <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">Total Courses</p>
-                        <p className="text-2xl font-black">{adminCourses.meta?.totalItems || 0}</p>
-                    </div>
-                    <div className="bg-card-bg p-8 rounded-[2rem] border border-border-subtle space-y-2">
-                        <UserPlus className="text-amber-500 mb-2" size={24} />
-                        <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">User Nodes</p>
-                        <p className="text-2xl font-black">1.4k</p>
-                    </div>
-                    <div className="bg-card-bg p-8 rounded-[2rem] border border-border-subtle space-y-2">
-                        <Activity className="text-red-500 mb-2" size={24} />
-                        <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">System Load</p>
-                        <p className="text-2xl font-black text-emerald-500">STABLE</p>
-                    </div>
-                </div>
-
-                {/* Logs / Quick Access */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 bg-card-bg rounded-[2.5rem] border border-border-subtle p-10 space-y-8">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-text-muted">Global Course Registry</h3>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="border-b border-border-subtle text-[9px] font-black uppercase text-text-muted tracking-widest">
-                                        <th className="pb-4">Course Name</th>
-                                        <th className="pb-4">Instructor</th>
-                                        <th className="pb-4">Status</th>
-                                        <th className="pb-4 text-right">Registry ID</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="text-xs font-black uppercase tracking-tight">
-                                    {adminCourses.data.slice(0, 5).map((item: any) => (
-                                        <tr key={item.id} className="border-b border-border-subtle/30 last:border-0 hover:bg-app-bg/30">
-                                            <td className="py-4">{item.courseName}</td>
-                                            <td className="py-4">{item.teacher?.firstName}</td>
-                                            <td className="py-4"><span className="text-emerald-500">Live</span></td>
-                                            <td className="py-4 text-right text-text-muted">NODE-{item.id}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-8 md:pt-10 space-y-8 md:space-y-10">
+                <section className="rounded-[1.75rem] md:rounded-[2rem] border border-border-subtle bg-card-bg p-6 md:p-10 shadow-xl overflow-hidden relative">
+                    <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-accent-blue/10 blur-3xl" />
+                    <div className="relative z-10 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+                        <div className="space-y-3 max-w-2xl">
+                            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-accent-blue">
+                                Admin operations
+                            </p>
+                            <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-none text-text-main">
+                                Welcome back, {welcome.firstName}
+                            </h1>
+                            <p className="text-sm font-medium text-text-muted uppercase tracking-wider">
+                                Platform overview · live ops
+                            </p>
                         </div>
-                    </div>
 
-                    {/* Pending Approvals Widget */}
-                    <div className="bg-card-bg rounded-[2.5rem] border border-border-subtle p-8 space-y-6">
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted">Pending Approvals</h3>
-                        <div className="space-y-4">
-                            <div className="p-4 bg-amber-500/5 rounded-2xl border border-amber-500/20 flex flex-col gap-3">
-                                <p className="text-[10px] font-black uppercase leading-tight">New Payment Proof: Student_42</p>
-                                <Link href="/admin/enrollment-requests" className="text-[9px] font-black text-amber-500 uppercase tracking-widest underline">Review Transaction</Link>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="rounded-2xl border border-accent-blue/25 bg-accent-blue/10 px-4 py-3 min-w-[150px]">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-accent-blue">
+                                    Revenue this month
+                                </p>
+                                <p className="text-xl font-black tabular-nums text-text-main mt-1">
+                                    {formatMoney(metrics.revenue.revenueThisMonth)}
+                                </p>
                             </div>
-                            <div className="p-4 bg-accent-blue/5 rounded-2xl border border-accent-blue/20 flex flex-col gap-3">
-                                <p className="text-[10px] font-black uppercase leading-tight">Instructor Invitation: maaziam</p>
-                                <Link href="/admin/invitations" className="text-[9px] font-black text-accent-blue uppercase tracking-widest underline">Manage Token</Link>
+                            <div
+                                className={`rounded-2xl border px-4 py-3 min-w-[140px] ${
+                                    pendingActions > 0
+                                        ? 'border-accent-blue/35 bg-accent-blue/10'
+                                        : 'border-border-subtle bg-app-bg'
+                                }`}
+                            >
+                                <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">
+                                    Pending actions
+                                </p>
+                                <p className="text-xl font-black tabular-nums text-accent-blue mt-1">
+                                    {pendingActions}
+                                </p>
                             </div>
+                            <button
+                                type="button"
+                                onClick={refresh}
+                                disabled={loading}
+                                className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl border border-border-subtle text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-accent-blue hover:border-accent-blue/30 disabled:opacity-50"
+                            >
+                                {loading ? (
+                                    <Loader2 size={14} className="animate-spin" />
+                                ) : (
+                                    <RefreshCw size={14} />
+                                )}
+                                Refresh
+                            </button>
                         </div>
                     </div>
+                </section>
+
+                <AdminKpiGrid metrics={metrics} />
+
+                <ActionRequiredPanel actionRequired={actionRequired} />
+
+                <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                    <EnrollmentsByStatusChart data={charts.enrollmentsByStatus} />
+                    <CoursesByAssignmentChart data={charts.coursesByAssignmentStatus} />
+                    <RevenueTrendChart data={charts.revenueLast6Months} />
+                </section>
+
+                <RecentActivityPanel recentActivity={recentActivity} />
+            </div>
+        </div>
+    );
+}
+
+function DashboardSkeleton() {
+    return (
+        <div className="min-h-screen bg-app-bg px-4 sm:px-6 pt-10 pb-20">
+            <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
+                <div className="h-40 rounded-[2rem] bg-card-bg border border-border-subtle" />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="h-36 rounded-2xl bg-card-bg border border-border-subtle"
+                        />
+                    ))}
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="h-72 rounded-2xl bg-card-bg border border-border-subtle"
+                        />
+                    ))}
+                </div>
+                <div className="flex items-center justify-center gap-3 py-10 text-text-muted">
+                    <Loader2 className="animate-spin" size={18} />
+                    <span className="text-xs font-black uppercase tracking-widest">
+                        Loading dashboard…
+                    </span>
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function AdminDashboardPage() {
+    return (
+        <Suspense fallback={<DashboardSkeleton />}>
+            <AdminDashboardInner />
+        </Suspense>
     );
 }

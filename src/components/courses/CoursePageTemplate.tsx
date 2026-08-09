@@ -2,12 +2,21 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import CourseList from '@/components/courses/CourseList';
-import { Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import SearchBar from '@/components/ui/SearchBar';
 import CourseFilterDropdown from '@/components/ui/CourseFilterDropdown';
+import Pagination from '@/components/ui/Pagination';
 import { Course } from '@/data/courses';
 
 const COURSES_PER_PAGE = 6;
+
+type ServerPagination = {
+  page: number;
+  totalPages: number;
+  totalItems?: number;
+  loading?: boolean;
+  onPageChange: (page: number) => void;
+};
 
 interface TemplateProps {
   title: string;
@@ -17,10 +26,13 @@ interface TemplateProps {
   placeholder?: string;
   extraHeaderContent?: React.ReactNode;
   showProgress?: boolean;
+  showMarksheetLink?: boolean;
+  /** When set, pagination is driven by the API (current `courses` = one page). */
+  serverPagination?: ServerPagination;
 }
 
 const CoursePageTemplate: React.FC<TemplateProps> = ({
-  title, description, courses, basePath, placeholder, extraHeaderContent, showProgress
+  title, description, courses, basePath, placeholder, extraHeaderContent, showProgress, showMarksheetLink, serverPagination
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [direction, setDirection] = useState(0);
@@ -34,7 +46,6 @@ const CoursePageTemplate: React.FC<TemplateProps> = ({
   }, [courses]);
 
   const uniqueTypes = ['Programming', 'Design', 'Business'];
-  console.log('dawdawdaw',courses[0]);
   const filteredCourses = useMemo(() => {
     return courses.filter(course => {
       const titleMatch = course.title?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
@@ -44,14 +55,24 @@ const CoursePageTemplate: React.FC<TemplateProps> = ({
     });
   }, [courses, searchQuery, filters]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredCourses.length / COURSES_PER_PAGE));
-  const startIndex = (currentPage - 1) * COURSES_PER_PAGE;
-  const endIndex = startIndex + COURSES_PER_PAGE;
-  const coursesToShow = filteredCourses.slice(startIndex, endIndex);
+  const isServerPaged = Boolean(serverPagination);
+  const activePage = isServerPaged ? serverPagination!.page : currentPage;
+  const totalPages = isServerPaged
+    ? Math.max(1, serverPagination!.totalPages || 1)
+    : Math.max(1, Math.ceil(filteredCourses.length / COURSES_PER_PAGE));
+  const coursesToShow = isServerPaged
+    ? filteredCourses
+    : filteredCourses.slice(
+        (currentPage - 1) * COURSES_PER_PAGE,
+        currentPage * COURSES_PER_PAGE
+      );
+  const totalItems = isServerPaged
+    ? (serverPagination!.totalItems ?? filteredCourses.length)
+    : filteredCourses.length;
 
   React.useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, filters]);
+    if (!isServerPaged) setCurrentPage(1);
+  }, [searchQuery, filters, isServerPaged]);
 
   const variants: Variants = {
     enter: (direction: number) => ({ x: direction > 0 ? 300 : -300, opacity: 0 }),
@@ -60,9 +81,13 @@ const CoursePageTemplate: React.FC<TemplateProps> = ({
   };
 
   const paginate = (newPage: number) => {
-    if (newPage === currentPage || newPage < 1 || newPage > totalPages) return;
-    setDirection(newPage > currentPage ? 1 : -1);
-    setCurrentPage(newPage);
+    if (newPage === activePage || newPage < 1 || newPage > totalPages) return;
+    setDirection(newPage > activePage ? 1 : -1);
+    if (isServerPaged) {
+      serverPagination!.onPageChange(newPage);
+    } else {
+      setCurrentPage(newPage);
+    }
   };
 
   const clearFilters = () => {
@@ -129,49 +154,29 @@ const CoursePageTemplate: React.FC<TemplateProps> = ({
       {filteredCourses.length > 0 && (
         <div className="relative mb-6">
             <AnimatePresence initial={false} custom={direction} mode="wait">
-            <motion.div key={currentPage} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" className="w-full">
-                <CourseList courses={coursesToShow} basePath={basePath} showProgress={showProgress} />
+            <motion.div key={activePage} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" className="w-full">
+                <CourseList
+                  courses={coursesToShow}
+                  basePath={basePath}
+                  showProgress={showProgress}
+                  showMarksheetLink={showMarksheetLink}
+                />
             </motion.div>
             </AnimatePresence>
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <nav className="flex items-center justify-center sm:justify-start gap-2 text-[10px] font-black uppercase tracking-[0.15em]">
-            <button 
-            onClick={() => paginate(currentPage - 1)} 
-            disabled={currentPage === 1} 
-            className="flex items-center gap-1.5 px-3 py-1.5 text-text-muted hover:text-accent-blue disabled:opacity-30 transition-all"
-            >
-            <ChevronLeft size={14} /> <span>Prev</span>
-            </button>
-            
-            <div className="flex items-center gap-1.5">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                <button 
-                    key={number} 
-                    onClick={() => paginate(number)} 
-                    className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all border ${
-                        currentPage === number 
-                        ? 'bg-accent-blue text-white border-accent-blue shadow-lg shadow-accent-blue/20 scale-105' 
-                        : 'bg-card-bg text-text-muted border-border-subtle hover:border-accent-blue/30'
-                    }`}
-                >
-                    {number}
-                </button>
-                ))}
-            </div>
-
-            <button 
-            onClick={() => paginate(currentPage + 1)} 
-            disabled={currentPage === totalPages} 
-            className="flex items-center gap-1.5 px-3 py-1.5 text-text-muted hover:text-accent-blue disabled:opacity-30 transition-all"
-            >
-            <span>Next</span> <ChevronRight size={14} />
-            </button>
-        </nav>
-      )}
+      <Pagination
+        variant="numbered"
+        page={activePage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        loading={serverPagination?.loading}
+        onPageChange={paginate}
+        hideWhenSinglePage
+        align="start"
+        className="pt-2"
+      />
     </div>
   );
 };

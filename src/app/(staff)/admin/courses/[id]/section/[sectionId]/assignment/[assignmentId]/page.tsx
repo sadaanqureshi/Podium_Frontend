@@ -271,6 +271,14 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import {
+    formatSubmissionScore,
+    formatSubmissionStatus,
+    getSubmissionMarks,
+    hasSubmissionStatus,
+    isSubmissionGraded,
+    isSubmissionLate,
+} from '@/lib/assignmentSubmissions';
 
 // Redux Actions
 import { fetchCourseContent } from '@/lib/store/features/courseSlice';
@@ -299,13 +307,20 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
             .find((a: any) => a.id === assignmentId);
     }, [fullData, assignmentId]);
 
-    const submissions = submissionsCache[assignmentId] || [];
+    const submissions = useMemo(
+        () => (submissionsCache[assignmentId] || []).filter(hasSubmissionStatus),
+        [submissionsCache, assignmentId]
+    );
     const isTableLoading = reduxSubLoading[assignmentId] || false;
 
     const [showSubmissions, setShowSubmissions] = useState(false);
     const [selectedSub, setSelectedSub] = useState<any>(null);
     const [gradeData, setGradeData] = useState({ marksObtained: '', comments: '' });
     const [gradeLoading, setGradeLoading] = useState(false);
+    const [marksError, setMarksError] = useState<string | null>(null);
+
+    const totalMarks = Number(assignment?.totalMarks ?? assignment?.total_marks ?? 0);
+    const dueDate = assignment?.dueDate ?? assignment?.due_date ?? null;
 
     useEffect(() => {
         if (!fullData && courseId) {
@@ -320,8 +335,28 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
         }
     };
 
+    const validateMarks = (raw: string): string | null => {
+        if (raw === '' || raw == null) return 'Enter marks obtained.';
+        const value = Number(raw);
+        if (Number.isNaN(value)) return 'Enter a valid number.';
+        if (value < 0) return 'Marks cannot be negative.';
+        if (totalMarks > 0 && value > totalMarks) {
+            return `Marks cannot exceed total marks (${totalMarks}).`;
+        }
+        return null;
+    };
+
+    const handleMarksChange = (raw: string) => {
+        setGradeData((prev) => ({ ...prev, marksObtained: raw }));
+        setMarksError(validateMarks(raw));
+    };
+
     const handleGradeSubmit = async () => {
-        if (!gradeData.marksObtained) return;
+        const error = validateMarks(gradeData.marksObtained);
+        if (error) {
+            setMarksError(error);
+            return;
+        }
         setGradeLoading(true);
         try {
             await dispatch(submitGrade({
@@ -333,6 +368,7 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
                 }
             })).unwrap();
             setSelectedSub(null);
+            setMarksError(null);
         } catch (err) {
             console.error("Grading failed");
         } finally {
@@ -358,11 +394,49 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
         },
         {
             header: 'Submitted', key: 'submittedAt',
-            render: (item: any) => (
-                <span className="text-xs font-bold text-text-muted">
-                    {item.submittedAt ? new Date(item.submittedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
-                </span>
-            )
+            render: (item: any) => {
+                const late = isSubmissionLate(item.submittedAt, dueDate);
+                return (
+                    <div className="flex flex-col gap-1">
+                        <span className="text-xs font-bold text-text-muted">
+                            {item.submittedAt
+                                ? new Date(item.submittedAt).toLocaleDateString('en-GB', {
+                                      day: 'numeric',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                  })
+                                : '—'}
+                        </span>
+                        {late && (
+                            <span className="inline-flex w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border bg-rose-500/10 text-rose-500 border-rose-500/25">
+                                Late
+                            </span>
+                        )}
+                    </div>
+                );
+            }
+        },
+        {
+            header: 'Status', key: 'status', align: 'center' as const,
+            render: (item: any) => {
+                const status = formatSubmissionStatus(item);
+                const graded = isSubmissionGraded(item);
+                const late = isSubmissionLate(item.submittedAt, dueDate);
+                const className = graded
+                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/25'
+                    : late
+                      ? 'bg-rose-500/10 text-rose-500 border-rose-500/25'
+                      : 'bg-amber-500/10 text-amber-500 border-amber-500/25';
+                return (
+                    <span
+                        className={`inline-flex px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${className}`}
+                    >
+                        {status}
+                    </span>
+                );
+            }
         },
         {
             header: 'Attachment', key: 'submissionFiles', align: 'center' as const,
@@ -377,14 +451,19 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
             )
         },
         {
-            header: 'Admin Score', key: 'marksObtained', align: 'center' as const,
+            header: 'Score', key: 'marksObtained', align: 'center' as const,
             render: (item: any) => {
-                const score = item.marksObtained ?? item.grade ?? item.score;
-                const total = assignment?.totalMarks || 0;
-                const isGraded = score !== null && score !== undefined && score !== "";
+                const graded = isSubmissionGraded(item);
+                const label = formatSubmissionScore(item, totalMarks);
                 return (
-                    <span className={`text-xs font-bold px-2 py-1 rounded-md ${isGraded ? 'bg-emerald-500/10 text-emerald-600' : 'bg-app-bg text-text-muted'}`}>
-                        {isGraded ? `${score}/${total}` : 'Ungraded'}
+                    <span
+                        className={`text-xs font-bold px-2 py-1 rounded-md ${
+                            graded
+                                ? 'bg-emerald-500/10 text-emerald-600'
+                                : 'bg-app-bg text-text-muted'
+                        }`}
+                    >
+                        {label}
                     </span>
                 );
             }
@@ -392,20 +471,26 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
         {
             header: 'Action', key: 'action', align: 'right' as const,
             render: (item: any) => {
-                const isGraded = item.marksObtained !== null && item.marksObtained !== undefined;
+                const graded = isSubmissionGraded(item);
+                const marks = getSubmissionMarks(item);
                 return (
                     <button
                         onClick={() => {
                             setSelectedSub(item);
-                            setGradeData({ marksObtained: item.marksObtained?.toString() || '', comments: item.comments || '' });
+                            const initialMarks = marks != null ? String(marks) : '';
+                            setGradeData({
+                                marksObtained: initialMarks,
+                                comments: item.comments || '',
+                            });
+                            setMarksError(initialMarks ? validateMarks(initialMarks) : null);
                         }}
                         className={`px-4 py-2 rounded-lg text-[11px] font-bold tracking-wide transition-colors ${
-                            isGraded
+                            graded
                                 ? 'bg-card-bg text-text-main border border-border-subtle hover:border-accent-blue'
                                 : 'bg-accent-blue text-white hover:bg-accent-blue/90'
                         }`}
                     >
-                        {isGraded ? 'Evaluated' : 'Mark Grade'}
+                        {graded ? 'Update Grade' : 'Mark Grade'}
                     </button>
                 );
             }
@@ -533,20 +618,44 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
                                 <h3 className="text-lg font-extrabold tracking-tight text-text-main">Add Grade</h3>
                                 <p className="text-xs text-text-muted font-medium mt-0.5 capitalize">{selectedSub.firstName} {selectedSub.lastName}</p>
                             </div>
-                            <button onClick={() => setSelectedSub(null)} className="p-2 text-text-muted hover:text-text-main hover:bg-card-bg rounded-lg transition-colors"><X size={20} /></button>
+                            <button
+                                onClick={() => {
+                                    setSelectedSub(null);
+                                    setMarksError(null);
+                                }}
+                                className="p-2 text-text-muted hover:text-text-main hover:bg-card-bg rounded-lg transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
                         </div>
 
                         {/* Modal Body */}
                         <div className="p-6 space-y-6">
                             <div>
-                                <label className="block text-[11px] font-bold uppercase text-text-muted mb-2 tracking-wider">Marks Obtained (Max: {assignment?.totalMarks})</label>
+                                <label className="block text-[11px] font-bold uppercase text-text-muted mb-2 tracking-wider">
+                                    Marks Obtained (Max: {totalMarks || assignment?.totalMarks || 0})
+                                </label>
                                 <input
                                     type="number"
+                                    min={0}
+                                    max={totalMarks || undefined}
+                                    step="any"
                                     value={gradeData.marksObtained}
-                                    onChange={(e) => setGradeData({ ...gradeData, marksObtained: e.target.value })}
-                                    className="w-full p-3.5 bg-app-bg text-text-main rounded-xl border border-border-subtle outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/20 font-bold transition-all"
+                                    onChange={(e) => handleMarksChange(e.target.value)}
+                                    className={`w-full p-3.5 bg-app-bg text-text-main rounded-xl border outline-none focus:ring-1 font-bold transition-all ${
+                                        marksError
+                                            ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20'
+                                            : 'border-border-subtle focus:border-accent-blue focus:ring-accent-blue/20'
+                                    }`}
                                     placeholder="Enter marks"
                                 />
+                                {marksError ? (
+                                    <p className="mt-2 text-[11px] font-bold text-rose-500">{marksError}</p>
+                                ) : (
+                                    <p className="mt-2 text-[11px] font-medium text-text-muted">
+                                        Marks must be between 0 and {totalMarks || assignment?.totalMarks || 0}.
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-[11px] font-bold uppercase text-text-muted mb-2 tracking-wider">Feedback</label>
@@ -564,7 +673,11 @@ const AdminAssignmentDetailPage = ({ params }: { params: Promise<any> }) => {
                         <div className="p-6 pt-0 mt-auto">
                             <button
                                 onClick={handleGradeSubmit}
-                                disabled={gradeLoading || !gradeData.marksObtained}
+                                disabled={
+                                    gradeLoading ||
+                                    !gradeData.marksObtained ||
+                                    !!marksError
+                                }
                                 className="w-full py-3.5 bg-accent-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 hover:bg-accent-blue/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {gradeLoading ? <Loader2 className="animate-spin" size={18} /> : <><CheckCircle2 size={18} /> Submit Grade</>}

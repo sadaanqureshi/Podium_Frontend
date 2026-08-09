@@ -1,31 +1,60 @@
 'use client';
-import React, { useState, useMemo } from 'react';
-import { Users, FileText, Layers, ArrowLeft, Loader2, Video, ClipboardList } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import {
+    Users,
+    FileText,
+    Layers,
+    ArrowLeft,
+    Loader2,
+    Video,
+    ClipboardList,
+    Inbox,
+    UserX,
+    CheckCircle,
+    HelpCircle,
+    FolderOpen,
+    ListTree,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import { refreshCourseContent, fetchCourseContent, removeLectureLocal, removeResourceLocal } from '@/lib/store/features/courseSlice';
 import { useToast } from '@/context/ToastContext';
 import { getErrorMessage } from '@/lib/api/errorMessage';
 
-// UI Components
 import { CourseInfoCard } from '@/components/courses/CourseInfoCard';
-import { StudentsTab } from '@/components/courses/StudentsTab';
+import { StudentsTab, EnrollmentRosterVariant } from '@/components/courses/StudentsTab';
 import { GenericContentTab } from '@/components/courses/GenericContentTab';
 import GenericFormModal, { FormField } from '@/components/ui/GenericFormModal';
 import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 
-// APIs
 import {
     createSectionAPI, deleteLectureAPI, deleteResourceAPI,
-    createAssignmentAPI, createQuizAPI, updateQuizAPI,
+    createAssignmentAPI, createQuizAPI, updateQuizAPI, getSpecificQuizAPI,
     updateLectureAPI, updateResourceAPI, createRecordedLectureAPI,
     createLiveLectureAPI, createResourceAPI, enrollStudentAPI,
-    dismissStudentAPI, deleteAssignmentAPI, deleteQuizAPI
+    dismissStudentAPI, deleteAssignmentAPI, deleteQuizAPI,
+    updateEnrollmentStatusAPI,
+    getEnrolledStudentsAPI,
+    AdminEnrollmentItem,
+    AdminEnrollmentsListStats,
 } from '@/lib/api/apiService';
 
 import { resolveGoogleConnected } from '@/lib/googleCalendar';
 
 const TAB_TO_TYPE_MAP: any = { students: 'student', lectures: 'lecture', quizzes: 'quiz', assignments: 'assignment', resources: 'resource' };
+
+const normalizeRosterItem = (item: any) => {
+    if (!item) return item;
+    const studentName =
+        item.studentName ||
+        `${item.student?.firstName || ''} ${item.student?.lastName || ''}`.trim();
+    return {
+        ...item,
+        studentId: item.studentId ?? item.student?.id,
+        studentName,
+        studentEmail: item.studentEmail || item.student?.email,
+    };
+};
 
 const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudents, backUrl }: any) => {
     const dispatch = useAppDispatch();
@@ -34,6 +63,10 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
     const isCalendarConnected = resolveGoogleConnected(user);
 
     const [activeTab, setActiveTab] = useState(role === 'student' ? 'lectures' : 'students');
+    const [enrollmentSubTab, setEnrollmentSubTab] = useState<EnrollmentRosterVariant>('enrolled');
+    const [courseEnrollmentRows, setCourseEnrollmentRows] = useState<AdminEnrollmentItem[] | null>(null);
+    const [courseEnrollmentStats, setCourseEnrollmentStats] = useState<AdminEnrollmentsListStats | null>(null);
+    const [courseEnrollmentsLoading, setCourseEnrollmentsLoading] = useState(false);
     const [activeLectureSubTab, setActiveLectureSubTab] = useState<'recorded' | 'online'>('recorded');
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,8 +77,41 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
     const [itemToEdit, setItemToEdit] = useState<any>(null);
     const [itemToDelete, setItemToDelete] = useState<any>(null);
 
+    const [rejectOpen, setRejectOpen] = useState(false);
+    const [rejectItem, setRejectItem] = useState<any | null>(null);
+    const [rejectionReason, setRejectionReason] = useState('');
+    const [enrollmentActionLoading, setEnrollmentActionLoading] = useState(false);
+
     const formatModalTitle = (type: string) =>
         type.charAt(0).toUpperCase() + type.slice(1);
+
+    // Admin-only: GET /admin/enrollments/course/:id (enriched roster + stats).
+    // Teachers use enrollments from course with-content — do not call admin APIs.
+    const loadCourseEnrollments = useCallback(async () => {
+        if (role !== 'admin') return;
+        setCourseEnrollmentsLoading(true);
+        try {
+            const res = await getEnrolledStudentsAPI(courseId);
+            setCourseEnrollmentRows(res.data || []);
+            setCourseEnrollmentStats(res.stats || null);
+        } catch {
+            // Fall back to with-content enrollment arrays
+            setCourseEnrollmentRows(null);
+            setCourseEnrollmentStats(null);
+        } finally {
+            setCourseEnrollmentsLoading(false);
+        }
+    }, [courseId, role]);
+
+    useEffect(() => {
+        loadCourseEnrollments();
+    }, [loadCourseEnrollments]);
+
+    const refreshContent = () => {
+        dispatch(refreshCourseContent(courseId));
+        dispatch(fetchCourseContent(courseId));
+        loadCourseEnrollments();
+    };
 
     const activeTabData = useMemo(() => {
         if (!data?.sections) return [];
@@ -64,12 +130,10 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
                 { name: 'title', label: 'Session Title', type: 'text', required: true },
                 { name: 'description', label: 'Agenda', type: 'textarea' },
                 { name: 'liveStart', label: 'Start Date & Time', type: 'datetime-local', required: true },
-                // { name: 'lectureOrder', label: 'Order', type: 'number', required: true }
             ] : [
                 { name: 'title', label: 'Lecture Title', type: 'text', required: true },
                 { name: 'description', label: 'Description', type: 'textarea' },
                 { name: 'video', label: 'Video URL', type: 'text', required: !itemToEdit },
-                // { name: 'lectureOrder', label: 'Order', type: 'number', required: true }
             ],
             assignment: [
                 { name: 'title', label: 'Assignment Title', type: 'text', required: true },
@@ -89,22 +153,69 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
             quiz: [
                 { name: 'title', label: 'Quiz Title', type: 'text', required: true },
                 { name: 'description', label: 'Quiz Description', type: 'textarea' },
-                { name: 'total_marks', label: 'Total Marks', type: 'number', required: true },
                 { name: 'start_time', label: 'Start Time', type: 'datetime-local' },
                 { name: 'end_time', label: 'End Time', type: 'datetime-local' },
-                { name: 'is_Published', label: 'Publish?', type: 'select', options: [{ label: 'Yes', value: 'true' }, { label: 'No', value: 'false' }] },
-                { name: 'questions', label: 'Quiz Questions', type: 'quiz-builder', required: true }
+                {
+                    name: 'is_Published',
+                    label: 'Availability',
+                    type: 'select',
+                    options: [
+                        { label: 'Published (Live)', value: 'true' },
+                        { label: 'Draft', value: 'false' },
+                    ],
+                },
+                {
+                    name: 'questions',
+                    label: 'Manage Questions',
+                    type: 'quiz-builder',
+                    required: true,
+                },
             ],
         };
         return configs[modalType] || [];
     }, [modalType, activeLectureSubTab, availableStudents, itemToEdit]);
+
+    const formatQuizInitialData = (quiz: any) => {
+        if (!quiz) return quiz;
+        const start = quiz.start_time || quiz.startTime;
+        const end = quiz.end_time || quiz.endTime;
+        return {
+            ...quiz,
+            start_time: start ? new Date(start).toISOString().slice(0, 16) : '',
+            end_time: end ? new Date(end).toISOString().slice(0, 16) : '',
+            is_Published: String(quiz.is_Published ?? quiz.isPublished ?? false),
+            questions: quiz.questions || [],
+        };
+    };
+
+    const handleEditItem = async (item: any, sectionId: number) => {
+        const type = TAB_TO_TYPE_MAP[activeTab];
+        setSelectedSectionId(sectionId);
+        setModalType(type);
+
+        if (type === 'quiz') {
+            setModalLoading(true);
+            try {
+                const fullQuiz = await getSpecificQuizAPI(item.id);
+                setItemToEdit(formatQuizInitialData(fullQuiz));
+                setIsModalOpen(true);
+            } catch (err) {
+                showToast(getErrorMessage(err, 'Failed to load quiz for editing'), 'error');
+            } finally {
+                setModalLoading(false);
+            }
+            return;
+        }
+
+        setItemToEdit(item);
+        setIsModalOpen(true);
+    };
 
     const handleFormSubmit = async (formData: FormData) => {
         setModalLoading(true);
         try {
             const rawData = Object.fromEntries(formData);
 
-            // Clear frontend message when teacher tries live lecture without Google linked
             if (
                 !itemToEdit &&
                 modalType === 'lecture' &&
@@ -120,7 +231,18 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
             }
 
             if (itemToEdit) {
-                if (modalType === 'quiz') await updateQuizAPI(itemToEdit.id, { ...rawData, questions: JSON.parse(rawData.questions as string), total_marks: Number(rawData.total_marks), is_Published: rawData.is_Published === 'true' });
+                if (modalType === 'quiz') {
+                    const questions = JSON.parse(rawData.questions as string);
+                    const total_marks =
+                        Number(rawData.total_marks) ||
+                        questions.reduce((sum: number, q: any) => sum + (Number(q?.marks) || 0), 0);
+                    await updateQuizAPI(itemToEdit.id, {
+                        ...rawData,
+                        questions,
+                        total_marks,
+                        is_Published: rawData.is_Published === 'true',
+                    });
+                }
                 else if (modalType === 'lecture') await updateLectureAPI(itemToEdit.id, courseId, formData);
                 else if (modalType === 'resource') await updateResourceAPI(courseId, selectedSectionId!, itemToEdit.id, formData);
                 showToast(`${formatModalTitle(modalType)} updated successfully`, 'success');
@@ -134,7 +256,20 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
                     await createAssignmentAPI(formData);
                 }
                 else if (modalType === 'student') await enrollStudentAPI({ courseId, studentId: Number(rawData.studentId) });
-                else if (modalType === 'quiz') await createQuizAPI({ ...rawData, course_id: courseId, section_id: selectedSectionId, total_marks: Number(rawData.total_marks), is_Published: rawData.is_Published === 'true', questions: JSON.parse(rawData.questions as string) });
+                else if (modalType === 'quiz') {
+                    const questions = JSON.parse(rawData.questions as string);
+                    const total_marks =
+                        Number(rawData.total_marks) ||
+                        questions.reduce((sum: number, q: any) => sum + (Number(q?.marks) || 0), 0);
+                    await createQuizAPI({
+                        ...rawData,
+                        course_id: courseId,
+                        section_id: selectedSectionId,
+                        total_marks,
+                        is_Published: rawData.is_Published === 'true',
+                        questions,
+                    });
+                }
                 else if (modalType === 'lecture') {
                     if (activeLectureSubTab === 'online') {
                         await createLiveLectureAPI({
@@ -164,8 +299,7 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
                     'success'
                 );
             }
-            dispatch(refreshCourseContent(courseId));
-            dispatch(fetchCourseContent(courseId));
+            refreshContent();
             setIsModalOpen(false); setItemToEdit(null);
         } catch (err: any) {
             showToast(
@@ -197,7 +331,7 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
                 if (itemToDelete.type === 'enrollment') await dismissStudentAPI(itemId, courseId, itemToDelete.studentId);
                 else if (itemToDelete.type === 'quiz') await deleteQuizAPI(itemId);
                 else if (itemToDelete.type === 'assignment') await deleteAssignmentAPI(itemId);
-                dispatch(refreshCourseContent(courseId)); dispatch(fetchCourseContent(courseId));
+                refreshContent();
             }
             setIsDeleteModalOpen(false);
             showToast('Deleted successfully', 'success');
@@ -205,6 +339,51 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
             showToast(getErrorMessage(err, 'Delete failed. Please try again.'), 'error');
         } finally {
             setModalLoading(false); setItemToDelete(null);
+        }
+    };
+
+    const handleApproveEnrollment = async (item: any) => {
+        if (!item?.id) return;
+        setEnrollmentActionLoading(true);
+        try {
+            await updateEnrollmentStatusAPI(item.id, { action: 'approve' });
+            showToast('Enrollment approved', 'success');
+            refreshContent();
+        } catch (err) {
+            showToast(getErrorMessage(err, 'Failed to approve enrollment'), 'error');
+        } finally {
+            setEnrollmentActionLoading(false);
+        }
+    };
+
+    const openRejectEnrollment = (item: any) => {
+        setRejectItem(item);
+        setRejectionReason('');
+        setRejectOpen(true);
+    };
+
+    const handleRejectEnrollment = async () => {
+        if (!rejectItem?.id) return;
+        const reason = rejectionReason.trim();
+        if (!reason) {
+            showToast('Please enter a rejection reason', 'error');
+            return;
+        }
+        setEnrollmentActionLoading(true);
+        try {
+            await updateEnrollmentStatusAPI(rejectItem.id, {
+                action: 'reject',
+                rejectionReason: reason,
+            });
+            showToast('Enrollment rejected', 'success');
+            setRejectOpen(false);
+            setRejectItem(null);
+            setRejectionReason('');
+            refreshContent();
+        } catch (err) {
+            showToast(getErrorMessage(err, 'Failed to reject enrollment'), 'error');
+        } finally {
+            setEnrollmentActionLoading(false);
         }
     };
 
@@ -216,7 +395,7 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
     );
 
     const allTabs = [
-        { id: 'students', label: 'Students', icon: Users },
+        { id: 'students', label: role === 'admin' ? 'Enrollments' : 'Students', icon: Users },
         { id: 'lectures', label: 'Lectures', icon: Video },
         { id: 'quizzes', label: 'Quizzes', icon: FileText },
         { id: 'assignments', label: 'Assignments', icon: ClipboardList },
@@ -224,23 +403,119 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
     ];
     const tabs = role === 'student' ? allTabs.filter(t => t.id !== 'students') : allTabs;
 
+    const stats = data?.stats;
+    const showAdminStats = role === 'admin' && stats;
+
+    const adminStatCards = showAdminStats
+        ? [
+            { label: 'Enrolled', value: stats.enrolledCount ?? 0, icon: Users, accent: 'text-emerald-500 bg-emerald-500/10' },
+            { label: 'Pending', value: stats.pendingCount ?? 0, icon: Inbox, accent: 'text-amber-500 bg-amber-500/10' },
+            { label: 'Rejected', value: stats.rejectedCount ?? 0, icon: UserX, accent: 'text-rose-500 bg-rose-500/10' },
+            { label: 'Total Enrollments', value: stats.totalEnrollments ?? 0, icon: CheckCircle, accent: 'text-sky-400 bg-sky-500/10' },
+            { label: 'Sections', value: stats.sectionCount ?? 0, icon: ListTree, accent: 'text-violet-400 bg-violet-500/10' },
+            { label: 'Lectures', value: stats.lectureCount ?? 0, icon: Video, accent: 'text-accent-blue bg-accent-blue/10' },
+            { label: 'Assignments', value: stats.assignmentCount ?? 0, icon: ClipboardList, accent: 'text-orange-400 bg-orange-500/10' },
+            { label: 'Quizzes', value: stats.quizCount ?? 0, icon: HelpCircle, accent: 'text-fuchsia-400 bg-fuchsia-500/10' },
+            { label: 'Resources', value: stats.resourceCount ?? 0, icon: FolderOpen, accent: 'text-teal-400 bg-teal-500/10' },
+          ]
+        : [];
+
+    const byCourseBuckets = useMemo(() => {
+        if (!courseEnrollmentRows) return null;
+        const enrolled: any[] = [];
+        const pending: any[] = [];
+        const rejected: any[] = [];
+        for (const row of courseEnrollmentRows) {
+            const normalized = normalizeRosterItem(row);
+            const status = (row.status || '').toLowerCase();
+            if (status === 'pending') pending.push(normalized);
+            else if (status === 'rejected') rejected.push(normalized);
+            else if (status === 'enrolled') enrolled.push(normalized);
+        }
+        return { enrolled, pending, rejected };
+    }, [courseEnrollmentRows]);
+
+    const enrollmentRoster = (() => {
+        if (byCourseBuckets) {
+            if (enrollmentSubTab === 'pending') return byCourseBuckets.pending;
+            if (enrollmentSubTab === 'rejected') return byCourseBuckets.rejected;
+            return byCourseBuckets.enrolled;
+        }
+        if (enrollmentSubTab === 'pending') return data?.pendingEnrollments || [];
+        if (enrollmentSubTab === 'rejected') return data?.rejectedEnrollments || [];
+        return data?.enrollments || [];
+    })();
+
+    const enrollmentSubTabs: { id: EnrollmentRosterVariant; label: string; count: number }[] = [
+        {
+            id: 'enrolled',
+            label: 'Enrolled',
+            count:
+                courseEnrollmentStats?.enrolled ??
+                byCourseBuckets?.enrolled.length ??
+                data?.enrollments?.length ??
+                stats?.enrolledCount ??
+                0,
+        },
+        {
+            id: 'pending',
+            label: 'Pending',
+            count:
+                courseEnrollmentStats?.pending ??
+                byCourseBuckets?.pending.length ??
+                data?.pendingEnrollments?.length ??
+                stats?.pendingCount ??
+                0,
+        },
+        {
+            id: 'rejected',
+            label: 'Rejected',
+            count:
+                courseEnrollmentStats?.rejected ??
+                byCourseBuckets?.rejected.length ??
+                data?.rejectedEnrollments?.length ??
+                stats?.rejectedCount ??
+                0,
+        },
+    ];
+
     return (
         <div className="w-full bg-app-bg min-h-screen font-sans text-text-main pb-16">
             
-            {/* Header: Clean & aligned */}
             <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6 pb-4">
                 <Link href={backUrl} className="inline-flex items-center gap-2 text-text-muted hover:text-text-main font-bold text-xs uppercase tracking-wider transition-colors">
                     <ArrowLeft size={16} /> Back to Courses
                 </Link>
             </div>
 
-            {/* Main Content Area */}
             <div className="max-w-7xl mx-auto px-4 md:px-8">
                 
-                {/* Course Overview Card */}
                 <CourseInfoCard data={data?.course} />
 
-                {/* Professional Underline Tabs (Fixes Mobile Spacing Completely) */}
+                {showAdminStats && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-9 gap-3 mb-2 -mt-2">
+                        {adminStatCards.map((card) => {
+                            const Icon = card.icon;
+                            return (
+                                <div
+                                    key={card.label}
+                                    className="bg-card-bg border border-border-subtle rounded-2xl p-3 shadow-sm flex items-center gap-2.5"
+                                >
+                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${card.accent}`}>
+                                        <Icon size={14} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[8px] font-black text-text-muted uppercase tracking-widest truncate">
+                                            {card.label}
+                                        </p>
+                                        <p className="text-base font-black tabular-nums">{card.value}</p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
                 <div className="w-full mt-10 mb-6 border-b border-border-subtle overflow-x-auto no-scrollbar">
                     <div className="flex gap-6 w-max min-w-full px-1">
                         {tabs.map((tab) => (
@@ -259,15 +534,56 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
                     </div>
                 </div>
 
-                {/* Content Box: Professional layout, subtle shadows, structured alignment */}
                 <div className="bg-card-bg rounded-xl border border-border-subtle p-5 md:p-8 min-h-[350px]">
                     {activeTab === 'students' && role !== 'student' ? (
-                        <StudentsTab
-                            data={data?.enrollments || []}
-                            role={role}
-                            onDelete={(id: number, name: string) => { setItemToDelete({ id, title: name, type: 'enrollment' }); setIsDeleteModalOpen(true); }}
-                            onAdd={() => { setModalType('student'); setItemToEdit(null); setIsModalOpen(true); }}
-                        />
+                        <div className="space-y-6">
+                            {role === 'admin' && (
+                                <div className="flex flex-wrap gap-2">
+                                    {enrollmentSubTabs.map((sub) => (
+                                        <button
+                                            key={sub.id}
+                                            type="button"
+                                            onClick={() => setEnrollmentSubTab(sub.id)}
+                                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                                                enrollmentSubTab === sub.id
+                                                    ? 'bg-accent-blue text-white border-accent-blue'
+                                                    : 'bg-app-bg text-text-muted border-border-subtle hover:text-text-main'
+                                            }`}
+                                        >
+                                            {sub.label}
+                                            <span className="ml-2 tabular-nums opacity-80">{sub.count}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            <StudentsTab
+                                data={
+                                    role === 'admin'
+                                        ? enrollmentRoster
+                                        : byCourseBuckets?.enrolled || data?.enrollments || []
+                                }
+                                role={role}
+                                variant={role === 'admin' ? enrollmentSubTab : 'enrolled'}
+                                loading={courseEnrollmentsLoading}
+                                onDelete={(id: number, name: string) => {
+                                    const enrollment =
+                                        (byCourseBuckets?.enrolled || data?.enrollments || []).find(
+                                            (e: any) => e.id === id
+                                        );
+                                    setItemToDelete({
+                                        id,
+                                        title: name,
+                                        type: 'enrollment',
+                                        studentId: enrollment?.studentId ?? enrollment?.student?.id,
+                                    });
+                                    setIsDeleteModalOpen(true);
+                                }}
+                                onAdd={() => { setModalType('student'); setItemToEdit(null); setIsModalOpen(true); }}
+                                onApprove={handleApproveEnrollment}
+                                onReject={openRejectEnrollment}
+                                actionLoading={enrollmentActionLoading}
+                            />
+                        </div>
                     ) : (
                         <GenericContentTab
                             title={activeTab}
@@ -277,18 +593,25 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
                             onAddSection={() => { setModalType('section'); setItemToEdit(null); setIsModalOpen(true); }}
                             onSubTabChange={(tab: any) => setActiveLectureSubTab(tab)}
                             onAddItem={(sectionId: number) => { setSelectedSectionId(sectionId); setModalType(TAB_TO_TYPE_MAP[activeTab]); setItemToEdit(null); setIsModalOpen(true); }}
-                            onEditItem={(item: any, sectionId: number) => { setItemToEdit(item); setSelectedSectionId(sectionId); setModalType(TAB_TO_TYPE_MAP[activeTab]); setIsModalOpen(true); }}
+                            onEditItem={handleEditItem}
                             onDeleteItem={(item: any, sectionId: number) => { setItemToDelete({ ...item, type: TAB_TO_TYPE_MAP[activeTab], sectionId }); setIsDeleteModalOpen(true); }}
                         />
                     )}
                 </div>
             </div>
 
-            {/* Modals */}
             <GenericFormModal
                 isOpen={isModalOpen}
                 onClose={() => { setIsModalOpen(false); setItemToEdit(null); }}
-                title={itemToEdit ? `Edit ${formatModalTitle(modalType)}` : `Add New ${formatModalTitle(modalType)}`}
+                title={
+                    modalType === 'quiz'
+                        ? itemToEdit
+                            ? 'Edit quiz'
+                            : 'Add New Quiz'
+                        : itemToEdit
+                          ? `Edit ${formatModalTitle(modalType)}`
+                          : `Add New ${formatModalTitle(modalType)}`
+                }
                 fields={formFields}
                 onSubmit={handleFormSubmit}
                 loading={modalLoading}
@@ -302,6 +625,50 @@ const UnifiedCourseDetail = ({ courseId, role, data, isLoading, availableStudent
                 title={itemToDelete?.title || "Item"}
                 loading={modalLoading}
             />
+
+            {rejectOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+                    <div className="w-full max-w-md bg-card-bg border border-border-subtle rounded-2xl p-6 shadow-2xl space-y-4">
+                        <div>
+                            <h3 className="text-lg font-black uppercase tracking-tight">Reject Enrollment</h3>
+                            <p className="text-xs text-text-muted font-medium mt-1">
+                                {rejectItem?.studentName
+                                    ? `Provide a reason for rejecting ${rejectItem.studentName}.`
+                                    : 'A rejection reason is required.'}
+                            </p>
+                        </div>
+                        <textarea
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            rows={4}
+                            placeholder="Rejection reason..."
+                            className="w-full rounded-xl border border-border-subtle bg-app-bg px-3 py-2 text-sm text-text-main outline-none focus:border-accent-blue resize-none"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <button
+                                type="button"
+                                disabled={enrollmentActionLoading}
+                                onClick={() => {
+                                    setRejectOpen(false);
+                                    setRejectItem(null);
+                                    setRejectionReason('');
+                                }}
+                                className="px-4 py-2 rounded-xl border border-border-subtle text-[10px] font-black uppercase tracking-widest text-text-muted"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                disabled={enrollmentActionLoading}
+                                onClick={handleRejectEnrollment}
+                                className="px-4 py-2 rounded-xl bg-red-500 text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
+                            >
+                                {enrollmentActionLoading ? 'Rejecting…' : 'Reject'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
