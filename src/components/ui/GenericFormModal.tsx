@@ -450,6 +450,8 @@ export interface FormField {
     placeholder?: string;
     required?: boolean;
     options?: { label: string; value: string | number }[];
+    /** For `files` fields — allow selecting more than one file */
+    multiple?: boolean;
 }
 
 function sumQuizQuestionMarks(questions: unknown): number {
@@ -681,7 +683,13 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
             }
 
             if (field.type === 'files') {
-                if (value instanceof File) formData.append(field.name, value);
+                if (value instanceof File) {
+                    formData.append(field.name, value);
+                } else if (Array.isArray(value)) {
+                    value.forEach((file) => {
+                        if (file instanceof File) formData.append(field.name, file);
+                    });
+                }
             } else if (field.type === 'quiz-builder') {
                 formData.append(field.name, JSON.stringify(value || []));
                 // Ensure API always receives total_marks even if the field was removed from the form
@@ -851,11 +859,15 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                                                 <input
                                                     type={field.type === 'files' ? 'file' : (field.type === 'textarea' ? 'text' : field.type)}
                                                     placeholder={field.placeholder}
+                                                    multiple={field.type === 'files' ? Boolean(field.multiple) : undefined}
                                                     value={field.type === 'files' ? undefined : (formValues[field.name] || '')}
                                                     onChange={(e) => {
                                                         if (field.type === 'files') {
-                                                            const file = e.target.files?.[0];
-                                                            handleInputChange(field.name, file || null);
+                                                            const selected = Array.from(e.target.files || []);
+                                                            handleInputChange(
+                                                                field.name,
+                                                                field.multiple ? selected : (selected[0] || null)
+                                                            );
                                                         } else {
                                                             handleInputChange(field.name, e.target.value);
                                                         }

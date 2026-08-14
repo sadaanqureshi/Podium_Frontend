@@ -12,10 +12,20 @@ import { getErrorMessage } from '@/lib/api/errorMessage';
 
 // Redux Actions & APIs
 import { submitAssignment } from '@/lib/store/features/assignmentSlice';
-import { getAssignmentDetailsAPI } from '@/lib/api/apiService'; 
+import { getAssignmentDetailsAPI } from '@/lib/api/apiService';
+import {
+    hasSubmissionStatus,
+    isSubmissionGraded,
+} from '@/lib/assignmentSubmissions';
 
 // UI Components
 import GenericFormModal from '@/components/ui/GenericFormModal';
+
+function unwrapAssignment(payload: any) {
+    if (payload?.id) return payload;
+    if (payload?.data?.id) return payload.data;
+    return payload?.data ?? payload;
+}
 
 const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
     const resolvedParams = use(params);
@@ -39,7 +49,7 @@ const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
             setIsLoading(true);
             try {
                 const data = await getAssignmentDetailsAPI(assignmentId);
-                setAssignmentData(data);
+                setAssignmentData(unwrapAssignment(data));
             } catch (error) {
                 console.error("Error fetching assignment:", error);
                 showToast(getErrorMessage(error, 'Failed to load assignment details.'), 'error');
@@ -60,7 +70,7 @@ const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
             
             // Re-fetch data to update submission status on UI
             const updatedData = await getAssignmentDetailsAPI(assignmentId);
-            setAssignmentData(updatedData);
+            setAssignmentData(unwrapAssignment(updatedData));
         } catch (err: any) {
             showToast(getErrorMessage(err, 'Failed to upload submission.'), 'error');
         } finally {
@@ -88,8 +98,16 @@ const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
         );
     }
 
-    const hasSubmitted = !!assignmentData.submission;
-    const isGraded = assignmentData.submission?.status === 'graded';
+    const submission = assignmentData.submission;
+    const hasSubmitted = hasSubmissionStatus(submission);
+    const isGraded = isSubmissionGraded(submission);
+    const submittedAt = submission?.submittedAt
+        ? new Date(submission.submittedAt)
+        : null;
+    const submittedAtValid = submittedAt && !Number.isNaN(submittedAt.getTime());
+    const submissionFiles: string[] = Array.isArray(submission?.submissionFiles)
+        ? submission.submissionFiles.filter(Boolean)
+        : [];
 
     return (
         <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-top-4 pb-20 bg-app-bg h-full text-text-main">
@@ -104,9 +122,17 @@ const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
                 
                 <div className="relative z-10 flex items-center gap-3">
                     <span className="text-accent-blue font-bold text-[10px] uppercase tracking-widest bg-accent-blue/10 px-2.5 py-1 rounded-md">Assignment</span>
-                    {hasSubmitted && (
+                    {isGraded ? (
                         <span className="text-emerald-600 font-bold text-[10px] uppercase tracking-widest bg-emerald-500/10 px-2.5 py-1 rounded-md flex items-center gap-1">
-                            <CheckCircle2 size={12} /> {isGraded ? 'Graded' : 'Submitted'}
+                            <CheckCircle2 size={12} /> Graded
+                        </span>
+                    ) : hasSubmitted ? (
+                        <span className="text-emerald-600 font-bold text-[10px] uppercase tracking-widest bg-emerald-500/10 px-2.5 py-1 rounded-md flex items-center gap-1">
+                            <CheckCircle2 size={12} /> Submitted
+                        </span>
+                    ) : (
+                        <span className="text-amber-500 font-bold text-[10px] uppercase tracking-widest bg-amber-500/10 px-2.5 py-1 rounded-md flex items-center gap-1">
+                            <AlertCircle size={12} /> Missing
                         </span>
                     )}
                 </div>
@@ -162,12 +188,11 @@ const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
                     )}
 
                     {/* 👉 Student's Uploaded Submission Files Rendering */}
-                    {hasSubmitted && assignmentData.submission.submissionFiles && assignmentData.submission.submissionFiles.length > 0 && (
+                    {hasSubmitted && submissionFiles.length > 0 && (
                         <div className="pt-4">
                             <h3 className="text-sm font-extrabold uppercase tracking-widest text-text-main mb-4">Your Submissions</h3>
                             <div className="space-y-3">
-                                {assignmentData.submission.submissionFiles.map((fileUrl: string, index: number) => {
-                                    // Extract filename from URL, or fallback to generic name
+                                {submissionFiles.map((fileUrl: string, index: number) => {
                                     const fileName = fileUrl.split('/').pop() || `Submission_File_${index + 1}`;
                                     
                                     return (
@@ -222,12 +247,18 @@ const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
                             <div className="p-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 space-y-3">
                                 <div className="flex items-center justify-center gap-2 text-emerald-600 border-b border-emerald-500/10 pb-3">
                                     <CheckCircle2 size={18} />
-                                    <span className="text-xs font-extrabold uppercase tracking-wider">Work Evaluated</span>
+                                    <span className="text-xs font-extrabold uppercase tracking-wider">
+                                        {isGraded ? 'Work Evaluated' : 'Work Submitted'}
+                                    </span>
                                 </div>
-                                <div className="flex justify-between items-center pt-2">
-                                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Submitted On</span>
-                                    <span className="text-xs font-bold text-text-main bg-card-bg px-2 py-1 rounded border border-border-subtle">{new Date(assignmentData.submission.submittedAt).toLocaleDateString('en-GB')}</span>
-                                </div>
+                                {submittedAtValid && (
+                                    <div className="flex justify-between items-center pt-2">
+                                        <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Submitted On</span>
+                                        <span className="text-xs font-bold text-text-main bg-card-bg px-2 py-1 rounded border border-border-subtle">
+                                            {submittedAt.toLocaleDateString('en-GB')}
+                                        </span>
+                                    </div>
+                                )}
                                 
                                 {isGraded && (
                                     <div className="pt-3 mt-3 border-t border-emerald-500/10 space-y-3">
@@ -245,12 +276,23 @@ const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
                                 )}
                             </div>
                         ) : (
-                            <button
-                                onClick={() => setIsSubmitModalOpen(true)}
-                                className="w-full py-3.5 bg-accent-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-hover-blue transition-colors flex items-center justify-center gap-2 shadow-sm"
-                            >
-                                <UploadCloud size={16} /> Deploy Submission
-                            </button>
+                            <div className="space-y-3">
+                                <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-center">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">
+                                        Submission missing
+                                    </p>
+                                    <p className="text-[11px] text-text-muted font-medium mt-1.5 leading-relaxed">
+                                        Upload your work before the due date.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsSubmitModalOpen(true)}
+                                    className="w-full py-3.5 bg-accent-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-hover-blue transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                >
+                                    <UploadCloud size={16} /> Upload Submission
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -259,11 +301,17 @@ const StudentAssignmentPage = ({ params }: { params: Promise<any> }) => {
             <GenericFormModal
                 isOpen={isSubmitModalOpen}
                 onClose={() => setIsSubmitModalOpen(false)}
-                title="Submit Assignment"
-                fields={[{ name: 'files', label: 'Upload your work', type: 'files', required: true }]}
+                title="Upload Submission"
+                fields={[{
+                    name: 'files',
+                    label: 'Upload your work',
+                    type: 'files',
+                    required: true,
+                    multiple: true,
+                }]}
                 onSubmit={handleSubmitAction}
                 loading={isSubmitting}
-                submitText="Deploy Files"
+                submitText="Submit"
             />
         </div>
     );
