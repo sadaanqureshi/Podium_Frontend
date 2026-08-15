@@ -184,7 +184,7 @@ export default function TeacherAttendancePage() {
             status,
         }));
 
-        const payload = {
+            const payload = {
             ...(selectedSession.attendanceDate
                 ? { attendanceDate: selectedSession.attendanceDate }
                 : {}),
@@ -233,7 +233,7 @@ export default function TeacherAttendancePage() {
                 <p className="text-[10px] font-black uppercase tracking-widest">
                     Loading attendance…
                 </p>
-            </div>
+                </div>
         );
     }
 
@@ -319,7 +319,7 @@ export default function TeacherAttendancePage() {
                                         <span className="shrink-0 h-10 w-10 rounded-xl bg-accent-blue/10 text-accent-blue flex items-center justify-center group-hover:bg-accent-blue group-hover:text-white transition-colors">
                                             <Eye size={16} />
                                         </span>
-                                    </div>
+            </div>
 
                                     <div className="mt-5 flex flex-wrap gap-2">
                                         <MiniBadge

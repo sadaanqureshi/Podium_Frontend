@@ -115,3 +115,109 @@ export function resolveQuizSubmissionBadge(
     }
     return null;
 }
+
+const MARKS_KEYS = [
+    'totalMarksObtained',
+    'total_marks_obtained',
+    'marksObtained',
+    'marks_obtained',
+    'obtainedMarks',
+    'obtained_marks',
+    'score',
+    'grade',
+    'totalMarks',
+] as const;
+
+function coerceMarks(raw: unknown): number | null {
+    if (raw === null || raw === undefined || raw === '') return null;
+    if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
+    if (typeof raw === 'string') {
+        const n = Number(raw.trim());
+        return Number.isFinite(n) ? n : null;
+    }
+    return null;
+}
+
+/** Flatten GET /quizzes/:id whether attempt sits on the quiz or a sibling key. */
+export function unwrapQuizDetail(payload: any): any {
+    if (!payload || typeof payload !== 'object') return payload;
+    const root = payload.data ?? payload;
+    const quiz = root?.quiz && typeof root.quiz === 'object' ? root.quiz : root;
+    const attempt =
+        quiz?.userAttempt ??
+        quiz?.user_attempt ??
+        quiz?.myAttempt ??
+        quiz?.my_attempt ??
+        quiz?.attempt ??
+        quiz?.submission ??
+        root?.userAttempt ??
+        root?.user_attempt ??
+        root?.myAttempt ??
+        root?.attempt ??
+        payload?.userAttempt ??
+        payload?.user_attempt ??
+        null;
+    return { ...quiz, userAttempt: attempt };
+}
+
+export function pickQuizAttempt(quizOrAttempt: any): QuizAttemptRow | null {
+    if (!quizOrAttempt || typeof quizOrAttempt !== 'object') return null;
+    const nested =
+        quizOrAttempt.userAttempt ??
+        quizOrAttempt.user_attempt ??
+        quizOrAttempt.myAttempt ??
+        quizOrAttempt.my_attempt ??
+        quizOrAttempt.attempt ??
+        quizOrAttempt.submission ??
+        null;
+    if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+        return nested as QuizAttemptRow;
+    }
+    const status = String(quizOrAttempt.status ?? '').trim().toLowerCase();
+    const looksLikeAttempt =
+        quizOrAttempt.attemptId != null ||
+        quizOrAttempt.submittedAt ||
+        quizOrAttempt.isGraded === true ||
+        quizOrAttempt.is_graded === true ||
+        status === 'submitted' ||
+        status === 'graded' ||
+        status === 'late';
+    if (looksLikeAttempt) return quizOrAttempt as QuizAttemptRow;
+    return null;
+}
+
+/** True when the student actually submitted an attempt (not a missing placeholder). */
+export function hasQuizAttempt(attempt: QuizAttemptRow | null | undefined): boolean {
+    return isRealQuizAttempt(attempt);
+}
+
+export function getQuizAttemptId(attempt: QuizAttemptRow | null | undefined): number | null {
+    if (!attempt) return null;
+    const raw = attempt.id ?? attempt.attemptId ?? (attempt as any).attempt_id;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+export function getQuizAttemptMarks(attempt: any): number | null {
+    if (!attempt || typeof attempt !== 'object') return null;
+    for (const key of MARKS_KEYS) {
+        if (key in attempt) {
+            const parsed = coerceMarks(attempt[key]);
+            if (parsed !== null) return parsed;
+        }
+    }
+    return null;
+}
+
+export function isQuizAttemptGraded(attempt: QuizAttemptRow | null | undefined): boolean {
+    if (!attempt) return false;
+    if (attempt.isGraded === true || (attempt as any).is_graded === true) return true;
+    const status = String(attempt.status ?? '').trim().toLowerCase();
+    if (status === 'graded' || status === 'evaluated') return true;
+    return getQuizAttemptMarks(attempt) !== null;
+}
+
+export function unwrapQuizResult(payload: any): any {
+    if (!payload || typeof payload !== 'object') return payload;
+    return payload.data ?? payload.result ?? payload;
+}

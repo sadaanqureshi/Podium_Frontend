@@ -17,7 +17,10 @@ const QuizResultView = ({ result, quizInfo }: any) => {
                         <div className="text-center">
                             <p className="text-[10px] font-bold text-text-muted uppercase mb-1">Total Score</p>
                             <p className="text-4xl font-black text-accent-blue">
-                                {result.totalMarksObtained} <span className="text-lg text-text-muted">/ {quizInfo.total_marks}</span>
+                                {result.totalMarksObtained ?? result.total_marks_obtained ?? result.marksObtained ?? '—'}{' '}
+                                <span className="text-lg text-text-muted">
+                                    / {quizInfo.total_marks ?? quizInfo.totalMarks ?? '—'}
+                                </span>
                             </p>
                         </div>
                         <Award size={42} className="text-amber-500" />
