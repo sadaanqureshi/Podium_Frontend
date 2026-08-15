@@ -38,7 +38,7 @@ const CourseFilterDropdown: React.FC<CourseFilterDropdownProps> = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 top-14 mt-2 w-72 bg-card-bg border border-border-subtle rounded-2xl shadow-2xl z-50 p-5"
+                    className="absolute right-0 top-full mt-2 w-72 bg-card-bg border border-border-subtle rounded-2xl shadow-2xl z-50 p-5"
                 >
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-sm font-black uppercase text-text-main tracking-widest">Filters</h3>

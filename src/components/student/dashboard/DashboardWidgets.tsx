@@ -178,7 +178,7 @@ function KpiCard({
         <Link
             href={href}
             style={{ animationDelay: `${delay}ms` }}
-            className={`group relative overflow-hidden rounded-2xl border p-4 md:p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg animate-in fade-in slide-in-from-bottom-3 fill-mode-both ${
+            className={`group relative overflow-hidden rounded-2xl border p-3 md:p-5 h-full shadow-sm transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-lg animate-in fade-in slide-in-from-bottom-3 fill-mode-both ${
                 highlight
                     ? 'border-accent-blue/35 bg-accent-blue/[0.07]'
                     : 'border-border-subtle bg-card-bg hover:border-accent-blue/30'
@@ -193,13 +193,15 @@ function KpiCard({
                     className="text-text-muted opacity-0 group-hover:opacity-100 group-hover:text-accent-blue transition-all"
                 />
             </div>
-            <p className="mt-4 text-2xl md:text-3xl font-black tabular-nums tracking-tight text-text-main">
+            <p className="mt-3 md:mt-4 text-xl md:text-3xl font-black tabular-nums tracking-tight text-text-main">
                 {display}
             </p>
-            <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-text-muted">
+            <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-text-muted leading-tight">
                 {label}
             </p>
-            <p className="mt-1.5 text-[11px] font-medium text-text-muted leading-snug">{support}</p>
+            <p className="mt-1.5 text-[11px] font-medium text-text-muted leading-snug min-h-0 md:min-h-[2.25rem]">
+                {support}
+            </p>
         </Link>
     );
 }

@@ -41,7 +41,7 @@ const StudentUnifiedCourseDetail = ({ courseId, data, isLoading, backUrl }: any)
     ];
 
     return (
-        <div className="w-full bg-app-bg min-h-screen font-sans text-text-main transition-colors duration-300">
+        <div className="w-full bg-app-bg min-h-screen font-sans text-text-main">
             <div className="p-8 pb-0">
                 <Link href={backUrl} className="flex items-center gap-2 text-text-muted hover:text-accent-blue font-bold transition-all text-sm uppercase tracking-widest">
                     <ArrowLeft size={16} /> My Learning

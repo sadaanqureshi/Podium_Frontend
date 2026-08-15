@@ -4,7 +4,7 @@ import { Send } from 'lucide-react';
 
 export default function ContactPage() {
   return (
-    <main className="min-h-screen bg-app-bg text-text-main transition-colors duration-300">
+    <main className="min-h-screen bg-app-bg text-text-main">
       <MarketingNavbar />
       <section className="pt-40 pb-20 px-6 max-w-3xl mx-auto text-center space-y-12">
         <div className="space-y-4">

@@ -114,7 +114,7 @@ const MoreInfo: React.FC<MoreInfoProps> = ({
                     isOpen ? 'translate-x-0' : 'translate-x-full'
                 }`}
             >
-                <div className="flex items-center justify-between px-6 py-5 border-b border-border-subtle bg-app-bg/50">
+                <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-border-subtle bg-app-bg/50 gap-3">
                     <div className="flex items-center gap-3">
                         {headerIcon && (
                             <div className="p-2 bg-accent-blue/10 text-accent-blue rounded-md">

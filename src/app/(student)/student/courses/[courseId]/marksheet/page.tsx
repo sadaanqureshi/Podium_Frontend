@@ -110,7 +110,7 @@ const StudentCourseMarksheetPage = ({
     const studentName = `${student.firstName} ${student.lastName}`.trim();
 
     return (
-        <div className="min-h-screen bg-app-bg text-text-main pb-20 relative overflow-hidden">
+        <div className="min-h-screen bg-app-bg text-text-main pb-20 relative overflow-x-hidden">
             <div className="pointer-events-none absolute inset-0">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(37,99,235,0.10),_transparent_50%)]" />
             </div>

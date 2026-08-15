@@ -178,18 +178,16 @@ interface CourseCardProps {
   imageUrl: string;
   basePath: string;
   showProgress?: boolean;
-  /** When set, shows a marksheet CTA on enrolled course cards */
-  marksheetHref?: string | null;
 }
 
 const Card: React.FC<CourseCardProps> = ({
   id, title, author, description, rating, progress = 0,
-  imageUrl, basePath, showProgress = true, marksheetHref,
+  imageUrl, basePath, showProgress = true,
 }) => {
   const courseHref = `${basePath}/${id}`;
 
   return (
-    <div className="w-full h-full flex flex-col rounded-xl overflow-hidden shadow-sm hover:shadow-lg border border-border-subtle bg-card-bg group transition-all duration-300">
+    <div className="w-full h-full flex flex-col rounded-xl overflow-hidden shadow-sm hover:shadow-lg border border-border-subtle bg-card-bg group transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5">
       <Link href={courseHref} className="block outline-none">
         <div className="relative w-full h-40 shrink-0 border-b border-border-subtle/50">
           <Image
@@ -202,42 +200,42 @@ const Card: React.FC<CourseCardProps> = ({
         </div>
       </Link>
 
-      <div className="p-5 flex flex-col flex-grow">
-        <Link href={courseHref} className="mb-4 outline-none">
+      <div className="p-5 flex flex-col flex-grow min-h-0">
+        <Link href={courseHref} className="outline-none">
           <p className="text-accent-blue text-[10px] font-bold uppercase tracking-wider mb-1.5">
             {author || 'Expert Faculty'}
           </p>
-          <h3 className="text-lg font-bold text-text-main line-clamp-2 mb-1.5 group-hover:text-accent-blue transition-colors leading-snug">
+          <h3 className="text-lg font-bold text-text-main line-clamp-2 min-h-[3.25rem] mb-1.5 group-hover:text-accent-blue transition-colors leading-snug">
             {title || 'Untitled Course'}
           </h3>
-          <p className="text-text-muted text-xs line-clamp-2 font-medium leading-relaxed">
+          <p className="text-text-muted text-xs line-clamp-2 min-h-[2.25rem] font-medium leading-relaxed">
             {description}
           </p>
         </Link>
 
-        {showProgress && (
-          <div className="mt-auto pt-2">
-            <div className="flex justify-between items-end text-[10px] font-bold mb-2">
-              <span className="text-text-muted uppercase tracking-wider">Progress</span>
-              <span className="text-text-main">{progress}%</span>
+        <div className="mt-auto pt-4">
+          {showProgress && (
+            <div className="mb-4">
+              <div className="flex justify-between items-end text-[10px] font-bold mb-2">
+                <span className="text-text-muted uppercase tracking-wider">Progress</span>
+                <span className="text-text-main">{progress}%</span>
+              </div>
+              <div className="w-full bg-app-bg border border-border-subtle rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-accent-blue h-full rounded-full"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
-            <div className="w-full bg-app-bg border border-border-subtle rounded-full h-1.5 overflow-hidden">
-              <div
-                className="bg-accent-blue h-full rounded-full transition-all duration-700 ease-in-out"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-        )}
+          )}
 
-        {marksheetHref && (
           <Link
-            href={marksheetHref}
-            className="mt-4 inline-flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-accent-blue/30 bg-accent-blue/10 text-accent-blue text-[10px] font-black uppercase tracking-widest hover:bg-accent-blue hover:text-white transition-colors"
+            href={courseHref}
+            className="inline-flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-accent-blue/30 bg-accent-blue/10 text-accent-blue text-[10px] font-black uppercase tracking-widest hover:bg-accent-blue hover:text-white"
           >
-            View Marksheet
+            View Details
           </Link>
-        )}
+        </div>
       </div>
     </div>
   );

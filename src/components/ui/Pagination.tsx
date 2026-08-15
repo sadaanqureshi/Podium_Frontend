@@ -108,7 +108,7 @@ const Pagination: React.FC<PaginationProps> = ({
     return (
         <nav
             aria-label="Pagination"
-            className={`flex flex-wrap items-center gap-3 ${alignClass} ${className}`}
+            className={`flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 ${alignClass} ${className}`}
         >
             {(variant === 'simple' || totalItems != null) && (
                 <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
@@ -117,12 +117,12 @@ const Pagination: React.FC<PaginationProps> = ({
                 </p>
             )}
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center justify-between sm:justify-end gap-1.5">
                 <button
                     type="button"
                     disabled={safePage <= 1 || loading}
                     onClick={() => go(safePage - 1)}
-                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-border-subtle text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-accent-blue hover:border-accent-blue/30 disabled:opacity-40 transition-colors"
+                    className="inline-flex items-center gap-1 px-3 py-2.5 min-h-10 rounded-xl border border-border-subtle text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-accent-blue hover:border-accent-blue/30 disabled:opacity-40"
                 >
                     <ChevronLeft size={14} /> Prev
                 </button>
@@ -132,7 +132,7 @@ const Pagination: React.FC<PaginationProps> = ({
                         item === 'ellipsis' ? (
                             <span
                                 key={`e-${idx}`}
-                                className="w-8 h-8 flex items-center justify-center text-text-muted text-xs"
+                                className="hidden sm:flex w-8 h-8 items-center justify-center text-text-muted text-xs"
                             >
                                 …
                             </span>
@@ -142,7 +142,7 @@ const Pagination: React.FC<PaginationProps> = ({
                                 type="button"
                                 disabled={loading}
                                 onClick={() => go(item)}
-                                className={`w-8 h-8 flex items-center justify-center rounded-xl text-[10px] font-black transition-all border ${
+                                className={`hidden sm:flex w-8 h-8 items-center justify-center rounded-xl text-[10px] font-black border ${
                                     safePage === item
                                         ? 'bg-accent-blue text-white border-accent-blue shadow-lg shadow-accent-blue/20'
                                         : 'bg-card-bg text-text-muted border-border-subtle hover:border-accent-blue/30'
@@ -157,7 +157,7 @@ const Pagination: React.FC<PaginationProps> = ({
                     type="button"
                     disabled={safePage >= safeTotal || loading}
                     onClick={() => go(safePage + 1)}
-                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-border-subtle text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-accent-blue hover:border-accent-blue/30 disabled:opacity-40 transition-colors"
+                    className="inline-flex items-center gap-1 px-3 py-2.5 min-h-10 rounded-xl border border-border-subtle text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-accent-blue hover:border-accent-blue/30 disabled:opacity-40"
                 >
                     Next <ChevronRight size={14} />
                 </button>

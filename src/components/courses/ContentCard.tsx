@@ -81,10 +81,11 @@ const ContentCard = ({
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {showBadge && (
                     <span
-                        className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border tabular-nums bg-accent-blue/10 text-accent-blue border-accent-blue/25"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border tabular-nums bg-accent-blue/10 text-accent-blue border-accent-blue/25"
                         title={`${badgeCount} ${badgeLabel}`}
                     >
-                        {badgeCount} {badgeLabel}
+                        {badgeCount}
+                        <span className="hidden sm:inline">{badgeLabel}</span>
                     </span>
                 )}
 

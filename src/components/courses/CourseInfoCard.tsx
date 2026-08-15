@@ -28,7 +28,7 @@ export const CourseInfoCard = ({
     const hasRating = rating != null && rating !== '';
 
     return (
-        <div className="bg-card-bg rounded-2xl border border-border-subtle shadow-sm p-6 md:p-8 mb-8 flex flex-col md:flex-row justify-between items-stretch gap-8 animate-in fade-in slide-in-from-top-4">
+        <div className="bg-card-bg rounded-2xl border border-border-subtle shadow-sm p-4 md:p-8 mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-stretch gap-5 md:gap-8">
             <div className="flex-1 min-w-0 flex flex-col">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                     <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-text-muted">
