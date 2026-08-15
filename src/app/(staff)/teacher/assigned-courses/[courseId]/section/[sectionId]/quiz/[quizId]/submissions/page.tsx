@@ -3,6 +3,7 @@ import React, { useState, useEffect, use } from 'react';
 import { Loader2, ArrowLeft, UserCheck, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { getQuizSubmissionsAPI } from '@/lib/api/apiService';
+import { isRealQuizAttempt, normalizeQuizAttemptsList } from '@/lib/quizSubmissions';
 import { useToast } from '@/context/ToastContext';
 import { getErrorMessage } from '@/lib/api/errorMessage';
 import UserManagementTable from '@/components/ui/UserManagementTable';
@@ -22,7 +23,8 @@ const QuizSubmissionsPage = ({ params }: { params: Promise<any> }) => {
         setLoadError(null);
         try {
             const res = await getQuizSubmissionsAPI(quizId);
-            setSubmissions(res.data || res || []);
+            const rows = normalizeQuizAttemptsList(res);
+            setSubmissions(rows.filter(isRealQuizAttempt));
         } catch (err) {
             const msg = getErrorMessage(err, 'Failed to load submissions');
             setLoadError(msg);

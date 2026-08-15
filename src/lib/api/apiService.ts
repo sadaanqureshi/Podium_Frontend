@@ -1,5 +1,6 @@
 import Cookies from 'js-cookie';
 import { throwIfNotOk, extractBackendMessage } from './errorMessage';
+import { unwrapQuizDetail } from '../quizSubmissions';
 
 // ==============================
 // BASE URL
@@ -2063,7 +2064,7 @@ export const getSpecificQuizAPI = async (id: number, opts?: { forStudent?: boole
     });
     await throwIfNotOk(response, 'Quiz details nahi mil sakin');
     const json = await response.json();
-    const quiz = json?.data ?? json;
+    const quiz = unwrapQuizDetail(json);
 
     // Never expose correct answers to students in client state
     if (opts?.forStudent && quiz?.questions) {

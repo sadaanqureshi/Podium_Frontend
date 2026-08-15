@@ -37,7 +37,11 @@ export const StudentGenericContentTab = ({
                 subtitle={
                     type === 'quiz'
                         ? `Total Marks: ${item.total_marks ?? item.totalMarks ?? '—'}${
-                              item.isCompleted ? ' · Completed' : ''
+                              item.isCompleted || item.userAttempt || item.attemptStatus === 'submitted' || item.attemptStatus === 'graded'
+                                  ? item.attemptStatus === 'graded' || item.isGraded
+                                      ? ' · Graded'
+                                      : ' · Submitted'
+                                  : ''
                           }`
                         : (item.lectureType === 'online'
                             ? `Scheduled: ${item.liveStart ? new Date(item.liveStart).toLocaleString('en-GB') : 'TBD'}`
