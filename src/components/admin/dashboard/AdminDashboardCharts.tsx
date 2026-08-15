@@ -92,7 +92,7 @@ export function EnrollmentsByStatusChart({
     return (
         <ChartCard title="Enrollments by status" subtitle="Pipeline mix">
             <div className="h-[220px] w-full relative">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" debounce={300}>
                     <PieChart>
                         <Pie
                             data={chartData}
@@ -102,6 +102,7 @@ export function EnrollmentsByStatusChart({
                             outerRadius={84}
                             paddingAngle={3}
                             stroke="none"
+                            isAnimationActive={false}
                         >
                             {chartData.map((entry) => (
                                 <Cell key={entry.name} fill={entry.color} />
@@ -164,7 +165,7 @@ export function CoursesByAssignmentChart({
     return (
         <ChartCard title="Courses by assignment" subtitle="Teacher coverage">
             <div className="h-[220px] w-full relative">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" debounce={300}>
                     <PieChart>
                         <Pie
                             data={chartData}
@@ -174,6 +175,7 @@ export function CoursesByAssignmentChart({
                             outerRadius={84}
                             paddingAngle={3}
                             stroke="none"
+                            isAnimationActive={false}
                         >
                             {chartData.map((entry) => (
                                 <Cell key={entry.name} fill={entry.color} />
@@ -234,7 +236,7 @@ export function RevenueTrendChart({
     return (
         <ChartCard title="Revenue · 6 months" subtitle="Paid volume trend">
             <div className="h-[220px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" debounce={300}>
                     <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                         <defs>
                             <linearGradient id="adminRevFill" x1="0" y1="0" x2="0" y2="1">
@@ -266,7 +268,7 @@ export function RevenueTrendChart({
                             stroke={ACCENT_BLUE}
                             strokeWidth={2.5}
                             fill="url(#adminRevFill)"
-                            animationDuration={1100}
+                            isAnimationActive={false}
                         />
                     </AreaChart>
                 </ResponsiveContainer>

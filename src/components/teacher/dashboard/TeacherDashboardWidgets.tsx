@@ -168,7 +168,7 @@ function KpiCard({
         <Link
             href={href}
             style={{ animationDelay: `${delay}ms` }}
-            className={`group relative overflow-hidden rounded-2xl border p-3 md:p-5 h-full shadow-sm transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-lg animate-in fade-in slide-in-from-bottom-3 fill-mode-both ${
+            className={`group rounded-2xl border p-3 md:p-5 h-full ${
                 highlight
                     ? 'border-accent-blue/35 bg-accent-blue/[0.07]'
                     : 'border-border-subtle bg-card-bg hover:border-accent-blue/30'

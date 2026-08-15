@@ -92,7 +92,7 @@ export function StudentsPerCourseChart({
     return (
         <ChartCard title="Students per course" subtitle="Enrollment by course">
             <div className="h-[220px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" debounce={300}>
                     <BarChart
                         data={data}
                         layout="vertical"
@@ -126,7 +126,7 @@ export function StudentsPerCourseChart({
                             fill={ACCENT_BLUE}
                             radius={[0, 8, 8, 0]}
                             barSize={14}
-                            animationDuration={1100}
+                            isAnimationActive={false}
                         />
                     </BarChart>
                 </ResponsiveContainer>
@@ -175,7 +175,7 @@ export function WorkloadSnapshotChart({
     return (
         <ChartCard title="Workload mix" subtitle="Open teaching work">
             <div className="h-[220px] w-full relative">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" debounce={300}>
                     <PieChart>
                         <Pie
                             data={data}
@@ -185,6 +185,7 @@ export function WorkloadSnapshotChart({
                             outerRadius={84}
                             paddingAngle={3}
                             stroke="none"
+                            isAnimationActive={false}
                         >
                             {data.map((entry) => (
                                 <Cell
@@ -248,7 +249,7 @@ export function AttendanceMarkStatusChart({
     return (
         <ChartCard title="Attendance status" subtitle="Recent sessions">
             <div className="h-[220px] w-full relative">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" debounce={300}>
                     <PieChart>
                         <Pie
                             data={data}
@@ -258,6 +259,7 @@ export function AttendanceMarkStatusChart({
                             outerRadius={84}
                             paddingAngle={3}
                             stroke="none"
+                            isAnimationActive={false}
                         >
                             {data.map((entry) => (
                                 <Cell key={entry.name} fill={entry.color} />
@@ -321,7 +323,7 @@ export function GradingQueueChart({
     return (
         <ChartCard title="Grading queue" subtitle="Pending submissions by assignment & quiz">
             <div className="h-[220px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" debounce={300}>
                     <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 36 }}>
                         <CartesianGrid stroke={CHART_GRID} vertical={false} />
                         <XAxis
@@ -353,7 +355,7 @@ export function GradingQueueChart({
                             fill={ACCENT_BLUE}
                             radius={[8, 8, 0, 0]}
                             barSize={28}
-                            animationDuration={1100}
+                            isAnimationActive={false}
                         />
                     </BarChart>
                 </ResponsiveContainer>

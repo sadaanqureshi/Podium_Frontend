@@ -99,7 +99,7 @@ export function CourseProgressChart({
     return (
         <ChartCard title="Course progress" subtitle="Completion by course">
             <div className="h-[220px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" debounce={300}>
                     <BarChart
                         data={data}
                         layout="vertical"
@@ -134,7 +134,7 @@ export function CourseProgressChart({
                             fill={ACCENT_BLUE}
                             radius={[0, 8, 8, 0]}
                             barSize={14}
-                            animationDuration={1100}
+                            isAnimationActive={false}
                         />
                     </BarChart>
                 </ResponsiveContainer>
@@ -172,7 +172,7 @@ export function AttendanceBreakdownChart({
     return (
         <ChartCard title="Attendance mix" subtitle="Present · absent · pending">
             <div className="h-[220px] w-full relative">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" debounce={300}>
                     <PieChart>
                         <Pie
                             data={data}
@@ -182,6 +182,7 @@ export function AttendanceBreakdownChart({
                             outerRadius={84}
                             paddingAngle={3}
                             stroke="none"
+                            isAnimationActive={false}
                         >
                             {data.map((entry) => (
                                 <Cell
@@ -251,7 +252,7 @@ export function UpdatesTypeChart({
     return (
         <ChartCard title="Activity mix" subtitle="Recent content types">
             <div className="h-[220px] w-full relative">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" debounce={300}>
                     <PieChart>
                         <Pie
                             data={data}
@@ -261,6 +262,7 @@ export function UpdatesTypeChart({
                             outerRadius={84}
                             paddingAngle={3}
                             stroke="none"
+                            isAnimationActive={false}
                         >
                             {data.map((entry) => (
                                 <Cell

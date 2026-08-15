@@ -196,7 +196,7 @@ export const SessionManager = ({ children }: { children: React.ReactNode }) => {
       if (now - lastFocusSyncAt.current < 15_000) return;
       lastFocusSyncAt.current = now;
 
-      void syncProfile({ force: true, silent: true });
+      void syncProfile({ silent: true });
     };
 
     window.addEventListener('focus', onFocus);

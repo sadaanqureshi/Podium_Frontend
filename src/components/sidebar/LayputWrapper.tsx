@@ -134,7 +134,7 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
         </header>
 
-        <main className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
+        <main className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain">
           {children}
         </main>
       </div>

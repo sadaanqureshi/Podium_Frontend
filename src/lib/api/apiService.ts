@@ -198,6 +198,60 @@ export const getAllCoursesAPI = async (page = 1, limit = 10) => {
     return await response.json();
 };
 
+export type PublicCatalogResult<T> = {
+    data: T[];
+    meta: { totalItems?: number; totalPages?: number; currentPage?: number } | null;
+    requiresAuth: boolean;
+};
+
+/** Guest-safe catalog fetch — optional auth, empty on 401 instead of throwing. */
+export const getPublicCoursesAPI = async (
+    page = 1,
+    limit = 8
+): Promise<PublicCatalogResult<any>> => {
+    const token = getToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    try {
+        const response = await fetch(`${API_URL}/courses/all?page=${page}&limit=${limit}`, {
+            method: 'GET',
+            headers,
+        });
+        if (response.status === 401 || response.status === 403) {
+            return { data: [], meta: null, requiresAuth: true };
+        }
+        await throwIfNotOk(response, 'Failed to fetch courses');
+        const json = await response.json();
+        const data = json?.data || (Array.isArray(json) ? json : []);
+        return { data, meta: json?.meta || null, requiresAuth: false };
+    } catch {
+        return { data: [], meta: null, requiresAuth: true };
+    }
+};
+
+export const getPublicCategoriesAPI = async (): Promise<PublicCatalogResult<any>> => {
+    const token = getToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    try {
+        const response = await fetch(`${API_URL}/courses/categories/all`, {
+            method: 'GET',
+            headers,
+        });
+        if (response.status === 401 || response.status === 403) {
+            return { data: [], meta: null, requiresAuth: true };
+        }
+        await throwIfNotOk(response, 'Categories could not be loaded');
+        const json = await response.json();
+        const data = json?.data || (Array.isArray(json) ? json : []);
+        return { data, meta: null, requiresAuth: false };
+    } catch {
+        return { data: [], meta: null, requiresAuth: true };
+    }
+};
+
 export const createCourseAPI = async (formData: FormData) => {
     const token = getToken();
     if (!token) throw new Error('Authentication token missing');

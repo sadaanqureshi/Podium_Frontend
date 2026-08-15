@@ -40,12 +40,14 @@ interface CourseListProps {
   courses: any[];
   basePath: string;
   showProgress?: boolean;
+  ctaLabel?: string;
 }
 
 const CourseList: React.FC<CourseListProps> = ({
   courses,
   basePath,
   showProgress,
+  ctaLabel,
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -62,6 +64,9 @@ const CourseList: React.FC<CourseListProps> = ({
           totalLessons={course.totalLessons || course.totalLectures || 0}
           basePath={basePath}
           showProgress={showProgress}
+          price={course.price}
+          href={course.href}
+          ctaLabel={ctaLabel || course.ctaLabel}
         />
       ))}
     </div>

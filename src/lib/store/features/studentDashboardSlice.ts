@@ -13,6 +13,12 @@ export const fetchStudentDashboard = createAsyncThunk(
         } catch (err: any) {
             return rejectWithValue(getErrorMessage(err, 'Failed to load dashboard'));
         }
+    },
+    {
+        condition: (_, { getState }) => {
+            const { loading } = (getState() as { studentDashboard: { loading: boolean } }).studentDashboard;
+            return !loading;
+        },
     }
 );
 

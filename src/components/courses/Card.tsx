@@ -178,13 +178,25 @@ interface CourseCardProps {
   imageUrl: string;
   basePath: string;
   showProgress?: boolean;
+  price?: string | number | null;
+  href?: string;
+  ctaLabel?: string;
+}
+
+function formatCardPrice(price: string | number | null | undefined) {
+  if (price == null || price === '') return null;
+  const n = Number(price);
+  if (Number.isNaN(n)) return String(price);
+  if (n === 0) return 'Free';
+  return `$${n}`;
 }
 
 const Card: React.FC<CourseCardProps> = ({
-  id, title, author, description, rating, progress = 0,
-  imageUrl, basePath, showProgress = true,
+  id, title, author, description, progress = 0,
+  imageUrl, basePath, showProgress = true, price, href, ctaLabel,
 }) => {
-  const courseHref = `${basePath}/${id}`;
+  const courseHref = href ?? `${basePath}/${id}`;
+  const priceLabel = formatCardPrice(price);
 
   return (
     <div className="w-full h-full flex flex-col rounded-xl overflow-hidden shadow-sm hover:shadow-lg border border-border-subtle bg-card-bg group transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5">
@@ -214,6 +226,9 @@ const Card: React.FC<CourseCardProps> = ({
         </Link>
 
         <div className="mt-auto pt-4">
+          {priceLabel && (
+            <p className="text-sm font-black text-text-main mb-3">{priceLabel}</p>
+          )}
           {showProgress && (
             <div className="mb-4">
               <div className="flex justify-between items-end text-[10px] font-bold mb-2">
@@ -233,7 +248,7 @@ const Card: React.FC<CourseCardProps> = ({
             href={courseHref}
             className="inline-flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-accent-blue/30 bg-accent-blue/10 text-accent-blue text-[10px] font-black uppercase tracking-widest hover:bg-accent-blue hover:text-white"
           >
-            View Details
+            {ctaLabel || 'View Details'}
           </Link>
         </div>
       </div>
