@@ -31,7 +31,7 @@
   --card-bg: #ffffff;       /* Clean White Cards */
   --text-main: #0f172a;     /* Dark Navy Text */
   --text-muted: #64748b;    /* Professional Slate Muted Text */
-  --border-subtle: #f1f5f9; /* Very Light Borders */
+  --border-subtle: #e2e8f0; /* Visible card edges in light mode */
   
   /* Sidebar Light Gradient */
   --sidebar-from: #ffffff;
@@ -74,13 +74,55 @@
   transition: background-color 0.3s ease, color 0.3s ease;
 } */
 
+html {
+  color-scheme: light;
+  overflow-x: hidden;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
 body {
   background: var(--app-bg);
   color: var(--text-main);
-  /* Plus Jakarta Sans aik bohat hi professional aur modern font hai */
   font-family: "Plus Jakarta Sans", sans-serif;
-  /* transition: background-color 0.15s ease; */
-  /* transition: background-color 400ms cubic-bezier(0.4, 0, 0.2, 1); */
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* Theme tokens must snap — never interpolate card/page backgrounds between modes */
+html,
+body,
+[class*="bg-app-bg"],
+[class*="bg-card-bg"] {
+  transition-property: transform, opacity, box-shadow, filter;
+}
+
+button:not(:disabled),
+[type="button"]:not(:disabled),
+[type="submit"]:not(:disabled) {
+  -webkit-tap-highlight-color: transparent;
+  transition-property: transform, box-shadow, opacity, filter, background-color, color, border-color;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+button:not(:disabled):active,
+[type="button"]:not(:disabled):active,
+[type="submit"]:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+a[class*="rounded"] {
+  -webkit-tap-highlight-color: transparent;
+  transition-property: transform, box-shadow, opacity, filter, background-color, color, border-color;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+a[class*="rounded"]:active {
+  transform: scale(0.985);
 }
 
 /* Scrollbar Styling for Premium Look */

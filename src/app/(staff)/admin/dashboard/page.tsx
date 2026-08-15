@@ -83,7 +83,7 @@ function AdminDashboardInner() {
         (actionRequired.pendingPayments?.length || 0);
 
     return (
-        <div className="min-h-screen bg-app-bg text-text-main pb-20 relative overflow-hidden">
+        <div className="min-h-screen bg-app-bg text-text-main pb-20 relative overflow-x-hidden">
             <div className="pointer-events-none absolute inset-0">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(37,99,235,0.12),_transparent_50%),radial-gradient(ellipse_at_bottom_right,_rgba(37,99,235,0.06),_transparent_45%)] dark:bg-[radial-gradient(ellipse_at_top,_rgba(37,99,235,0.16),_transparent_50%),radial-gradient(ellipse_at_bottom_right,_rgba(56,189,248,0.06),_transparent_45%)]" />
                 <div
@@ -103,7 +103,7 @@ function AdminDashboardInner() {
                             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-accent-blue">
                                 Admin operations
                             </p>
-                            <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-none text-text-main">
+                            <h1 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight leading-tight text-text-main">
                                 Welcome back, {welcome.firstName}
                             </h1>
                             <p className="text-sm font-medium text-text-muted uppercase tracking-wider">

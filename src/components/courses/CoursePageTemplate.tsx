@@ -26,13 +26,12 @@ interface TemplateProps {
   placeholder?: string;
   extraHeaderContent?: React.ReactNode;
   showProgress?: boolean;
-  showMarksheetLink?: boolean;
   /** When set, pagination is driven by the API (current `courses` = one page). */
   serverPagination?: ServerPagination;
 }
 
 const CoursePageTemplate: React.FC<TemplateProps> = ({
-  title, description, courses, basePath, placeholder, extraHeaderContent, showProgress, showMarksheetLink, serverPagination
+  title, description, courses, basePath, placeholder, extraHeaderContent, showProgress, serverPagination
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [direction, setDirection] = useState(0);
@@ -96,7 +95,7 @@ const CoursePageTemplate: React.FC<TemplateProps> = ({
 
   return (
     // FIX: Spacing tightened by using py-4 instead of py-6/py-8
-    <div className="w-full px-4 md:px-8 py-4 transition-colors duration-300">
+    <div className="w-full px-4 md:px-8 py-4">
       
       {/* Header Section: Reduced mb-10 to mb-6 */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -108,8 +107,8 @@ const CoursePageTemplate: React.FC<TemplateProps> = ({
       </div>
 
       {/* Toolbar: Reduced mb-8 to mb-5 */}
-      <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-4">
-        <div className="w-full sm:w-1/2 md:w-1/3">
+      <div className="relative flex flex-col sm:flex-row sm:items-center mb-6 gap-3">
+        <div className="w-full sm:flex-1 sm:max-w-xl">
           <SearchBar 
             placeholder={placeholder || "Search course..."} 
             value={searchQuery}
@@ -117,10 +116,10 @@ const CoursePageTemplate: React.FC<TemplateProps> = ({
           />
         </div>
         
-        <div className="relative w-full sm:w-auto">
+        <div className="relative w-full sm:w-auto shrink-0">
             <button 
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 border rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm ${
+                className={`w-full sm:w-auto h-11 flex items-center justify-center gap-2 px-5 border rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm ${
                     filters.teacher || filters.type 
                     ? 'bg-accent-blue/10 border-accent-blue text-accent-blue' 
                     : 'bg-card-bg border-border-subtle text-text-main hover:bg-sidebar-to/10'
@@ -159,7 +158,6 @@ const CoursePageTemplate: React.FC<TemplateProps> = ({
                   courses={coursesToShow}
                   basePath={basePath}
                   showProgress={showProgress}
-                  showMarksheetLink={showMarksheetLink}
                 />
             </motion.div>
             </AnimatePresence>

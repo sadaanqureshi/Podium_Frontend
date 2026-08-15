@@ -17,8 +17,12 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
-    // 'class' attribute hona zaroori hai taaki Tailwind ko signal miley
-    <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
       {children}
     </NextThemesProvider>
   );

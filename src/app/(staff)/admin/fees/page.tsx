@@ -400,7 +400,7 @@ const FeesManagement = () => {
                         <div
                             key={card.label}
                             title={card.title || card.label}
-                            className="bg-card-bg border border-border-subtle rounded-2xl p-4 shadow-sm flex items-center gap-3"
+                            className="bg-card-bg border border-border-subtle rounded-2xl p-3 md:p-4 shadow-sm flex items-center gap-2.5 min-w-0"
                         >
                             <div
                                 className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${card.accent}`}
@@ -408,7 +408,7 @@ const FeesManagement = () => {
                                 <Icon size={20} strokeWidth={2.25} />
                             </div>
                             <div className="min-w-0">
-                                <p className="text-[9px] font-black text-text-muted uppercase tracking-widest truncate">
+                                <p className="text-[9px] font-black text-text-muted uppercase tracking-widest leading-tight">
                                     {card.label}
                                 </p>
                                 <p className="text-xl font-black tabular-nums tracking-tight truncate">
@@ -476,7 +476,7 @@ const FeesManagement = () => {
                     onRowClick={(item) => handleView(item)}
                 />
 
-                <div className="px-6 py-4 border-t border-border-subtle bg-app-bg/40">
+                <div className="px-4 md:px-6 py-4 border-t border-border-subtle bg-app-bg/40">
                     <Pagination
                         page={meta?.currentPage || page}
                         totalPages={totalPages}

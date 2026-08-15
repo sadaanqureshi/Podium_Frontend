@@ -168,7 +168,7 @@ const StudentManagement = () => {
         <div className="p-4 md:p-8 bg-app-bg min-h-screen text-text-main space-y-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-black uppercase tracking-tight">Student Registry</h1>
+                    <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight">Student Registry</h1>
                     <p className="text-text-muted text-sm font-medium mt-1">
                         Browse students and open a profile for enrollments and history.
                     </p>
@@ -179,7 +179,7 @@ const StudentManagement = () => {
                         setSelectedUser(null);
                         setModalOpen(true);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-accent-blue text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95"
+                            className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2.5 bg-accent-blue text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl"
                 >
                     <Plus size={18} strokeWidth={3} /> Register Student
                 </button>
@@ -192,18 +192,18 @@ const StudentManagement = () => {
                     return (
                         <div
                             key={card.label}
-                            className="bg-card-bg border border-border-subtle rounded-2xl p-4 shadow-sm flex items-center gap-3"
+                            className="bg-card-bg border border-border-subtle rounded-2xl p-3 md:p-4 shadow-sm flex items-center gap-2.5 min-w-0"
                         >
                             <div
-                                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${card.accent}`}
+                                className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center shrink-0 ${card.accent}`}
                             >
                                 <Icon size={18} />
                             </div>
                             <div className="min-w-0">
-                                <p className="text-[9px] font-black text-text-muted uppercase tracking-widest truncate">
+                                <p className="text-[9px] font-black text-text-muted uppercase tracking-widest leading-tight">
                                     {card.label}
                                 </p>
-                                <p className="text-xl font-black tabular-nums">
+                                <p className="text-lg md:text-xl font-black tabular-nums">
                                     {loading && !students.data?.length ? '—' : card.value}
                                 </p>
                             </div>
@@ -231,7 +231,7 @@ const StudentManagement = () => {
                     type="Student"
                 />
 
-                <div className="px-6 py-4 border-t border-border-subtle bg-app-bg/40">
+                <div className="px-4 md:px-6 py-4 border-t border-border-subtle bg-app-bg/40">
                     <Pagination
                         page={meta?.currentPage || page}
                         totalPages={totalPages}

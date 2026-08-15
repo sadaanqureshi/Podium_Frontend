@@ -49,7 +49,7 @@ const StudentCoursePageTemplate: React.FC<TemplateProps> = ({
   if (!mounted) return <div className="w-full min-h-screen bg-app-bg transition-none" />;
 
   return (
-    <div className="w-full p-4 md:p-8 transition-colors duration-300 bg-app-bg min-h-screen">
+    <div className="w-full p-4 md:p-8 bg-app-bg min-h-screen">
       
       {/* Header Section: Matched with Pro Template */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
@@ -65,11 +65,13 @@ const StudentCoursePageTemplate: React.FC<TemplateProps> = ({
       </div>
 
       {/* Toolbar: Matched with Pro Template */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <SearchBar placeholder={placeholder || "Search Protocol..."} />
-        <button className="flex items-center gap-2 px-6 py-2.5 bg-card-bg border border-border-subtle rounded-xl text-[11px] font-black uppercase tracking-widest text-text-main hover:bg-accent-blue/10 hover:border-accent-blue/30 transition-all shadow-sm active:scale-95">
-          <Filter size={16} className="text-accent-blue" />
-          <span>Filter Registry</span>
+      <div className="flex flex-col sm:flex-row sm:items-center mb-6 gap-3">
+        <div className="w-full sm:flex-1 sm:max-w-xl">
+          <SearchBar placeholder={placeholder || "Search Protocol..."} />
+        </div>
+        <button className="w-full sm:w-auto h-11 flex items-center justify-center gap-2 px-5 bg-card-bg border border-border-subtle rounded-xl text-[10px] font-black uppercase tracking-widest text-text-main hover:bg-accent-blue/10 hover:border-accent-blue/30 shadow-sm">
+          <Filter size={14} className="text-accent-blue" />
+          <span>Filter</span>
         </button>
       </div>
 

@@ -40,17 +40,15 @@ interface CourseListProps {
   courses: any[];
   basePath: string;
   showProgress?: boolean;
-  showMarksheetLink?: boolean;
 }
 
 const CourseList: React.FC<CourseListProps> = ({
   courses,
   basePath,
   showProgress,
-  showMarksheetLink,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
       {courses.map((course) => (
         <Card
           key={course.id}
@@ -64,9 +62,6 @@ const CourseList: React.FC<CourseListProps> = ({
           totalLessons={course.totalLessons || course.totalLectures || 0}
           basePath={basePath}
           showProgress={showProgress}
-          marksheetHref={
-            showMarksheetLink ? `/student/courses/${course.id}/marksheet` : null
-          }
         />
       ))}
     </div>

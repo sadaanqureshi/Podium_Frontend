@@ -137,7 +137,6 @@ export default function EnrolledCoursesPage() {
                 courses={mappedCourses}
                 basePath="/student/enrolled-courses"
                 showProgress={true}
-                showMarksheetLink={true}
             />
         </div>
     );

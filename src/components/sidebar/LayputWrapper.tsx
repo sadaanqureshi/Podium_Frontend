@@ -19,13 +19,18 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   const dispatch = useAppDispatch();
   const pathname = usePathname();
 
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsDropdownOpen(false);
+  }, [pathname]);
 
   const user = useAppSelector((state) => state.auth.user);
   const authRole = useAppSelector((state) => state.auth.role);
@@ -63,37 +68,27 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   };
 
   return (
-    // bg-app-bg khud ko light/dark ke hisab se adjust karega
-    <div className="flex min-h-screen w-full bg-app-bg">
+    <div className="flex h-screen h-dvh w-full overflow-hidden bg-app-bg">
 
-      {/* Desktop Sidebar Wrapper */}
-      <div className="hidden lg:block flex-shrink-0 w-[260px] h-screen sticky top-0 border-r border-border-subtle z-50">
+      {/* Desktop sidebar — stays put; only the main column scrolls */}
+      <div className="hidden lg:flex flex-col flex-shrink-0 w-[260px] h-full border-r border-border-subtle z-50">
         <WebSidebar />
-      </div> 
+      </div>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
 
-        {/* HEADER: Gradient using sidebar tokens for seamless look */}
-        <header className="h-14 flex items-center justify-between px-6 lg:px-10 sticky top-0 z-[40] bg-gradient-to-r from-sidebar-from to-sidebar-to">
-
-          <div className="lg:hidden w-10"></div>
+        <header className="h-14 shrink-0 flex items-center justify-between pl-16 pr-4 md:px-6 lg:px-8 z-[40] bg-gradient-to-r from-sidebar-from to-sidebar-to border-b border-border-subtle lg:pl-8">
 
           <div className="flex items-center gap-4 ml-auto">
             
-            {/* THEME TOGGLE */}
             <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 rounded-xl bg-card-bg border border-border-subtle text-text-main shadow-sm hover:scale-110 active:scale-95 transition-all"
+              type="button"
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              className="p-2 rounded-xl bg-card-bg border border-border-subtle text-text-main shadow-sm hover:scale-105 active:scale-95 transition-[transform,box-shadow] duration-150 ease-out"
             >
-              {theme === 'dark' ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-accent-blue" />}
+              {resolvedTheme === 'dark' ? <Sun size={18} className="text-yellow-400" /> : <Moon size={18} className="text-accent-blue" />}
             </button>
 
-            {/* <button className="p-2 text-text-muted hover:text-accent-blue transition-all relative">
-              <Bell size={18} />
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-accent-blue rounded-full"></span>
-            </button> */}
-
-            {/* PROFILE DROPDOWN */}
             <div className="relative" ref={dropdownRef}>
               <button
                 onMouseEnter={() => setIsDropdownOpen(true)}
@@ -107,9 +102,10 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 {isDropdownOpen && (
                   <motion.div
                     onMouseLeave={() => setIsDropdownOpen(false)}
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 8, scale: 0.97 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                    transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
                     className="absolute right-0 mt-3 w-56 bg-card-bg rounded-2xl shadow-2xl border border-border-subtle p-2 z-[100] origin-top-right overflow-hidden"
                   >
                     <div className="px-4 py-3 mb-2 border-b border-border-subtle">
@@ -120,14 +116,14 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <Link
                       href={profilePath}
                       onClick={() => setIsDropdownOpen(false)}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-bold text-text-muted hover:bg-sidebar-to hover:text-accent-blue rounded-xl transition-all mb-1"
+                      className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-bold text-text-muted hover:bg-sidebar-to hover:text-accent-blue rounded-xl transition-[background-color,color,transform] duration-150 mb-1"
                     >
                       <Settings size={16} /> Profile Settings
                     </Link>
 
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-bold text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                      className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-bold text-red-500 hover:bg-red-500/10 rounded-xl transition-[background-color,transform] duration-150"
                     >
                       <LogOut size={16} /> Logout
                     </button>
@@ -138,10 +134,8 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
         </header>
 
-        <main className="w-full flex-1 pl-5">
-          <div className="animate-in fade-in slide-in-from-top-1 duration-300">
-            {children}
-          </div>
+        <main className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
+          {children}
         </main>
       </div>
 
@@ -173,7 +167,7 @@ const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <motion.aside
-              className="lg:hidden fixed top-0 left-0 h-full z-50 shadow-2xl"
+              className="lg:hidden fixed top-0 left-0 h-full w-[260px] z-50 shadow-2xl"
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >

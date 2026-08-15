@@ -364,7 +364,7 @@ const AdminCoursesPage = () => {
                                 <Icon size={16} />
                             </div>
                             <div className="min-w-0">
-                                <p className="text-[8px] font-black text-text-muted uppercase tracking-widest truncate">
+                                <p className="text-[8px] font-black text-text-muted uppercase tracking-widest leading-tight">
                                     {card.label}
                                 </p>
                                 <p className="text-lg font-black tabular-nums">
@@ -403,7 +403,7 @@ const AdminCoursesPage = () => {
                     }}
                 />
 
-                <div className="px-6 py-4 border-t border-border-subtle bg-app-bg/40">
+                <div className="px-4 md:px-6 py-4 border-t border-border-subtle bg-app-bg/40">
                     <Pagination
                         page={meta?.currentPage || page}
                         totalPages={totalPages}

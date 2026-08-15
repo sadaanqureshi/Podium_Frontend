@@ -194,13 +194,13 @@ const WebSidebar: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => 
   };
 
   return (
-    <aside className="w-[280px] h-full bg-gradient-to-b from-sidebar-from to-sidebar-to flex flex-col font-sans overflow-hidden pt-20 lg:pt-5 border-r border-border-subtle shadow-xl lg:shadow-none">
-      <div className="flex-1 overflow-y-auto px-[15px] pb-5 no-scrollbar">
+    <aside className="w-full h-full bg-gradient-to-b from-sidebar-from to-sidebar-to flex flex-col font-sans overflow-hidden pt-4">
+      <div className="flex-1 overflow-y-auto px-3 pb-5 no-scrollbar">
 
         <Link
           href={homeHref}
           onClick={onLinkClick}
-          className="flex items-center gap-3 p-[10px] pb-[30px] rounded-xl hover:bg-sidebar-to/40 transition-colors"
+          className="flex items-center gap-3 px-2 py-3 mb-3 rounded-xl hover:bg-sidebar-to/40 transition-colors"
         >
           <Image
             src={logoSrc}

@@ -728,14 +728,14 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
     const hasQuizBuilder = fields.some((f) => f.type === 'quiz-builder');
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div
-                className={`bg-card-bg w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-border-subtle ${
+                className={`bg-card-bg w-full rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[100dvh] sm:max-h-[90vh] border border-border-subtle ${
                     hasQuizBuilder ? 'max-w-4xl' : 'max-w-3xl'
                 }`}
             >
 
-                <div className="flex justify-between items-center px-6 sm:px-8 py-5 border-b border-border-subtle bg-app-bg/50">
+                <div className="flex justify-between items-center px-4 sm:px-8 py-4 sm:py-5 border-b border-border-subtle bg-app-bg/50 gap-3">
                     <div>
                         <h2 className="text-xl font-bold tracking-tight text-text-main">{title}</h2>
                         <p className="text-xs text-text-muted mt-1 font-medium">
@@ -751,7 +751,7 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
 
                 <form onSubmit={handleSubmit} className="overflow-y-visible bg-card-bg flex-1">
                     <div
-                        className={`px-6 sm:px-8 py-6 space-y-6 overflow-y-auto no-scrollbar ${
+                        className={`px-4 sm:px-8 py-5 space-y-6 overflow-y-auto no-scrollbar ${
                             hasQuizBuilder ? 'max-h-[68vh]' : 'max-h-[60vh]'
                         }`}
                     >
@@ -889,7 +889,7 @@ const GenericFormModal: React.FC<GenericFormModalProps> = ({
                         </div>
                     </div>
 
-                    <div className="px-8 py-5 bg-app-bg/90 flex justify-end gap-3 border-t border-border-subtle z-10 backdrop-blur-md">
+                    <div className="px-4 sm:px-8 py-4 sm:py-5 bg-app-bg/90 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 border-t border-border-subtle z-10 backdrop-blur-md">
                         <button
                             type="button"
                             onClick={onClose}
