@@ -148,6 +148,10 @@ a[class*="rounded"]:active {
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
+
+main {
+    -webkit-overflow-scrolling: touch;
+}
 /* globals.css ke aakhir mein add karein */
 
 .hero-registry-card {

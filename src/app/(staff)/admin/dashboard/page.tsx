@@ -27,22 +27,9 @@ function AdminDashboardInner() {
     };
 
     useEffect(() => {
+        if (data) return;
         dispatch(fetchAdminDashboard());
-    }, [dispatch]);
-
-    useEffect(() => {
-        const onFocus = () => {
-            if (document.visibilityState === 'visible') {
-                dispatch(fetchAdminDashboard());
-            }
-        };
-        document.addEventListener('visibilitychange', onFocus);
-        window.addEventListener('focus', onFocus);
-        return () => {
-            document.removeEventListener('visibilitychange', onFocus);
-            window.removeEventListener('focus', onFocus);
-        };
-    }, [dispatch]);
+    }, [dispatch, data]);
 
     useEffect(() => {
         if (error && data) {
@@ -83,22 +70,10 @@ function AdminDashboardInner() {
         (actionRequired.pendingPayments?.length || 0);
 
     return (
-        <div className="min-h-screen bg-app-bg text-text-main pb-20 relative overflow-x-hidden">
-            <div className="pointer-events-none absolute inset-0">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(37,99,235,0.12),_transparent_50%),radial-gradient(ellipse_at_bottom_right,_rgba(37,99,235,0.06),_transparent_45%)] dark:bg-[radial-gradient(ellipse_at_top,_rgba(37,99,235,0.16),_transparent_50%),radial-gradient(ellipse_at_bottom_right,_rgba(56,189,248,0.06),_transparent_45%)]" />
-                <div
-                    className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]"
-                    style={{
-                        backgroundImage:
-                            'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
-                    }}
-                />
-            </div>
-
-            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-8 md:pt-10 space-y-8 md:space-y-10">
-                <section className="rounded-[1.75rem] md:rounded-[2rem] border border-border-subtle bg-card-bg p-6 md:p-10 shadow-xl overflow-hidden relative">
-                    <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-accent-blue/10 blur-3xl" />
-                    <div className="relative z-10 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+        <div className="bg-app-bg text-text-main pb-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 md:pt-10 space-y-8 md:space-y-10">
+                <section className="rounded-[1.75rem] md:rounded-[2rem] border border-border-subtle bg-card-bg p-6 md:p-10">
+                    <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
                         <div className="space-y-3 max-w-2xl">
                             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-accent-blue">
                                 Admin operations

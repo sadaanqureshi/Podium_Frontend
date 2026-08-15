@@ -10,6 +10,12 @@ export const fetchAdminDashboard = createAsyncThunk(
         } catch (err: unknown) {
             return rejectWithValue(getErrorMessage(err, 'Failed to load dashboard'));
         }
+    },
+    {
+        condition: (_, { getState }) => {
+            const { loading } = (getState() as { adminDashboard: { loading: boolean } }).adminDashboard;
+            return !loading;
+        },
     }
 );
 
